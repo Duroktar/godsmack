@@ -1,0 +1,10 @@
+{
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "typescript.navigator.showVisibilityLabels": true,
+    "typescript.navigator.showIcons": true,
+    "typescript.navigator.showDataTypes": true,
+    "files.exclude": {
+        "**/node_modules/": true
+    }
+}
