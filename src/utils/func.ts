@@ -1,6 +1,7 @@
+import type { IResult } from '../types'
 
 export class Result<T, E extends Error> {
-    constructor(public result: F.Result<T, E>) { }
+    constructor(public result: IResult<T, E>) { }
 
     static Value<T>(value: T): Result<T, any> {
         return new Result({

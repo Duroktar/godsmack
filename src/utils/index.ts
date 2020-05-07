@@ -1,2 +1,5 @@
 export { clamp } from './clamp'
+export { createTaggedSingleton } from './createTaggedSingleton'
+export { getTsConfigFile } from './getTsConfigFile'
 export * as func from './func'
+export * as http from './http'

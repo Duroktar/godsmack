@@ -1,0 +1,48 @@
+export interface StaticTestProps {
+    describe: Mocha.SuiteFunction;
+    it: Mocha.TestFunction;
+    expect: Chai.ExpectStatic;
+}
+
+export type ValueOf<T> = T[keyof T];
+
+export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+
+export type Type<T> = {
+    new(...args: any): T;
+}
+
+export type InferType<T> = T extends Type<infer U> ? U : never
+
+export type EmptyType = {
+    __empty__: true;
+};
+
+export interface IValue<T> {
+    type: 'value'
+    value: T
+}
+
+export interface IError<E extends Error> {
+    type: 'error'
+    error: E
+}
+
+export type IResult<T, E extends Error> = IValue<T> | IError<E>
+
+export type BodyRequest<T = {}> = {
+  body: T
+}
+
+export type ParamsRequest<T = {}> = {
+  params: T
+}
+
+export type QueryRequest<T = {}> = {
+  query: T
+}
+
+export type Request<T = {}> =
+  | ParamsRequest<T>
+  | QueryRequest<T>
+  | BodyRequest<T>

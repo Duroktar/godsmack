@@ -1,5 +1,6 @@
 import { Injector as DefaultInjector } from '../Injector';
 import { createTaggedSingleton } from '../../utils/createTaggedSingleton';
+import type { Type } from '../../types';
 
 type GenericClassDecorator<T> = (target: T) => void;
 

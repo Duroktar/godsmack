@@ -64,5 +64,4 @@ describe('Injector Class', () => {
         notStrictEqual(t3(), t6.test3)
         notStrictEqual(t5(), t6.test5)
     });
-
 })
