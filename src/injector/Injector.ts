@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable'
 import { Logger, LogLevel } from '../framework/services/Logger';
-import { ObjectFactory } from '../framework';
 import type { Type, InferType } from '../types';
 
 export const SYMBOL_SINGLETON = Symbol.for('SINGLETON')
@@ -28,6 +27,8 @@ export class InjectorFactory {
   }
   //#endregion
 
+  //#region private
+  private types = new Map<string, Type<any>>()
   private dependencies = new Map<string, Type<any>>()
   private singletons = new Map<string, any>()
   private noOverrides: boolean = true;
@@ -49,6 +50,7 @@ export class InjectorFactory {
 
     return { resolved, injections };
   }
+  //#endregion
 
   //#region information
   listDependencies(): string[] {
@@ -100,9 +102,6 @@ export class InjectorFactory {
 
   getSingleton<T>(target: Type<T>): T {
     this.logger.debug('Getting singleton:', this.getTypeName(target))
-    if (this.getTypeName(target) === ObjectFactory.constructor.name) {
-      this.logger.debug(this.singletons)
-    }
     return this.singletons.get(this.getTypeName(target))!
   }
 
@@ -129,8 +128,13 @@ export class InjectorFactory {
     return this.dependencies.has(this.getTypeName(target))
   }
 
+  setDependency<T extends Type<any>>(target: T | string, resolved: T) {
+    return this.addDependency(target, resolved, true);
+  }
+
   addDependency<T extends Type<any>>(target: T | string, resolved: T, override = false) {
     const targetName = this.getTypeName(target)
+    const resolvedName = this.getTypeName(resolved)
     if (this.dependencies.has(targetName)) {
       if (this.noOverrides && !override) {
         this.logger.warn(`skipping existing dependency => ${targetName}`)
@@ -140,8 +144,8 @@ export class InjectorFactory {
     } else {
       this.logger.debug(`Setting dependency => ${targetName} to => ${resolved}`)
     }
-    this.dependencies.set(targetName, resolved)
-    return this.dependencies
+    this.updateTypes<T>(target, targetName, resolved, resolvedName);
+    return this.dependencies.set(targetName, resolved)
   }
 
   getDependency<T extends Type<any>>(target: T | string): Type<any> {
@@ -159,6 +163,26 @@ export class InjectorFactory {
       this.addDependency(target, resolved);
     }
     return this.getDependency(target) as T;
+  }
+  //#endregion
+
+  //#region types
+  getTypes(): Map<string, Type<any>> {
+    return this.types
+  }
+
+  getType<T extends Type<any>>(type: string | T) {
+    return this.types.get(this.getTypeName(type))
+  }
+
+  private updateTypes<T extends Type<any>>(target: string | T, targetName: string, resolved: T, resolvedName: string) {
+    if (typeof target !== 'string') {
+      this.types.set(targetName, target);
+    }
+    else {
+      this.types.set(targetName, resolved);
+    }
+    this.types.set(resolvedName, resolved);
   }
   //#endregion
 
@@ -181,14 +205,14 @@ export class InjectorFactory {
   //#endregion
 
   //#region utilities
-  private getTypeName = <T extends Type<any>>(t: T | string) => {
+  getTypeName = <T extends Type<any>>(t: T | string) => {
     const rv = (typeof t === 'string') ? t : t?.name || t?.constructor.name
     if (!rv) {
       throw new Error(`somthing fucky passed to getTypeName => ${t}`)
     }
     return rv
   }
-  private getTypeInstanceName = <T extends any>(t: Type<T>) => {
+  getTypeInstanceName = <T extends any>(t: Type<T>) => {
     return t.constructor.name
   }
   //#endregion

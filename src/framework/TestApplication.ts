@@ -2,7 +2,8 @@ import { Application } from './Application';
 import { ApplicationBuilder } from './ApplicationBuilder';
 import { Container } from './Container';
 import { InMemoryDatabase, DatabaseProvider } from './Database';
-import { HttpServerProvider, ExpressServer } from './Server';
+import { HttpServerProvider } from './HttpServer';
+import { ExpressServer } from "./services/ExpressServer";
 import { StaticTestProps } from '../types';
 import type { IApplication, IApplicationService, MergeDefaultProviders } from '../interfaces';
 

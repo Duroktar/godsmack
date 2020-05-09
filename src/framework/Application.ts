@@ -1,12 +1,16 @@
 import { ObjectFactory, FactoryBuilder } from './Factory';
-import { FactoryTypeRecord } from '../interfaces/IFactory';
 import { CliAppProvider, YargsCliApp } from './CommandLine';
+import { Client } from './ClientBuilder';
 import { DatabaseProvider } from './Database';
-import { HttpServerProvider, ExpressServer } from './Server';
-import { IApplication, IApplicationServiceHooks, MergeDefaultProviders } from '../interfaces';
+import { HttpServerProvider } from './HttpServer';
+import { ExpressServer } from "./services/ExpressServer";
+import { IApplication, IApplicationServiceHooks } from '../interfaces/IApplication';
+import { IFactory, FactoryTypeRecord } from '../interfaces/IFactory';
+import { IClient, IHttpServer, MergeDefaultProviders } from '../interfaces';
+import { Type } from '../types';
 
 /**
- * Default implementation of the Application Interface
+ * Default implementation of the IApplication interface
  *
  * @export
  * @class Application
@@ -37,20 +41,29 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public stop = () => { this.destroyApplication() }
 
-  public addFactory = (factory: ObjectFactory<any>) => {
-    this.container.addSingletonInstance(ObjectFactory, factory)
+  public addFactory = (factory: IFactory<Record<string, Type<any>>>) => {
+    this.container.addSingletonInstance<Type<IFactory>>(ObjectFactory, factory)
+    return this
+  }
+
+  public addServer = (server: IHttpServer) => {
+    this.container.addSingletonInstance<Type<IHttpServer>>(HttpServerProvider, server)
+    return this
+  }
+
+  public useClient(client: IClient) {
+    this.container.addSingletonInstance<Type<IClient>>(Client, client)
+    return this
   }
 
   public addDatabase = (database: DatabaseProvider) => {
     this.container.addSingletonInstance(DatabaseProvider, database)
-  }
-
-  public addServer = (server: HttpServerProvider) => {
-    this.container.addSingletonInstance(HttpServerProvider, server)
+    return this
   }
 
   public addCliApp = (cliApp: CliAppProvider) => {
     this.container.addSingletonInstance(CliAppProvider, cliApp)
+    return this
   }
 
   public serverStartListening() {
@@ -60,7 +73,6 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public cliAppRun() {
     this.container.resolve(CliAppProvider).run();
   }
-
 
   /* Convenience API */
 
@@ -72,9 +84,18 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return new YargsCliApp(this)
   }
 
+  public addDefaultClient(path?: string) {
+    const client: IClient = this.container
+      .addSingleton(Client)
+      .resolve(Client)
+
+    client.applyMiddleware(this, path)
+    return this.useClient(client)
+  }
+
   public addDefaultFactory<T extends FactoryTypeRecord>(
     types: T,
-  ): ObjectFactory<T> {
+  ): IFactory<T> {
     return new FactoryBuilder(this)
       .withTypes(types)
       .build();
@@ -93,7 +114,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   private initializeApplication() {
     this.__hooks.create()
     this.__hooks.configure()
-    this.__onAppStarted()
+    this.__onAppStarted?.()
   }
   private destroyApplication() {
     this.__hooks.exit()

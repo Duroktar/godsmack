@@ -1,12 +1,12 @@
-import { Application, types } from '../../'
 import { IFactory, FactoryTypeRecord, GetParams } from '../interfaces'
+import type { Application, types } from '../../'
 
 
 export class ObjectFactory<Types extends FactoryTypeRecord = any> implements IFactory<Types>
 {
   constructor(
-    public application: Application<any>,
-    public types: FactoryTypeRecord = {},
+    private application: Application<any>,
+    private types: FactoryTypeRecord,
   ) {
     Object.entries(types).map(([key, value]) => {
       application.container
@@ -15,26 +15,25 @@ export class ObjectFactory<Types extends FactoryTypeRecord = any> implements IFa
     })
   }
 
-  create = <K extends keyof Types, Impl extends Types[K]>(
+  create<K extends keyof Types, Impl extends Types[K]>(
     type: K,
     ...params: GetParams<Impl>
-  ): InstanceType<Impl> => {
-    // console.log('this here ->', this)
-    // console.log('type:', type)
-    // console.log('types:', this.types)
-    const klass = this.types[type as any]
-    const C = this.getInjectorDependency<Impl>(klass)
-    // console.log('YUP')
+  ): InstanceType<Impl> {
+    const C = this.getInjectorDependency<Impl>(type as any)
     if (C) return new C(...params as any)
-    // if (klass) return new klass(...params as any)
     throw new Error("Factory couldn't create type: " + type)
   }
 
-  getTypes = (): Record<string, types.Type<any>> => {
-    return this.types
+  getTypes(): Record<string, types.Type<any>> {
+    const types = this.application.container
+      .getInjector()
+      .getTypes()
+      .entries()
+
+    return Object.fromEntries(types)
   }
 
-  getInjectorDependency = <T extends any>(klass: types.Type<T>) => {
+  getInjectorDependency<T extends any>(klass: types.Type<T>) {
     return this.application.container
       .getInjector()
       .getDependency(klass)
@@ -42,7 +41,7 @@ export class ObjectFactory<Types extends FactoryTypeRecord = any> implements IFa
 }
 
 export class DebugObjectFactory<T extends FactoryTypeRecord> extends ObjectFactory<T> {
-  getInjectorDependency = <T extends any>(klass: types.Type<T>) => {
+  getInjectorDependency<T extends any>(klass: types.Type<T>) {
     const result = super.getInjectorDependency(klass)
     // console.log('got injector dep:', result)
     return result
@@ -53,7 +52,7 @@ export class FactoryBuilder<Types extends FactoryTypeRecord>
 {
   constructor(public app: Application<any>) { }
 
-  private types!: FactoryTypeRecord
+  private types: FactoryTypeRecord = {}
 
   public withTypes<T extends FactoryTypeRecord>(
     types: T
@@ -66,9 +65,10 @@ export class FactoryBuilder<Types extends FactoryTypeRecord>
 
   public withFactory(factory: typeof ObjectFactory) {
     this.factory = factory
+    return this
   }
 
-  public build = (): ObjectFactory<Types> => {
+  public build(): IFactory<Types> {
 
     this.app.container
       .getInjector()

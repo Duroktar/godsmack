@@ -9,9 +9,16 @@ export type GetParams<T extends any> =
 
 export type FactoryTypeRecord = Record<string, Type<any>>
 
-export interface IFactory<Types extends FactoryTypeRecord> {
+/**
+ * Interface for the application Object Factory.
+ *
+ * @export
+ * @interface IFactory
+ * @template Types
+ */
+export interface IFactory<Types extends FactoryTypeRecord = any> {
   /**
-   *
+   * Used to create new instances of type T
    *
    * @template T
    * @param {T} type
@@ -23,8 +30,10 @@ export interface IFactory<Types extends FactoryTypeRecord> {
     type: T,
     ...params: GetParams<Types[T]>
   ): InstanceType<Types[T]>;
+  getInjectorDependency<T extends any>(klass: Type<T>): Type<T>
   /**
-   *
+   * Returns a record of registered types
+   * available for creation
    *
    * @returns {FactoryTypeRecord}
    * @memberof IFactory

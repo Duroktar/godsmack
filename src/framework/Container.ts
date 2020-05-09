@@ -7,9 +7,7 @@ export type InferContainerT<T> = T extends Container<infer C> ? C : never
 
 export class Container<T = EmptyType> implements IContainer<T> {
   /* Public api */
-  constructor(
-    private injector: InjectorFactory = Injector,
-  ) { }
+  constructor(private injector: InjectorFactory = Injector) { }
 
   public resolve<Target extends T>(target: Type<Target>): Target {
     return this.injector.resolve(target)
@@ -31,7 +29,6 @@ export class Container<T = EmptyType> implements IContainer<T> {
     instance: InferType<I>,
   ): Container<Exclude<InferType<I> | T, EmptyType>> {
     createTaggedSingleton(type, true); // SIDE-EFFECT
-    // console.log('adding singleton instance:', instance)
     this.injector.upsertSingletonInstance(type, instance)
     return this as any;
   }

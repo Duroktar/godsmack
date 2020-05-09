@@ -6,7 +6,7 @@ import type { IApplicationCreationService, IApplication, MergeDefaultProviders }
  * @export
  * @interface IApplicationBuilder
  */
-export interface IApplicationBuilder {}
+export interface IApplicationBuilder { }
 
 /**
  * Interface for the default Application Builder.
