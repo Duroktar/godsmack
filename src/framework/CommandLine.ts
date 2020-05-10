@@ -1,4 +1,3 @@
-import yargs from 'yargs'
 import { IApplication } from "../interfaces";
 
 interface ICommandLineApp {
@@ -11,13 +10,6 @@ export class CliAppProvider implements ICommandLineApp {
   public readonly engine: any
   public run() {
     console.log('initializing base CLI app')
-  }
-}
-
-export class YargsCliApp extends CliAppProvider {
-  public readonly engine = yargs
-  public run() {
-    console.log('initializing yargs CLI app')
   }
 }
 

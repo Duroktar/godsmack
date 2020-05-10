@@ -1,20 +1,19 @@
-import { Application } from './Application';
 import { ClientAdapter } from './ClientAdapter';
 import { HttpServerProvider } from './HttpServer';
-import { Logger } from './services';
 import { Injectable } from '../injector';
+import { Logger } from './services';
 import { transpile } from '../utils';
-import type { IClient } from '../interfaces';
+import type { IApplication, IClient } from '../interfaces';
 
 @Injectable()
-export class Client implements IClient {
+export class JavascriptClient implements IClient {
   constructor(
     public logger: Logger,
     public server: HttpServerProvider,
   ) {
     this.logger = logger.For(this)
   }
-  applyMiddleware(app: Application<any>, endpoint = '/__client.js'): this {
+  applyMiddleware(app: IApplication<any>, endpoint = '/__client.js') {
     this.server.use(endpoint, (req, res) => {
       const client = app.container
         .resolve<ClientAdapter>(ClientAdapter)
@@ -32,7 +31,7 @@ export class Client implements IClient {
       res.type('application/javascipt')
       res.send(result)
     })
-    this.logger.info('Serving JS API from', endpoint)
+    this.logger.info('Serving API Client from', endpoint)
     return this
   }
 }

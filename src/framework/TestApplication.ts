@@ -1,10 +1,11 @@
 import { Application } from './Application';
 import { ApplicationBuilder } from './ApplicationBuilder';
 import { Container } from './Container';
-import { InMemoryDatabase, DatabaseProvider } from './Database';
+import { DatabaseProvider } from './Database';
+import { InMemoryDatabase } from "./services/MemoryDB";
 import { HttpServerProvider } from './HttpServer';
 import { ExpressServer } from "./services/ExpressServer";
-import { StaticTestProps } from '../types';
+import type { StaticTestProps, InferApplicationTypes } from '../types';
 import type { IApplication, IApplicationService, MergeDefaultProviders } from '../interfaces';
 
 export class TestApplication<T> extends Application<T> {
@@ -85,9 +86,14 @@ export class TestApplication<T> extends Application<T> {
 
     class NoNo { }
 
+    type AppTypes = InferApplicationTypes<typeof app>;
+
     app.configure(app => {
       app.container.resolve(TestDoDo).setDodo('poopoo dodo')
-      console.log(app.container.resolve(BoogerWhoop).getDodo())
+      app.container.resolve(BoogerWhoop).setDodo('boo dodo')
+
+      // @ts-expect-error
+      // app.container.resolve(NoNo)
 
       const db = app.container.resolve(DatabaseProvider)
       db.insert('users', { id: 1, name: 'Admin' })

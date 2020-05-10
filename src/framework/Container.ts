@@ -13,15 +13,15 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return this.injector.resolve(target)
   }
 
-  public addTransient<T>(ifce: Type<T>, impl: Type<T> = ifce) {
-    return this.__addInjectorDependency(impl, ifce.name);
+  public addTransient<T>(type: Type<T>, impl: Type<T> = type) {
+    return this.__addInjectorDependency(impl, type.name);
   }
 
-  public addSingleton<T>(ifce: Type<T>, impl: Type<T> = ifce) {
-    createTaggedSingleton(ifce, true); // SIDE-EFFECT
+  public addSingleton<T>(type: Type<T>, impl: Type<T> = type) {
+    createTaggedSingleton(type, true); // SIDE-EFFECT
     createTaggedSingleton(impl, true); // SIDE-EFFECT
     this.injector.addSingleton(impl)
-    return this.__addInjectorDependency(impl, ifce.name);
+    return this.__addInjectorDependency(impl, type.name);
   }
 
   public addSingletonInstance<I extends Type<any>>(
@@ -29,8 +29,8 @@ export class Container<T = EmptyType> implements IContainer<T> {
     instance: InferType<I>,
   ): Container<Exclude<InferType<I> | T, EmptyType>> {
     createTaggedSingleton(type, true); // SIDE-EFFECT
-    this.injector.upsertSingletonInstance(type, instance)
-    return this as any;
+    this.injector.upsertSingletonInstance(type, instance);
+    return this.__addInjectorDependency(type, type.name); // ensure override (...)
   }
 
   public getInjector = () => { return this.injector }

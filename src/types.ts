@@ -1,31 +1,39 @@
+import { IApplication } from './interfaces';
+import type { Container } from './framework';
+
 export interface StaticTestProps {
-    describe: Mocha.SuiteFunction;
-    it: Mocha.TestFunction;
-    expect: Chai.ExpectStatic;
+  describe: Mocha.SuiteFunction;
+  it: Mocha.TestFunction;
+  expect: Chai.ExpectStatic;
 }
+
+export type InferApplicationContainerType<T> = T extends IApplication<infer C> ? C : never;
+export type InferApplicationTypes<T> = InferContainerTypes<InferApplicationContainerType<T>>
+export type InferContainerTypes<T> = T extends Container<infer C> ? C : never
+
 
 export type ValueOf<T> = T[keyof T];
 
 export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 
 export type Type<T> = {
-    new(...args: any): T;
+  new(...args: any): T;
 }
 
 export type InferType<T> = T extends Type<infer U> ? U : never
 
 export type EmptyType = {
-    __empty__: true;
+  __empty__: true;
 };
 
 export interface IValue<T> {
-    type: 'value'
-    value: T
+  type: 'value'
+  value: T
 }
 
 export interface IError<E extends Error> {
-    type: 'error'
-    error: E
+  type: 'error'
+  error: E
 }
 
 export type IResult<T, E extends Error> = IValue<T> | IError<E>

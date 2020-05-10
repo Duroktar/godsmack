@@ -1,5 +1,6 @@
 import { StartupProvider } from '../framework/Startup';
-import { CliAppProvider, YargsCliApp } from '../framework/CommandLine';
+import { CliAppProvider } from '../framework/CommandLine';
+import { YargsCliApp } from "../framework/services/YargsCliApp";
 import { DatabaseProvider } from '../framework/Database';
 import { HttpServerProvider } from '../framework/HttpServer';
 import { ExpressServer } from "../framework/services/ExpressServer";
@@ -7,8 +8,10 @@ import { ObjectFactory } from '../framework/Factory';
 import { FactoryTypeRecord, IFactory } from './IFactory';
 import { EmptyType } from '../types';
 import { Application } from '../framework/Application';
-import { Container, InferContainerT } from '../framework';
+import { Container, InferContainerT, ApplicationConfigurationService, ApplicationCreationService } from '../framework';
 import { IHttpServer } from './IHttpServer';
+import { DockerService } from '../framework/Docker';
+import { IContainer } from './IContainer';
 
 /**
  * The default Application Interface
@@ -17,7 +20,7 @@ import { IHttpServer } from './IHttpServer';
  * @interface IApplication
  * @template AppContainer
  */
-export interface IApplication<AppContainer> {
+export interface IApplication<AppContainer = any> {
   /**
    * Configuration function. This is where the
    * bulk of the application logic goes after
@@ -92,7 +95,7 @@ export interface IApplication<AppContainer> {
   /**
    * Configures the default Client for use
    *
-   * @returns {this}
+   * @returns {this} The application instance for chaining
    * @memberof IApplication
    */
   addDefaultClient(): this
@@ -113,11 +116,20 @@ export interface IApplication<AppContainer> {
    */
   container: MergeDefaultProviders<AppContainer>;
 
+  /**
+   * Configures the application to run on docker, creating
+   * all the necessary files in the root project directory
+   * and automatically building and starting the app.
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addDockerSupport(): this
+
   // TODO / wishlist
   // addLiveReloading(): this
   // addSettings(config: any): this
   // addSinglePageApp(): this
-  // addDockerfile(file: any): this
   // addCronJobs(): this
   // addCreateReactApp(): this
 }
@@ -129,37 +141,37 @@ export interface IApplication<AppContainer> {
  * @interface IApplicationCreationService
  * @template T
  */
-export interface IApplicationCreationService<T extends any> {
+export interface IApplicationCreationService<T extends any = any> {
   /**
    * Used to configure dependencies for the program.
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureServices?: (container: Container<EmptyType>) => T;
+  ConfigureServices(container: IContainer<any>): T;
   /**
    * Used to configure a server for the application
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureServer?: <T>(app: IApplication<T>) => IHttpServer;
+  ConfigureServer?: (app: IApplication) => IHttpServer;
   /**
    * Used to configure a database for the application
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureDatabase?: <T>(app: IApplication<T>) => DatabaseProvider;
+  ConfigureDatabase?: (app: IApplication) => DatabaseProvider;
   /**
    * Used to configure a CLI application
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureCliApp?: <T>(app: IApplication<T>) => CliAppProvider;
+  ConfigureCliApp?: (app: IApplication) => CliAppProvider;
   /**
    * Used to configure the default object factory
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureFactory?: <T>(app: Application<T>) => IFactory;
+  ConfigureFactory?: (app: IApplication) => IFactory;
 };
 
 /**
@@ -174,10 +186,9 @@ export interface IApplicationConfigurationClass<T> {
   /**
    * Class based interface for `IApplicationConfigurationService`
    *
-   * @type {IApplicationConfigurationCallback<T>}
    * @memberof IApplicationConfigurationClass
    */
-  configure: IApplicationConfigurationCallback<T>
+  configure: (app: IApplication<T>) => void
 };
 
 export type IApplicationService = (app: IApplication<any>, server: HttpServerProvider) => void
@@ -189,7 +200,6 @@ export type IApplicationService = (app: IApplication<any>, server: HttpServerPro
  * @interface IApplicationServiceHooks
  */
 export interface IApplicationServiceHooks {
-  create(): void
   configure(): void
   exit(): void
 }
@@ -197,9 +207,12 @@ export interface IApplicationServiceHooks {
 
 export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | InferContainerT<ApplicationContainer>
+  | ApplicationCreationService
+  | ApplicationConfigurationService
   | ObjectFactory
   | HttpServerProvider
   | DatabaseProvider
   | CliAppProvider
   | StartupProvider
+  | DockerService
   , EmptyType>>

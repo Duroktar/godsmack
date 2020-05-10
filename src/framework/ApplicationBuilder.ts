@@ -1,43 +1,25 @@
 import { Application } from './Application';
+import { ApplicationCreationService } from './ApplicationCreationService';
 import { Container } from './Container';
-import { NullCliApp } from './CommandLine';
-import { NullDatabase } from './Database';
-import { FactoryBuilder } from './Factory';
-import { NullServer } from './HttpServer';
-import type { IApplication, IApplicationCreationService, MergeDefaultProviders, IContainer } from '../interfaces';
+import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService } from '../interfaces';
 
 /**
- * The default implementation for an IApplicationBuilder used
+ * The default implementation of the IApplicationBuilder used
  * to create and configure new Applications.
  *
  * @class ApplicationBuilder
  */
-export class ApplicationBuilder {
+export class ApplicationBuilder implements IApplicationBuilder {
   /**
    * Used to create and configure a new Application.
    *
    * @static
-   * @returns
+   * @returns An Application instance
    */
-  static Create<T extends Container<any>>({
-    ConfigureServer = app => new NullServer(app),
-    ConfigureDatabase = app => new NullDatabase(app),
-    ConfigureCliApp = app => new NullCliApp(app),
-    ConfigureFactory = app => new FactoryBuilder(app).build(),
-    ConfigureServices,
-  }: IApplicationCreationService<T>) {
-    const application = new Application(new Container());
-    application.container.addSingletonInstance(Application, application)
-    application.addFactory(ConfigureFactory(application));
-
-    ; (application as any).__hooks.create = () => {
-      ConfigureServices?.(application.container as any)
-      application.addDatabase(ConfigureDatabase(application));
-      application.addServer(ConfigureServer(application));
-      application.addCliApp(ConfigureCliApp(application));
-    }
-
-    const app = (application as IApplication<any>);
+  static Create<T extends Container<any>>(service: IApplicationCreationService<T>) {
+    const app = new Application(new Container());
+    app.container.addSingletonInstance(Application, app);
+    app.container.addSingletonInstance(ApplicationCreationService, service);
     return app as IApplication<MergeDefaultProviders<T>>
   }
 }

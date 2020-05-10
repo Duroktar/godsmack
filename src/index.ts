@@ -8,20 +8,27 @@ export * from './interfaces'
 export * from './types'
 
 export {
-  ApplicationBuilder,
   Application,
-  Container,
-  ObjectFactory,
-  HttpServerProvider,
+  ApplicationBuilder,
+  ApplicationConfigurationService,
+  ApplicationCreationService,
   CliAppProvider,
-  DatabaseProvider,
-  ExpressServer,
-  InMemoryDatabase,
-  Logger,
-  YargsCliApp,
-  Client,
   ClientAdapter,
+  Container,
+  DatabaseProvider,
+  DebugObjectFactory,
+  Disposable,
+  ExpressServer,
+  HttpServerProvider,
+  InMemoryDatabase,
+  JavascriptClient,
+  Logger,
+  LogLevel,
+  ObjectFactory,
+  StartupProvider,
   XMLHttpClient,
+  YargsCliApp,
+  FactoryBuilder,
 } from './framework'
 
 export { Injectable, Singleton } from './injector'

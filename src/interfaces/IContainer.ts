@@ -11,11 +11,10 @@ import { InjectorFactory } from '../injector/Injector';
  */
 export interface IContainer<T = EmptyType> {
   /**
-   * Used to resolve program dependencies. Works recursively on all sub-
-   * dependencies to return an instantiated object of the requested type.
-   * The dependency must previously have either been declared in the
-   * constructor of an `Injectable()` decorated class or registered to
-   * the application container in the `ConfigureServices` function.
+   * Used to resolve program dependencies. The dependency must
+   * previously have either been declared in the constructor of
+   * an `Injectable()` decorated class or registered to the
+   * application container in the `ConfigureServices` function.
    *
    * @template Target Can be replaced with a valid Interface for the Target type
    * @param {Type<Target>} target The type to resolve

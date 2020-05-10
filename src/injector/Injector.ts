@@ -18,11 +18,11 @@ export class InjectorFactory {
     const { resolved, injections } = this.resolveTokens<T>(target);
 
     if (this.isSingleton(resolved)) {
-      this.logger.info('Resolving singleton for dependency =>', this.getTypeName(resolved))
+      this.logger.debug('Resolving singleton for dependency =>', this.getTypeName(resolved))
       return this.upsertSingleton(resolved, injections);
     }
 
-    this.logger.info('Resolving new target instance for dependency =>', this.getTypeName(resolved))
+    this.logger.debug('Resolving new target instance for dependency =>', this.getTypeName(resolved))
     return this.createObject<T>(resolved, injections);
   }
   //#endregion
@@ -78,26 +78,29 @@ export class InjectorFactory {
 
   //#region singletons
   isSingleton(target: Type<any>) {
+    this.logger.debug('Determining if singleton. target =>', target)
     return (target as any)[SYMBOL_SINGLETON] || this.hasSingleton(target);
   }
 
   hasSingleton<T>(target: Type<T>) {
-    this.logger.debug('looking for singleton for target:', target)
+    this.logger.debug('Looking for singleton for target:', target)
     return this.singletons.has(this.getTypeName(target))
   }
 
-  addSingleton<T>(newable: Type<T>, injections?: any) {
+  addSingleton<T>(newable: Type<T>, injections?: any): T {
     this.logger.debug('Setting singleton to NEW target instance:', this.getTypeName(newable), newable)
-    const newObject = injections
+    const newObject: T = injections
       ? this.createObject(newable, injections)
       : this.resolve(newable);
 
-    return this.singletons.set(this.getTypeName(newable), newObject);
+    this.singletons.set(this.getTypeName(newable), newObject);
+    return newObject;
   }
 
-  addSingletonInstance<T extends Type<any>>(type: T, instance: InferType<T>) {
-    this.logger.debug('Setting singleton to EXISTING target instance:', this.getTypeInstanceName(instance), instance)
-    return this.singletons.set(this.getTypeName(type), instance);
+  addSingletonInstance<T extends Type<any>, I extends InferType<T>>(type: T, instance: I): I {
+    this.logger.debug('Setting singleton to EXISTING target instance:', this.getInstanceName(instance), instance)
+    this.singletons.set(this.getTypeName(type), instance);
+    return instance
   }
 
   getSingleton<T>(target: Type<T>): T {
@@ -106,20 +109,21 @@ export class InjectorFactory {
   }
 
   upsertSingleton<T>(target: Type<T>, injections: any): T {
-    this.logger.info('Upserting singleton =>', this.getTypeName(target))
+    this.logger.debug('Upserting singleton =>', this.getTypeName(target))
     const dep = this.upsertDependency(target, target);
     if (!this.hasSingleton(dep)) {
-      this.addSingleton(dep, injections);
+      return this.addSingleton(dep, injections);
     }
     return this.getSingleton(dep);
   }
 
   upsertSingletonInstance<T extends Type<any>>(target: T, instance: InferType<T>): T {
+    this.logger.debug('Upserting singleton instance =>', this.getTypeName(target))
     const dep = this.upsertDependency(target, instance.constructor);
     if (!this.hasSingleton(dep)) {
-      this.addSingletonInstance(dep, instance);
+      return this.addSingletonInstance(dep, instance);
     }
-    return this.getSingleton(dep);
+    return instance;
   }
   //#endregion
 
@@ -137,10 +141,10 @@ export class InjectorFactory {
     const resolvedName = this.getTypeName(resolved)
     if (this.dependencies.has(targetName)) {
       if (this.noOverrides && !override) {
-        this.logger.warn(`skipping existing dependency => ${targetName}`)
+        this.logger.debug(`Skipping existing dependency => ${targetName}`)
         return this.dependencies
       }
-      this.logger.debug(`overriding existing dependency => ${targetName}`)
+      this.logger.debug(`Overriding existing dependency => ${targetName}`)
     } else {
       this.logger.debug(`Setting dependency => ${targetName} to => ${resolved}`)
     }
@@ -150,19 +154,19 @@ export class InjectorFactory {
 
   getDependency<T extends Type<any>>(target: T | string): Type<any> {
     const tName = this.getTypeName(target);
-    if (!this.dependencies.has(tName)) {
-      this.logger.error(`dependency not found => ${tName}`)
-    }
     this.logger.debug('Getting dependency =>', tName)
+    if (!this.dependencies.has(tName)) {
+      this.logger.debug(`Dependency not found => ${tName}`)
+    }
     return this.dependencies.get(tName)!
   }
 
   upsertDependency<T extends Type<any>>(target: T | string, resolved: T): T {
-    this.logger.info('Upserting dependency =>', this.getTypeName(target))
+    this.logger.debug('Upserting dependency =>', this.getTypeName(target))
     if (!this.hasDependency(target)) {
       this.addDependency(target, resolved);
     }
-    return this.getDependency(target) as T;
+    return (typeof target !== 'string') ? target : resolved;
   }
   //#endregion
 
@@ -176,13 +180,20 @@ export class InjectorFactory {
   }
 
   private updateTypes<T extends Type<any>>(target: string | T, targetName: string, resolved: T, resolvedName: string) {
-    if (typeof target !== 'string') {
-      this.types.set(targetName, target);
+    if (!this.types.has(targetName)) {
+      if (typeof target !== 'string') {
+        this.logger.debug('Updating target Type =>', targetName, 'to target =>', target)
+        this.types.set(targetName, target);
+      }
+      else {
+        this.logger.debug('Updating target Type =>', targetName, 'to resolved =>', resolved)
+        this.types.set(targetName, resolved);
+      }
     }
-    else {
-      this.types.set(targetName, resolved);
+    if (resolvedName !== Object.name && !this.types.has(resolvedName)) {
+      this.logger.debug('Updating resolvedName Type =>', resolvedName, 'to resolved =>', resolved)
+      this.types.set(resolvedName, resolved);
     }
-    this.types.set(resolvedName, resolved);
   }
   //#endregion
 
@@ -212,7 +223,7 @@ export class InjectorFactory {
     }
     return rv
   }
-  getTypeInstanceName = <T extends any>(t: Type<T>) => {
+  getInstanceName = <T extends any>(t: Type<T>) => {
     return t.constructor.name
   }
   //#endregion
