@@ -6,7 +6,7 @@ import { JavascriptClient } from './Client';
 import { DatabaseProvider } from './Database';
 import { DockerService } from './Docker';
 import { FactoryBuilder } from "./FactoryBuilder";
-import { Logger } from './services';
+import { Logger, PostgresDB } from './services';
 import { ObjectFactory } from './Factory';
 import { HttpServerProvider } from './HttpServer';
 import { ExpressServer } from "./services/ExpressServer";
@@ -30,8 +30,8 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   /* Public API */
 
-  public main(argv?: string[]) {
-    this.__initializeApplication(argv)
+  public async main(argv?: string[]) {
+    await this.__initializeApplication(argv)
   }
 
   public test(argv?: string[]) {
@@ -46,7 +46,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  public onAppStarted = (cb: Function) => this.__onAppStarted = cb
+  public onAppStarted = (cb: () => Promise<any> | void) => this.__onAppStarted = cb
 
   public stop = () => { this.destroyApplication() }
 
@@ -80,20 +80,22 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
+  private __isDockerizingDB = false
+  public addDockerDBSupport = () => {
+    if (!process.env.DOCKER_CTX) {
+      this.container.addSingleton(DockerService)
+
+      this.__isDockerizingDB = true
+    }
+    return this
+  }
+
   public addDockerSupport = () => {
     if (!process.env.DOCKER_CTX) {
       const logger = this.logger.For(this)
       logger.info('Enabling Docker Support');
 
-      this.container
-        .addSingleton(DockerService)
-        .resolve(DockerService)
-        .installDockerSupport()
-        .startDockerApp()
-        .catch(err => {
-          logger.error(err);
-          process.exit(1);
-        });
+      this.container.addSingleton(DockerService)
 
       this.__isDockerizingApp = true
     }
@@ -112,6 +114,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addExpressServer(): ExpressServer {
     return new ExpressServer(this)
+  }
+
+  public addPostgresDatabase(): PostgresDB {
+    return new PostgresDB(this)
   }
 
   public addYargsCliApp(): YargsCliApp {
@@ -148,23 +154,58 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   private __onAppStarted: Function = () => { }
 
-  private __initializeApplication(args?: string[]) {
-    const creationService = this.container.resolve(ApplicationCreationService)
+  private async __initializeApplication(args?: string[]) {
+    const creationService = this.container
+      .resolve(ApplicationCreationService)
 
     // Set this up first, since it can potentially be used by stuff
     // in configuration handlers below..
     const factory = creationService.ConfigureFactory?.(this)
     if (factory) this.useFactory(factory)
 
+    const database = creationService.ConfigureDatabase?.(this)
+    if (database) this.addDatabase(database)
+
+    const docker = this.container.resolve(DockerService)
+
+    if (this.__isDockerizingDB) {
+      const callback = () => this.container
+        .resolve(DatabaseProvider)
+        .createDockerDB()
+        .catch(err => console.error(err));
+
+      docker
+        .registerSetupAction({
+          label: 'Adding Docker Database Support..',
+          name: 'docker-db',
+          steps: [{
+            func: callback,
+            args: [],
+            msg: 'Creating Docker Database..',
+          }],
+        })
+    }
+
     if (this.__isDockerizingApp) {
       // If we're setting up to launch in docker than we don't need
       // to do the rest of this stuff because the app is going to
-      // spawn itself back up with the DOCKER_CTX env var set anyways.
+      // spawn itself back up with the DOCKER_CTX env var set anyways
+      // so just return after executing the docker install/setup.
+
+      await docker.executeSetupActions()
+
+      await docker
+        .installDockerSupport()
+        .startDockerApp()
+
       return;
+    } else {
+      await this.container
+        .resolve(DockerService)
+        .executeSetupActions()
     }
 
     // Setup the other (optional) dependencies.
-    this.addDatabase(creationService.ConfigureDatabase?.(this)!)
     this.addCliApp(creationService.ConfigureCliApp?.(this)!)
     this.addServer(creationService.ConfigureServer?.(this)!)
 
@@ -177,7 +218,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     // steps/configuration has taken effect.
     this.container.resolve(ApplicationConfigurationService).configure(this)
 
-    this.__onAppStarted()
+    await this.__onAppStarted()
   }
 
   private destroyApplication() {

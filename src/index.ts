@@ -19,16 +19,18 @@ export {
   DebugObjectFactory,
   Disposable,
   ExpressServer,
+  FactoryBuilder,
   HttpServerProvider,
   InMemoryDatabase,
   JavascriptClient,
   Logger,
   LogLevel,
   ObjectFactory,
+  PostgresDB,
+  SequelizeAdapter,
   StartupProvider,
   XMLHttpClient,
   YargsCliApp,
-  FactoryBuilder,
 } from './framework'
 
 export { Injectable, Singleton } from './injector'

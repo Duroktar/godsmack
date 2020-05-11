@@ -1,4 +1,3 @@
-import { IApplication } from './interfaces';
 import type { Container } from './framework';
 
 export interface StaticTestProps {
@@ -7,7 +6,11 @@ export interface StaticTestProps {
   expect: Chai.ExpectStatic;
 }
 
-export type InferApplicationContainerType<T> = T extends IApplication<infer C> ? C : never;
+export interface IContainerApplication<T extends any> {
+  container: Container<T>
+}
+
+export type InferApplicationContainerType<T> = T extends IContainerApplication<infer C> ? C : never;
 export type InferApplicationTypes<T> = InferContainerTypes<InferApplicationContainerType<T>>
 export type InferContainerTypes<T> = T extends Container<infer C> ? C : never
 

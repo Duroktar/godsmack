@@ -5,10 +5,6 @@ import { join } from 'path';
 import { IApplication } from '../../interfaces';
 
 export class InMemoryDatabase extends DatabaseProvider {
-  constructor(app: IApplication) {
-    super(app)
-    this.logger = this.logger.For(this)
-  }
 
   private tables = new Map<string, any[]>();
   private __data_dir: string = '.memorydb'
@@ -106,5 +102,8 @@ export class InMemoryDatabase extends DatabaseProvider {
     }
 
     return this
+  }
+  async testConnection() {
+    return true
   }
 }

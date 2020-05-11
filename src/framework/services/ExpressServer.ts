@@ -1,10 +1,10 @@
 import bodyParser from 'body-parser';
 import express, { Request, Response, RequestHandler } from 'express';
 import { HttpServerProvider } from '../HttpServer';
-import type { IApplication, IController } from "../../interfaces";
+import type { IController, IConfigureServerApplication } from "../../interfaces";
 import type { Type } from '../../types';
 
-export class ExpressServer<App extends IApplication<any> = any> extends HttpServerProvider<App> {
+export class ExpressServer<App extends IConfigureServerApplication<any> = any> extends HttpServerProvider<App> {
   public readonly __server: express.Server = express();
 
   //#region Public Api
@@ -106,6 +106,8 @@ export class ExpressServer<App extends IApplication<any> = any> extends HttpServ
         }
       });
     });
+
+    super.onServerStarted()
   };
   public useControllers(controllerDir: string = 'controllers') {
     this.parseJsonBody();

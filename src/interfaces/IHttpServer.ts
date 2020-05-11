@@ -18,6 +18,20 @@ export interface IHttpServer {
    */
   port: number;
   /**
+   * The host name of the server.
+   *
+   * @type {string}
+   * @memberof IHttpServer
+   */
+  host: string;
+  /**
+   * Whether or not the server is hosted from https (default = false)
+   *
+   * @type {boolean}
+   * @memberof IHttpServer
+   */
+  https: boolean;
+  /**
    * Used for registering get request handlers with the server.
    *
    * @param {PathArgument} path

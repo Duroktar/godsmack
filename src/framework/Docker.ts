@@ -5,6 +5,19 @@ import { getProjectRoot } from '../utils/getProjectRoot';
 import { Logger } from './services';
 import { Injectable } from '../injector';
 
+interface SetupStep<F extends (...args: any) => any> {
+  func: F;
+  args: Parameters<F>;
+  msg?: string;
+  err?: any;
+}
+
+interface IDockerSetupAction {
+  name: string;
+  label?: string
+  steps: SetupStep<any>[]
+}
+
 @Injectable()
 export class DockerService {
   constructor(private logger: Logger) {
@@ -24,6 +37,11 @@ export class DockerService {
     return this
   }
 
+  public registerSetupAction(action: IDockerSetupAction) {
+    this.logger.info('Registering Docker Setup Action:', action.name)
+    this.__setupActions.push(action)
+  }
+
   public validateInstallation() {
     return (
       this.hasDockerignorefile() &&
@@ -32,10 +50,23 @@ export class DockerService {
     )
   }
 
+  public async executeSetupActions() {
+    for (let action of this.__setupActions) {
+      this.logger.info('Executing action:', action.name)
+      if (action.label) { this.logger.info(action.label) }
+      for (let { func: method, args, msg, err } of action.steps) {
+        if (msg) { this.logger.info(msg) }
+        if (await method(...args) === err)
+          throw new Error('REEEEEE')
+      }
+    }
+    return this
+  }
+
   public async startDockerApp(tag = 'godsmack-app') {
     // this.logger.info('HACK!! Copying Godsmack files.')
     // await this.HACK__copyGodsmackFiles()
-    this.logger.info('Building docker image..')
+    this.logger.info('Building docker image.. (this can take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
     await this.runDockerApp();
@@ -48,30 +79,38 @@ export class DockerService {
 
   public async buildDockerApp(tag = 'godsmack-app') {
     // await shell("npm", ["run", "build"])
-    await shell("docker", ["stop", tag]);
-    await shell("docker", ["rm", tag]);
-    return shell("docker", ["build", "-t", tag, "."]);
+    await this.runDockerCommand("stop", [tag]);
+    await this.runDockerCommand("rm", [tag]);
+    return await this.runDockerCommand("build", ["-t", tag, "."]);
   }
 
   public async runDockerApp(tag = 'godsmack-app', daemon = false) {
-    const args = ["run", "-p", "3000:3000"].concat(daemon ? '-d' : [])
-    return shell("docker", args.concat(tag), undefined, true);
+    const args = ["-p", "3000:3000"].concat(daemon ? '-d' : [])
+    return await this.runDockerCommand("run", args.concat(tag), { log: true });
   }
 
   public async attachDockerApp(tag = 'godsmack-app') {
     const appId = await this.getAppContainerId(tag)
     if (!appId) throw new Error(`Couldn't find Container ID.`)
-    return shell("docker", ["attach", appId]);
+    return await this.runDockerCommand("attach", [appId]);
   }
 
   public async getAppContainerId(tag = 'godsmack-app') {
-    const lines = await shell("docker", ["container", "ls"])
-    return lines
+    return await this.getContainerId(tag)
+  }
+
+  public async getContainerId(tag: string) {
+    const result = await this.runDockerCommand("ps")
+    return result.stdout
       .split('\n')
       .slice(1)
       .find(line => line.includes(tag))
       ?.split(' ')
       .pop()
+  }
+
+  public async runDockerCommand(cmd: DockerCommands, args: string[] = [], opts?: any) {
+    return shell('docker', [cmd, ...args], opts?.options, opts?.log);
   }
 
   // docker exec -it (docker container ls | grep godsmack-app | awk '{print $1}') /bin/sh
@@ -86,6 +125,8 @@ export class DockerService {
   }
 
   //#region Internals
+  private __setupActions: IDockerSetupAction[] = []
+
   private __dockerfile = 'Dockerfile'
   private __dockerignorefile = '.dockerignore'
 
@@ -164,8 +205,19 @@ CMD [ "npm", "start" ]
   //#endregion
 }
 
+type DockerCommands =
+  | 'build'
+  | 'start'
+  | 'run'
+  | 'stop'
+  | 'rm'
+  | 'exec'
+  | 'attach'
+  | 'ps'
+  ;
+
 function shell(cmd: string, args: string[], opts = { cwd: process.cwd() }, log = false) {
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<{ stdout: string, code: number }>((resolve, reject) => {
     const child = spawn(cmd, args, opts);
     let res = ""
 
@@ -186,7 +238,7 @@ function shell(cmd: string, args: string[], opts = { cwd: process.cwd() }, log =
     });
     child.on("close", code => {
       // console.debug(`child process exited with code ${code}`);
-      resolve(res)
+      resolve({ stdout: res, code })
     });
   })
 }

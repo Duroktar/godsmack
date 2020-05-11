@@ -16,10 +16,19 @@ export class ApplicationBuilder implements IApplicationBuilder {
    * @static
    * @returns An Application instance
    */
-  static Create<T extends Container<any>>(service: IApplicationCreationService<T>) {
+  static Create<T extends Container<any>>(
+    service: IApplicationCreationService<T>,
+  ): IApplication<MergeDefaultProviders<T>> {
+
+    // https://www.youtube.com/watch?v=oHg5SJYRHA0
     const app = new Application(new Container());
-    app.container.addSingletonInstance(Application, app);
-    app.container.addSingletonInstance(ApplicationCreationService, service);
-    return app as IApplication<MergeDefaultProviders<T>>
+
+    app.container
+      .addSingletonInstance(Application, app)
+      .addSingletonInstance(ApplicationCreationService, service)
+      .addSingletonInstance(Container, app.container)
+      ;
+
+    return app
   }
 }

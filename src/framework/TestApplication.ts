@@ -66,7 +66,7 @@ export class TestApplication<T> extends Application<T> {
             res.send('Invalid query! id: "' + req.params.id + '" is ' + id)
           }
           const query = `"select": "*", "from": "userHats", "where": ["userId", "=", ${id}]`;
-          const userHat = db.query<any[]>(query)[0];
+          const userHat = db.query(query)[0];
           res.send(db.query(`"select": ["type"], "from": "hats", "where": ["id", "=", ${userHat.id}]`));
         })
       }

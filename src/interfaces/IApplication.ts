@@ -8,7 +8,7 @@ import { ObjectFactory } from '../framework/Factory';
 import { FactoryTypeRecord, IFactory } from './IFactory';
 import { EmptyType } from '../types';
 import { Application } from '../framework/Application';
-import { Container, InferContainerT, ApplicationConfigurationService, ApplicationCreationService } from '../framework';
+import { Container, InferContainerT, ApplicationConfigurationService, ApplicationCreationService, PostgresDB } from '../framework';
 import { IHttpServer } from './IHttpServer';
 import { DockerService } from '../framework/Docker';
 import { IContainer } from './IContainer';
@@ -43,7 +43,7 @@ export interface IApplication<AppContainer = any> {
    *
    * @memberof IApplication
    */
-  main: (argv?: string[]) => void;
+  main: (argv?: string[]) => Promise<any>;
   /**
    * Starts the Application in Test mode.
    *
@@ -107,7 +107,7 @@ export interface IApplication<AppContainer = any> {
    *
    * @memberof IApplication
    */
-  onAppStarted(cb: Function): void;
+  onAppStarted(cb: () => Promise<any> | void): void;
   /**
    * The Application DI container. Used to register and
    * resolve the various dependencies for the program.
@@ -115,6 +115,8 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   container: MergeDefaultProviders<AppContainer>;
+
+  addPostgresDatabase(): PostgresDB
 
   /**
    * Configures the application to run on docker, creating
@@ -125,6 +127,8 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   addDockerSupport(): this
+
+  addDockerDBSupport(): this
 
   // TODO / wishlist
   // addLiveReloading(): this
@@ -153,34 +157,76 @@ export interface IApplicationCreationService<T extends any = any> {
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureServer?: (app: IApplication) => IHttpServer;
+  ConfigureServer?: (app: IConfigureServerApplication) => IHttpServer;
   /**
    * Used to configure a database for the application
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureDatabase?: (app: IApplication) => DatabaseProvider;
+  ConfigureDatabase?: (app: IConfigureDatabaseApplication) => DatabaseProvider;
   /**
    * Used to configure a CLI application
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureCliApp?: (app: IApplication) => CliAppProvider;
+  ConfigureCliApp?: (app: IConfigureCliAppApplication) => CliAppProvider;
   /**
    * Used to configure the default object factory
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureFactory?: (app: IApplication) => IFactory;
+  ConfigureFactory?: (app: IConfigureFactoryApplication) => IFactory;
 };
+
+export type IBuiltApplication<C> = Pick<
+  IApplication<C>,
+  | 'main'
+  | 'test'
+  | 'addDockerSupport'
+  | 'addDockerDBSupport'
+>
+
+export type IConfigureServerApplication<C = any> = Pick<
+  IApplication<C>,
+  | 'container'
+  | 'addExpressServer'
+  | 'addServer'
+>
+
+export type IConfigureDatabaseApplication<C = any> = Pick<
+  IApplication<C>,
+  | 'container'
+  | 'addDatabase'
+  | 'addPostgresDatabase'
+>
+
+export type IConfigureCliAppApplication<C = any> = Pick<
+  IApplication<C>,
+  | 'container'
+  | 'addCliApp'
+  | 'addYargsCliApp'
+>
+
+export type IConfigureFactoryApplication<C = any> = Pick<
+  IApplication<C>,
+  | 'container'
+  | 'addDefaultFactory'
+>
+
+export type IConfigurationApplication<C = any> = Pick<
+  IApplication<C>,
+  | 'container'
+  | 'addDefaultClient'
+  | 'onAppStarted'
+>
 
 /**
  * `IApplicationConfigurationService` callback Interface
  *
  */
 export type IApplicationConfigurationCallback<AppContainer> = (
-  cb: (app: IApplication<AppContainer>) => void
-) => IApplication<AppContainer>;
+  cb: (app: IConfigurationApplication<AppContainer>) => void
+) => IBuiltApplication<AppContainer>;
 
 export interface IApplicationConfigurationClass<T> {
   /**

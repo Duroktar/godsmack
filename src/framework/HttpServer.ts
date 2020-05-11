@@ -3,13 +3,16 @@ import { RequestHandler } from 'express'
 import { Logger } from './services/Logger'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
 import { Type } from '../types'
-import { IApplication, IApplicationService, IHttpServer } from "../interfaces"
+import { IApplicationService, IHttpServer, IConfigureServerApplication } from "../interfaces"
+import { createUrlFrom } from '../utils/http'
 
 const CONTROLLER = 'Controller'
 
-export class HttpServerProvider<App extends IApplication<any> = any> implements IHttpServer {
+export class HttpServerProvider<App extends IConfigureServerApplication<any> = any> implements IHttpServer {
   public readonly __server = mockServerInstance
   public port = 3000
+  public host = 'locahost'
+  public https = false
   public controllers: Map<string, Type<any>> = new Map()
 
   constructor(public readonly app: App) { }
@@ -34,11 +37,16 @@ export class HttpServerProvider<App extends IApplication<any> = any> implements 
     services.forEach((service) => service(this.app as any, this as any))
     return this
   }
-  public listen(port?: number) {
+  public listen(port?: number, host?: string) {
     if (port) this.port = port
+    if (host) this.host = host
     this.__server.listen(this.port, this.onServerStarted)
   }
-  public onServerStarted = () => { }
+  public onServerStarted() {
+    const url = this.formatServerUrl()
+    this.logger.info('Server listening at', url)
+  }
+
   public use(
     mountPoint: string | RegExp | (string | RegExp)[],
     ...handlers: RequestHandler[]
@@ -82,6 +90,10 @@ export class HttpServerProvider<App extends IApplication<any> = any> implements 
 
   public get logger() {
     return this.app.container.resolve(Logger).For(this)
+  }
+
+  public formatServerUrl() {
+    return createUrlFrom(this.host, this.port, { https: this.https })
   }
 }
 

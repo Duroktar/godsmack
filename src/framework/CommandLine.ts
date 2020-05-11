@@ -1,12 +1,12 @@
-import { IApplication } from "../interfaces";
+import { IApplication, IConfigureCliAppApplication } from "../interfaces";
 
 interface ICommandLineApp {
   engine: any
   run(): void
 }
 
-export class CliAppProvider implements ICommandLineApp {
-  constructor(public app: IApplication<any>) { }
+export class CliAppProvider<App extends IConfigureCliAppApplication<any> = any> implements ICommandLineApp {
+  constructor(public app: App) { }
   public readonly engine: any
   public run() {
     console.log('initializing base CLI app')
