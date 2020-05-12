@@ -24,9 +24,11 @@ import { Type } from '../types';
  * @template AppContainer
  */
 export class Application<AppContainer> implements IApplication<AppContainer> {
-  private logger = Logger.For(Application)
+  private logger: Logger
 
-  constructor(public container: MergeDefaultProviders<AppContainer>) { }
+  constructor(public container: MergeDefaultProviders<AppContainer>) {
+    this.logger = Logger.For(this)
+  }
 
   /* Public API */
 
@@ -80,10 +82,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  private __isDockerizingDB = false
+  private __isDockerizingDB = false // TODO move me to internals section
+
   public addDockerDBSupport = () => {
     if (!process.env.DOCKER_CTX) {
-      this.container.addSingleton(DockerService)
+      this.logger.info('Enabling Docker DB Support');
 
       this.__isDockerizingDB = true
     }
@@ -92,10 +95,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addDockerSupport = () => {
     if (!process.env.DOCKER_CTX) {
-      const logger = this.logger.For(this)
-      logger.info('Enabling Docker Support');
-
-      this.container.addSingleton(DockerService)
+      this.logger.info('Enabling Docker Support');
 
       this.__isDockerizingApp = true
     }

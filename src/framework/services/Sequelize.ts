@@ -1,28 +1,42 @@
 import { DatabaseProvider } from '../Database';
 import { Singleton } from '../../injector'
-import { Sequelize, QueryTypes, Options } from 'sequelize'
+import { Sequelize, QueryTypes, Options, SyncOptions } from 'sequelize'
 
 @Singleton()
 export class SequelizeAdapter extends DatabaseProvider {
-  connect(db: string, user: string, pass: string, options?: Options) {
+  async connect(db: string, user?: string, pass?: string, options?: Options) {
     this.logger.info('Connecting to Database:', options?.dialect)
-    this.sequelize = new Sequelize(db, user, pass, options);
+    this.logger.info('Connection String:', db)
+    if (user) {
+      this.connection = new Sequelize(db, user, pass, options);
+    }
+    else {
+      this.connection = new Sequelize(db, options);
+    }
     return this
   }
   query(...args: Parameters<Sequelize['query']>) {
-    return this.sequelize.query(...args)
+    return this.connection.query(...args)
   }
   insert(...args: Parameters<Sequelize['query']>) {
-    return this.sequelize.query(args[0], {
+    return this.connection.query(args[0], {
       ...args[1],
       type: QueryTypes.INSERT,
     })
   }
+  syncDatabaseTables(options?: SyncOptions) {
+    return this.connection
+      .sync(options)
+      .catch((err: any) => {
+        this.logger.info('there was an error syncing tables')
+        this.logger.error(err)
+      })
+  }
   async testConnection() {
     this.logger.info('Testing connection to database...');
     try {
-      await this.sequelize.authenticate({
-        retry: { max: 25 }, logging: false,
+      await this.connection.authenticate({
+        retry: { max: 25 }, logging: true,
       })
       this.logger.info('Database connection established.');
       return true
@@ -32,14 +46,34 @@ export class SequelizeAdapter extends DatabaseProvider {
     }
   }
 
+  public settings: SequelizeOptions = {
+    user: 'admin',
+    pass: 'pass123',
+    port: 5432,
+    host_port: 5432,
+    host: '0.0.0.0',
+    name: 'godsmack-db',
+    dialect: 'postgres',
+  }
+
   private __connection: Sequelize | null = null
 
-  private set sequelize(val: Sequelize) {
+  set connection(val: Sequelize) {
     this.__connection = val
   }
-  private get sequelize(): Sequelize {
+  get connection(): Sequelize {
     if (!this.__connection)
       throw new Error('Not connected to database.')
     return this.__connection
   }
+}
+
+type SequelizeOptions = {
+  pass: string;
+  user: string;
+  port: number;
+  host_port: number;
+  host: string;
+  name: string;
+  dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql"
 }

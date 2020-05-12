@@ -1,6 +1,7 @@
 import { Application } from './Application';
 import { ApplicationCreationService } from './ApplicationCreationService';
 import { Container } from './Container';
+import { DockerService } from './Docker';
 import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService } from '../interfaces';
 
 /**
@@ -21,13 +22,13 @@ export class ApplicationBuilder implements IApplicationBuilder {
   ): IApplication<MergeDefaultProviders<T>> {
 
     // https://www.youtube.com/watch?v=oHg5SJYRHA0
-    const app = new Application(new Container());
+    const app = new Application(new Container())
 
     app.container
       .addSingletonInstance(Application, app)
       .addSingletonInstance(ApplicationCreationService, service)
       .addSingletonInstance(Container, app.container)
-      ;
+      .addSingleton(DockerService)
 
     return app
   }

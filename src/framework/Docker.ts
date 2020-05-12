@@ -26,9 +26,8 @@ export class DockerService {
 
   //#region Public API
   public installDockerSupport() {
-    this.logger.info('Checking docker install status..')
     if (!this.validateInstallation()) {
-      this.logger.info('Check failed. Installing docker files.')
+      this.logger.info('Installing docker files.')
       this.createDockerignore()
       this.createDockerfile()
     } else {
@@ -63,10 +62,13 @@ export class DockerService {
     return this
   }
 
-  public async startDockerApp(tag = 'godsmack-app') {
-    // this.logger.info('HACK!! Copying Godsmack files.')
-    // await this.HACK__copyGodsmackFiles()
-    this.logger.info('Building docker image.. (this can take a few minutes)')
+  public async startDockerApp() {
+    this.logger.info('HACK!! Copying Godsmack files.')
+    await this.HACK__copyGodsmackFiles()
+    this.logger.info('Creating network bridge.')
+    await this.removeNetworkBridge()
+    await this.createNetworkBridge()
+    this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
     await this.runDockerApp();
@@ -77,26 +79,41 @@ export class DockerService {
     return
   }
 
-  public async buildDockerApp(tag = 'godsmack-app') {
-    // await shell("npm", ["run", "build"])
-    await this.runDockerCommand("stop", [tag]);
-    await this.runDockerCommand("rm", [tag]);
-    return await this.runDockerCommand("build", ["-t", tag, "."]);
+  public async buildDockerApp() {
+    await this.runDockerCommand("stop", [this.settings.image_tag_name]);
+    await this.runDockerCommand("rm", [this.settings.image_tag_name]);
+    return await this.runDockerCommand("build", ["-t", this.settings.image_tag_name, "."]);
   }
 
-  public async runDockerApp(tag = 'godsmack-app', daemon = false) {
-    const args = ["-p", "3000:3000"].concat(daemon ? '-d' : [])
-    return await this.runDockerCommand("run", args.concat(tag), { log: true });
+  public async runDockerApp() {
+    const args = [
+      "--name", this.settings.image_tag_name,
+      "--network", this.settings.network_name,
+      "-p", "3000:3000", this.settings.image_tag_name
+    ] // .concat(daemon ? '-d' : [])
+    return await this.runDockerCommand("run", args, { log: true });
   }
 
-  public async attachDockerApp(tag = 'godsmack-app') {
-    const appId = await this.getAppContainerId(tag)
+  public async attachDockerApp() {
+    const appId = await this.getAppContainerId()
     if (!appId) throw new Error(`Couldn't find Container ID.`)
     return await this.runDockerCommand("attach", [appId]);
   }
 
-  public async getAppContainerId(tag = 'godsmack-app') {
-    return await this.getContainerId(tag)
+  public async getAppContainerId() {
+    return await this.getContainerId(this.settings.image_tag_name)
+  }
+
+  public async createNetworkBridge() {
+    return await this.runDockerCommand('network',
+      ['create',
+        '--driver', 'bridge',
+        this.settings.network_name])
+  }
+
+  public async removeNetworkBridge() {
+    return await this.runDockerCommand('network',
+      ['rm', this.settings.network_name])
   }
 
   public async getContainerId(tag: string) {
@@ -130,6 +147,12 @@ export class DockerService {
   private __dockerfile = 'Dockerfile'
   private __dockerignorefile = '.dockerignore'
 
+  public settings: DockerSettings = {
+    image_tag_name: 'godsmack-app',
+    network_name: 'godsmack',
+    daemonize_app: false,
+  }
+
   private hasDockerfile(): boolean {
     return existsSync(this.getDockerfilePath())
   }
@@ -142,17 +165,17 @@ export class DockerService {
     return readFileSync(this.getDockerfilePath()) + ''
   }
 
-  private compareDockerfileContents(): boolean {
-    return this.readDockerfile() === this.getDockerfileContents()
+  private compareDockerfileContents(options?: any): boolean {
+    return this.readDockerfile() === this.getDockerfileContents(options)
   }
 
   private createDockerfile(options?: any) {
     const dockerfilePath = this.getDockerfilePath()
-    const contents = this.getDockerfileContents()
+    const contents = this.getDockerfileContents(options)
     writeFileSync(dockerfilePath, contents)
   }
 
-  private createDockerignore(options?: any) {
+  private createDockerignore() {
     const dockerignorePath = this.getDockerignorePath()
     const contents = this.getDockerignoreContents()
     writeFileSync(dockerignorePath, contents)
@@ -205,6 +228,12 @@ CMD [ "npm", "start" ]
   //#endregion
 }
 
+type DockerSettings = {
+  image_tag_name: string
+  network_name: string
+  daemonize_app: boolean
+}
+
 type DockerCommands =
   | 'build'
   | 'start'
@@ -214,6 +243,7 @@ type DockerCommands =
   | 'exec'
   | 'attach'
   | 'ps'
+  | 'network'
   ;
 
 function shell(cmd: string, args: string[], opts = { cwd: process.cwd() }, log = false) {

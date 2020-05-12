@@ -49,6 +49,9 @@ export class Logger {
   public For = <T extends any>(klass: T, lvl?: LogLevel) => {
     return Logger.For(klass, lvl ?? this.level)
   }
+  public Tag = (name: string, lvl?: LogLevel) => {
+    return Logger.Tag(name, lvl ?? this.level)
+  }
   /**
    * Returns a logger instance for the provided type and
    * (optionally) LogLevel.
@@ -67,11 +70,14 @@ export class Logger {
    *
    * @memberof Logger
    */
-  static Tag(label: string) {
+  static Tag(label: string, lvl?: LogLevel) {
     const logger = new Logger()
     logger.owner = label
+    if (lvl)
+      logger.level = lvl
     return logger
   }
+
   isLogLevel = (...lvls: LogLevel[]) => {
     const hasLvl = () => {
       for (let lvl of lvls) {

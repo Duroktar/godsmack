@@ -2,14 +2,13 @@ import { DatabaseProvider } from '../Database';
 import { clamp } from '../../utils/clamp';
 import { writeFile, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { IApplication } from '../../interfaces';
 
 export class InMemoryDatabase extends DatabaseProvider {
 
   private tables = new Map<string, any[]>();
   private __data_dir: string = '.memorydb'
 
-  connect(o: any) {
+  async connect(o: any) {
     return true;
   }
 

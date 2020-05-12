@@ -1,8 +1,9 @@
 export interface IDatabaseProvider {
-  connect(...args: any): any
-  query(...args: any): any
-  insert(...args: any): any
+  connect(...args: any): Promise<any>
+  query(...args: any): Promise<any>
+  insert(...args: any): Promise<any>
   testConnection(...args: any): Promise<any>
   createDockerDB(...args: any): Promise<any>
   findDockerDb(...args: any): Promise<boolean>
+  syncDatabaseTables(...args: any): Promise<any>
 }

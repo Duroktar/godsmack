@@ -1,13 +1,14 @@
-import { IApplication, IConfigureDatabaseApplication } from "../interfaces"
+import { IConfigureDatabaseApplication } from "../interfaces"
 import { IDatabaseProvider } from '../interfaces/IDatabase'
 import { Logger } from './services'
 
 export class DatabaseProvider implements IDatabaseProvider {
   public logger: Logger
+  public connection: any
   constructor(public app: IConfigureDatabaseApplication<any>) {
     this.logger = Logger.For(this)
   }
-  public connect(...args: any): any {
+  public connect(...args: any): Promise<any> {
     throw new Error("Method not implemented.")
   }
   public query(...args: any): any {
@@ -25,10 +26,13 @@ export class DatabaseProvider implements IDatabaseProvider {
   public findDockerDb(opts?: any): Promise<boolean> {
     throw new Error("Method not implemented.")
   }
+  public syncDatabaseTables(opts?: any): Promise<any> {
+    throw new Error("Method not implemented.")
+  }
 }
 
 export class NullDatabase extends DatabaseProvider {
-  connect(o: any) {
+  async connect(o: any) {
     return true
   }
   query<R>(q: string) {
