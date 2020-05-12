@@ -93,7 +93,7 @@ export class TestApplication<T> extends Application<T> {
       app.container.resolve(BoogerWhoop).setDodo('boo dodo')
 
       // @ts-expect-error
-      // app.container.resolve(NoNo)
+      app.container.resolve(NoNo)
 
       const db = app.container.resolve(DatabaseProvider)
       db.insert('users', { id: 1, name: 'Admin' })

@@ -4,6 +4,7 @@ import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { getProjectRoot } from '../utils/getProjectRoot';
 import { Logger } from './services';
 import { Injectable } from '../injector';
+import { Shell } from './Shell';
 
 interface SetupStep<F extends (...args: any) => any> {
   func: F;
@@ -20,7 +21,10 @@ interface IDockerSetupAction {
 
 @Injectable()
 export class DockerService {
-  constructor(private logger: Logger) {
+  constructor(
+    private logger: Logger,
+    private shell: Shell,
+  ) {
     this.logger = logger.For(this)
   }
 
@@ -65,9 +69,6 @@ export class DockerService {
   public async startDockerApp() {
     this.logger.info('HACK!! Copying Godsmack files.')
     await this.HACK__copyGodsmackFiles()
-    this.logger.info('Creating network bridge.')
-    await this.removeNetworkBridge()
-    await this.createNetworkBridge()
     this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
@@ -80,16 +81,21 @@ export class DockerService {
   }
 
   public async buildDockerApp() {
+    const args = [
+      "-t", this.settings.image_tag_name,
+      ".",
+    ]
     await this.runDockerCommand("stop", [this.settings.image_tag_name]);
     await this.runDockerCommand("rm", [this.settings.image_tag_name]);
-    return await this.runDockerCommand("build", ["-t", this.settings.image_tag_name, "."]);
+    return await this.runDockerCommand("build", args);
   }
 
   public async runDockerApp() {
     const args = [
       "--name", this.settings.image_tag_name,
       "--network", this.settings.network_name,
-      "-p", "3000:3000", this.settings.image_tag_name
+      "-p", "3000:3000",
+      this.settings.image_tag_name,
     ] // .concat(daemon ? '-d' : [])
     return await this.runDockerCommand("run", args, { log: true });
   }
@@ -126,17 +132,17 @@ export class DockerService {
       .pop()
   }
 
-  public async runDockerCommand(cmd: DockerCommands, args: string[] = [], opts?: any) {
-    return shell('docker', [cmd, ...args], opts?.options, opts?.log);
+  public async runDockerCommand(cmd: DockerCommands, args: string[] = [], opts: any = {}) {
+    return this.shell.spawn('docker', [cmd, ...args], opts);
   }
 
   // docker exec -it (docker container ls | grep godsmack-app | awk '{print $1}') /bin/sh
   //#endregion
 
   private async HACK__copyGodsmackFiles() {
-    await shell('rm', ['-rf', '.godsmack'])
-    await shell('mkdir', ['.godsmack'])
-    return shell("cp", [
+    await this.shell.spawn('rm', ['-rf', '.godsmack'])
+    await this.shell.spawn('mkdir', ['.godsmack'])
+    return this.shell.spawn("cp", [
       "-r", "../godsmack", ".godsmack",
     ]);
   }
@@ -245,30 +251,3 @@ type DockerCommands =
   | 'ps'
   | 'network'
   ;
-
-function shell(cmd: string, args: string[], opts = { cwd: process.cwd() }, log = false) {
-  return new Promise<{ stdout: string, code: number }>((resolve, reject) => {
-    const child = spawn(cmd, args, opts);
-    let res = ""
-
-    if (!child.stdout || !child.stderr)
-      return reject();
-
-    child.stdout.on("data", data => {
-      res += data
-      log && process.stdout.write(data);
-    });
-    child.stderr.on("data", data => {
-      log && process.stderr.write(data);
-    });
-
-    child.on('error', (error) => {
-      console.error(`error: ${error.message}`);
-      reject(error)
-    });
-    child.on("close", code => {
-      // console.debug(`child process exited with code ${code}`);
-      resolve({ stdout: res, code })
-    });
-  })
-}

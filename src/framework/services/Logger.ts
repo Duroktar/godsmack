@@ -1,3 +1,4 @@
+import { Type } from '../../types'
 
 export enum LogLevel {
   LOG,
@@ -59,10 +60,16 @@ export class Logger {
    * @memberof Logger
    */
   static For<T extends any>(klass: T, lvl?: LogLevel) {
+    const k = (klass as any)
+
+    const cName = k?.constructor?.name
+      ? k?.constructor?.name : k?.name
+        ? k?.name : null
+
     const logger = new Logger()
-    logger.owner = klass.constructor.name
-    if (lvl)
-      logger.level = lvl
+
+    if (cName) logger.owner = cName
+    if (lvl) logger.level = lvl
     return logger
   }
   /**

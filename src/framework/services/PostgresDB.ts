@@ -5,37 +5,34 @@ import { SequelizeAdapter } from './Sequelize';
 @Singleton()
 export class PostgresDB extends SequelizeAdapter {
   public async connect() {
-    const url = createDbConnectionString({
-      ...this.settings,
-      host: this.dockerPgSettings.container_name,
-    })
-
+    const url = this.getDbConnectionString()
     return super.connect(url, undefined, undefined, {
       dialect: this.settings.dialect,
     })
   }
-  public async createDockerDB(opts?: any) {
-    if (! await this.findDockerDb()) {
-      this.logger.info('Creating PostgresDB Docker Container. (this may take a few minutes)')
-      const dockerSettings = this.app.container
-        .resolve(DockerService)
-        .settings;
 
-      const result = await this.app.container
-        .resolve(DockerService)
-        .runDockerCommand('run', [
-          '--name', this.dockerPgSettings.container_name,
-          "--network", dockerSettings.network_name,
-          '-v', `${this.dockerPgSettings.data_volume_dir}:/var/lib/postgresql/data'`,
-          '-p', `${this.settings.host_port}:${this.settings.port}`,
-          '-e', `POSTGRES_PASSWORD=${this.settings.pass}`,
-          '-e', `POSTGRES_USER=${this.settings.user}`,
-          '-e', `POSTGRES_DB=${this.settings.name}`,
-          // '-e', `POSTGRES_HOST=${this.settings.host}`,
-          '-e', `POSTGRES_PORT=${this.settings.port}`,
-          '-d', `postgres:${this.dockerPgSettings.image_tag}`,
-        ])
-      if (result.code === 0) {
+  public async createDockerDB(opts?: any) {
+    if (opts?.sync === true) {
+      this.logger.info('Sync enabled. Dropping old DB Container.')
+      await this.stopDockerDb()
+    }
+
+    if (!await this.findDockerDb()) {
+      this.logger.info('Creating PostgresDB Docker Container. (this may take a few minutes)')
+      const docker = this.app.container.resolve(DockerService);
+      const { code } = await docker.runDockerCommand('run', [
+        '--name', this.dockerPgSettings.container_name,
+        '--network', docker.settings.network_name,
+        '-v', `${this.dockerPgSettings.data_volume_dir}:/var/lib/postgresql/data'`,
+        '-p', `${this.settings.host_port}:${this.settings.port}`,
+        '-e', `POSTGRES_PASSWORD=${this.settings.pass}`,
+        '-e', `POSTGRES_USER=${this.settings.user}`,
+        '-e', `POSTGRES_DB=${this.settings.name}`,
+        // '-e', `POSTGRES_HOST=${this.settings.host}`,
+        '-e', `POSTGRES_PORT=${this.settings.port}`,
+        '-d', `postgres:${this.dockerPgSettings.image_tag}`,
+      ])
+      if (code === 0) {
         this.logger.info('Finished Creating PostgresDB Container.')
       } else {
         this.logger.error(
@@ -48,10 +45,11 @@ export class PostgresDB extends SequelizeAdapter {
 
   public async stopDockerDb(): Promise<void> {
     const dockerService = this.app.container.resolve(DockerService);
-    const containerId = await this.getDockerDbContainerId()
+    const containerId = this.dockerPgSettings.container_name
     if (containerId) {
       this.logger.info('Stopping PostgresDB Docker Container.')
-      dockerService.runDockerCommand('stop', [containerId])
+      await dockerService.runDockerCommand('stop', [containerId])
+      await dockerService.runDockerCommand('rm', [containerId])
     }
   }
 
@@ -71,6 +69,15 @@ export class PostgresDB extends SequelizeAdapter {
     container_name: 'godsmack-postgres-db',
     data_volume_dir: '/postgres',
     image_tag: 'alpine',
+  }
+
+  private getDbConnectionString() {
+    return createDbConnectionString({
+      ...this.settings,
+      host: Boolean(process.env.DOCKER_CTX)
+        ? this.dockerPgSettings.container_name
+        : this.settings.host,
+    });
   }
 
   private async getDockerDbContainerId() {

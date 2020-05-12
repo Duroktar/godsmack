@@ -2,20 +2,17 @@
 export const SYMBOL_DISPOSABLE = Symbol.for('DISPOSE')
 
 interface DisposableResource {
-  [SYMBOL_DISPOSABLE]: () => void;
+  dispose: () => void;
 }
 
 export const Disposable = new class {
-  Dispose(target: unknown) {
+  Dispose(target: any) {
     if (Disposable.Is(target)) {
-      target[SYMBOL_DISPOSABLE]()
+      target.dispose()
     }
   }
-  Wrap<T extends any>(target: T): T {
-    target[SYMBOL_DISPOSABLE] = () => { };
-    return target;
-  }
   Is(target: any): target is DisposableResource {
-    return typeof target?.[SYMBOL_DISPOSABLE] === 'function';
+    const disposeFunc = (target as any)?.dispose;
+    return typeof disposeFunc === 'function';
   }
 }

@@ -199,7 +199,7 @@ export class InjectorFactory {
 
   //#region disposable
   createObject<T>(target: Type<any>, injections: T[]): T {
-    return Disposable.Wrap(new target(...injections));
+    return new target(...injections);
   }
 
   disposeObject<T>(target: Type<any>): void {

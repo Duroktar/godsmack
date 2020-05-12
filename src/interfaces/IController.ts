@@ -5,7 +5,7 @@
  * @interface IController
  * @template T
  */
-export interface IController<T extends {}> {
+export interface IController<T extends any> {
   /**
    * Used to register a get request handler.
    *

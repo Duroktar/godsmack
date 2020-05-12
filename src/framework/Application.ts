@@ -168,10 +168,35 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
     const docker = this.container.resolve(DockerService)
 
+    if (this.__isDockerizingApp || this.__isDockerizingDB) {
+      const createBridge = (...args: any) => docker
+        .createNetworkBridge()
+        .catch(err => console.error(err));
+
+      const removeBridge = (...args: any) => docker
+        .removeNetworkBridge()
+        .catch(err => console.error(err));
+
+      docker
+        .registerSetupAction({
+          label: 'Setting up a Docker Network Bridge.',
+          name: 'docker-network',
+          steps: [{
+            func: removeBridge,
+            args: [],
+            msg: 'Removing old bridge..'
+          }, {
+            func: createBridge,
+            args: [],
+            msg: 'Creating new bridge..'
+          }],
+        })
+    }
+
     if (this.__isDockerizingDB) {
-      const callback = () => this.container
+      const callback = (...args: any) => this.container
         .resolve(DatabaseProvider)
-        .createDockerDB()
+        .createDockerDB(...args)
         .catch(err => console.error(err));
 
       docker
@@ -180,10 +205,13 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
           name: 'docker-db',
           steps: [{
             func: callback,
-            args: [],
-            msg: 'Creating Docker Database..',
+            args: [{ sync: true }],
           }],
         })
+    }
+
+    if (this.__isDockerizingApp || this.__isDockerizingDB) {
+      await docker.executeSetupActions()
     }
 
     if (this.__isDockerizingApp) {
@@ -192,17 +220,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
       // spawn itself back up with the DOCKER_CTX env var set anyways
       // so just return after executing the docker install/setup.
 
-      await docker.executeSetupActions()
-
       await docker
         .installDockerSupport()
         .startDockerApp()
 
       return;
-    } else {
-      await this.container
-        .resolve(DockerService)
-        .executeSetupActions()
     }
 
     // Setup the other (optional) dependencies.
