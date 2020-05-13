@@ -36,7 +36,7 @@ export interface IApplication<AppContainer = any> {
    *
    * @memberof IApplication
    */
-  stop: () => void;
+  stop: () => Promise<void>;
   /**
    * The main Application function. Starts running
    * in standard (non-test) mode.
@@ -49,7 +49,7 @@ export interface IApplication<AppContainer = any> {
    *
    * @memberof IApplication
    */
-  test: (argv?: string[]) => void;
+  test: (argv?: string[]) => Promise<void>;
   /**
    * Used to add and configure a Database Provider
    * to the Application

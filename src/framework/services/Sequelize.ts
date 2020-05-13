@@ -7,14 +7,16 @@ export class SequelizeAdapter extends DatabaseProvider {
   async connect(db: string, user?: string, pass?: string, options?: Options) {
     this.logger.info('Connecting to Database:', options?.dialect)
     this.logger.info('Connection String:', db)
+    const settings = this.mergeDefaultsWithOptions(options);
     if (user) {
-      this.connection = new Sequelize(db, user, pass, options);
+      this.connection = new Sequelize(db, user, pass, settings);
     }
     else {
-      this.connection = new Sequelize(db, options);
+      this.connection = new Sequelize(db, settings);
     }
     return this
   }
+
   query(...args: Parameters<Sequelize['query']>) {
     return this.connection.query(...args)
   }
@@ -54,6 +56,27 @@ export class SequelizeAdapter extends DatabaseProvider {
     host: '0.0.0.0',
     name: 'godsmack-db',
     dialect: 'postgres',
+    // logging: false,
+  }
+
+  public mergeDefaultsWithOptions(options: Options | undefined) {
+    const defaults: Options = {
+      define: {
+        timestamps: false,
+      }
+    };
+    const settings = {
+      port: this.settings.port,
+      host: this.settings.host,
+      name: this.settings.name,
+      ...defaults,
+      ...options,
+      define: {
+        ...defaults.define,
+        ...options?.define,
+      }
+    };
+    return settings;
   }
 
   private __connection: Sequelize | null = null
@@ -75,5 +98,6 @@ type SequelizeOptions = {
   host_port: number;
   host: string;
   name: string;
+  logging?: boolean;
   dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql"
 }

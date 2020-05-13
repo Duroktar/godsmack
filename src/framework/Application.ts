@@ -36,7 +36,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     await this.__initializeApplication(argv)
   }
 
-  public test(argv?: string[]) {
+  public async test(argv?: string[]) {
     throw new Error('Method not implemented')
   }
 
@@ -50,7 +50,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public onAppStarted = (cb: () => Promise<any> | void) => this.__onAppStarted = cb
 
-  public stop = () => { this.destroyApplication() }
+  public stop = async () => { await this.destroyApplication() }
 
   public useFactory = (factory: IFactory<Record<string, Type<any>>>) => {
     if (factory)
@@ -169,11 +169,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     const docker = this.container.resolve(DockerService)
 
     if (this.__isDockerizingApp || this.__isDockerizingDB) {
-      const createBridge = (...args: any) => docker
+      const createNetworkBridgeCallback = () => docker
         .createNetworkBridge()
         .catch(err => console.error(err));
 
-      const removeBridge = (...args: any) => docker
+      const removeNetworkBridgeCallback = () => docker
         .removeNetworkBridge()
         .catch(err => console.error(err));
 
@@ -182,11 +182,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
           label: 'Setting up a Docker Network Bridge.',
           name: 'docker-network',
           steps: [{
-            func: removeBridge,
+            func: removeNetworkBridgeCallback,
             args: [],
-            msg: 'Removing old bridge..'
+            msg: 'Removing old bridge..',
+            when: DROP_AND_RECREATE_NETWORK_BRIDGE,
           }, {
-            func: createBridge,
+            func: createNetworkBridgeCallback,
             args: [],
             msg: 'Creating new bridge..'
           }],
@@ -194,9 +195,15 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     }
 
     if (this.__isDockerizingDB) {
-      const callback = (...args: any) => this.container
+      const db = this.container
         .resolve(DatabaseProvider)
-        .createDockerDB(...args)
+
+      const createDbCallback = () => db
+        .createDockerDB()
+        .catch(err => console.error(err));
+
+      const removeDbCallback = () => db
+        .removeDockerDB()
         .catch(err => console.error(err));
 
       docker
@@ -204,8 +211,13 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
           label: 'Adding Docker Database Support..',
           name: 'docker-db',
           steps: [{
-            func: callback,
-            args: [{ sync: true }],
+            func: removeDbCallback,
+            args: [],
+            when: DROP_AND_REBUILD_DOCKER_DB,
+          }, {
+            func: createDbCallback,
+            args: [],
+            msg: 'Creating Database Container..',
           }],
         })
     }
@@ -243,7 +255,15 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     await this.__onAppStarted()
   }
 
-  private destroyApplication() {
+  private async destroyApplication() {
     this.__hooks.exit()
+    if (this.__isDockerizingDB) {
+      await this.container
+        .resolve(DatabaseProvider)
+        .stopDockerDB()
+    }
   }
 }
+
+const DROP_AND_REBUILD_DOCKER_DB = false
+const DROP_AND_RECREATE_NETWORK_BRIDGE = false

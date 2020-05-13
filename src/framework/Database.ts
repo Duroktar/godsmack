@@ -23,6 +23,12 @@ export class DatabaseProvider implements IDatabaseProvider {
   public createDockerDB(...args: any): Promise<any> {
     throw new Error("Method not implemented.")
   }
+  public stopDockerDB(...args: any): Promise<any> {
+    throw new Error("Method not implemented.")
+  }
+  public removeDockerDB(...args: any): Promise<any> {
+    throw new Error("Method not implemented.")
+  }
   public findDockerDb(opts?: any): Promise<boolean> {
     throw new Error("Method not implemented.")
   }

@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import { join as joinPath } from 'path';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { getProjectRoot } from '../utils/getProjectRoot';
@@ -6,14 +5,15 @@ import { Logger } from './services';
 import { Injectable } from '../injector';
 import { Shell } from './Shell';
 
-interface SetupStep<F extends (...args: any) => any> {
+export interface SetupStep<F extends (...args: any) => any> {
   func: F;
   args: Parameters<F>;
   msg?: string;
   err?: any;
+  when?: boolean;
 }
 
-interface IDockerSetupAction {
+export interface IDockerSetupAction {
   name: string;
   label?: string
   steps: SetupStep<any>[]
@@ -41,14 +41,17 @@ export class DockerService {
   }
 
   public registerSetupAction(action: IDockerSetupAction) {
-    this.logger.info('Registering Docker Setup Action:', action.name)
+    this.logger.debug('Registering Docker Setup Action:', action.name)
     this.__setupActions.push(action)
   }
 
   public validateInstallation() {
+    if (this.hasDockerfile() && this.hasDockerfileEjected()) {
+      return true
+    }
     return (
-      this.hasDockerignorefile() &&
       this.hasDockerfile() &&
+      this.hasDockerignorefile() &&
       this.compareDockerfileContents()
     )
   }
@@ -57,8 +60,9 @@ export class DockerService {
     for (let action of this.__setupActions) {
       this.logger.info('Executing action:', action.name)
       if (action.label) { this.logger.info(action.label) }
-      for (let { func: method, args, msg, err } of action.steps) {
-        if (msg) { this.logger.info(msg) }
+      for (let { func: method, args, msg, err, when: cond = true } of action.steps) {
+        if (!cond) continue
+        if (msg) { this.logger.debug(msg) }
         if (await method(...args) === err)
           throw new Error('REEEEEE')
       }
@@ -67,17 +71,11 @@ export class DockerService {
   }
 
   public async startDockerApp() {
-    this.logger.info('HACK!! Copying Godsmack files.')
     await this.HACK__copyGodsmackFiles()
     this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
-    await this.runDockerApp();
-
-    // // Use when daemonizing..
-    // this.logger.info('Attaching to app..')
-    // await this.attachDockerApp();
-    return
+    return await this.runDockerApp();
   }
 
   public async buildDockerApp() {
@@ -132,7 +130,7 @@ export class DockerService {
       .pop()
   }
 
-  public async runDockerCommand(cmd: DockerCommands, args: string[] = [], opts: any = {}) {
+  public async runDockerCommand(cmd: DockerCommand, args: string[] = [], opts: any = {}) {
     return this.shell.spawn('docker', [cmd, ...args], opts);
   }
 
@@ -140,6 +138,7 @@ export class DockerService {
   //#endregion
 
   private async HACK__copyGodsmackFiles() {
+    this.logger.info('HACK!! Copying Godsmack files.')
     await this.shell.spawn('rm', ['-rf', '.godsmack'])
     await this.shell.spawn('mkdir', ['.godsmack'])
     return this.shell.spawn("cp", [
@@ -165,6 +164,12 @@ export class DockerService {
 
   private hasDockerignorefile(): boolean {
     return existsSync(this.getDockerignorePath())
+  }
+
+  private readonly __ejectTag = '# -- NO_REPLACE';
+
+  private hasDockerfileEjected(): boolean {
+    return this.readDockerfile().startsWith(this.__ejectTag)
   }
 
   private readDockerfile(): string {
@@ -200,7 +205,10 @@ export class DockerService {
     port = 3000,
     nodeVersion = 'lts-alpine',
   } = {}) {
-    return `FROM node:${nodeVersion}
+    return `# DELETE THIS LINE TO EJECT FILE
+${this.__ejectTag}
+
+FROM node:${nodeVersion}
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -223,6 +231,7 @@ COPY ./www ./www
 ENV DOCKER_CTX=true
 ENV NODE_ENV=${nodeEnv ?? 'development'}
 
+EXPOSE 9229
 EXPOSE ${port}
 CMD [ "npm", "start" ]
 `
@@ -240,7 +249,7 @@ type DockerSettings = {
   daemonize_app: boolean
 }
 
-type DockerCommands =
+export type DockerCommand =
   | 'build'
   | 'start'
   | 'run'

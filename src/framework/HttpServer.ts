@@ -11,7 +11,7 @@ const CONTROLLER = 'Controller'
 export class HttpServerProvider<App extends IConfigureServerApplication<any> = any> implements IHttpServer {
   public readonly __server = mockServerInstance
   public port = 3000
-  public host = 'locahost'
+  public host = 'localhost'
   public https = false
   public controllers: Map<string, Type<any>> = new Map()
 

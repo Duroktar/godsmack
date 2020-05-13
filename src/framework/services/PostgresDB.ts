@@ -1,26 +1,24 @@
 import { Singleton } from '../../injector'
-import { DockerService } from '../Docker';
+import { DockerService, DockerCommand } from '../Docker';
 import { SequelizeAdapter } from './Sequelize';
 
 @Singleton()
 export class PostgresDB extends SequelizeAdapter {
   public async connect() {
     const url = this.getDbConnectionString()
-    return super.connect(url, undefined, undefined, {
+    const options = this.mergeDefaultsWithOptions({
       dialect: this.settings.dialect,
-    })
+      host: this.getHostName(),
+      sync: { force: true }
+    });
+    return super.connect(url, undefined, undefined, options)
   }
 
-  public async createDockerDB(opts?: any) {
-    if (opts?.sync === true) {
-      this.logger.info('Sync enabled. Dropping old DB Container.')
-      await this.stopDockerDb()
-    }
-
+  public async createDockerDB() {
     if (!await this.findDockerDb()) {
       this.logger.info('Creating PostgresDB Docker Container. (this may take a few minutes)')
       const docker = this.app.container.resolve(DockerService);
-      const { code } = await docker.runDockerCommand('run', [
+      const { code } = await this.runDockerDbCommand('run',
         '--name', this.dockerPgSettings.container_name,
         '--network', docker.settings.network_name,
         '-v', `${this.dockerPgSettings.data_volume_dir}:/var/lib/postgresql/data'`,
@@ -28,10 +26,10 @@ export class PostgresDB extends SequelizeAdapter {
         '-e', `POSTGRES_PASSWORD=${this.settings.pass}`,
         '-e', `POSTGRES_USER=${this.settings.user}`,
         '-e', `POSTGRES_DB=${this.settings.name}`,
-        // '-e', `POSTGRES_HOST=${this.settings.host}`,
+        '-e', `POSTGRES_HOST=${this.settings.host}`,
         '-e', `POSTGRES_PORT=${this.settings.port}`,
         '-d', `postgres:${this.dockerPgSettings.image_tag}`,
-      ])
+      )
       if (code === 0) {
         this.logger.info('Finished Creating PostgresDB Container.')
       } else {
@@ -44,13 +42,17 @@ export class PostgresDB extends SequelizeAdapter {
   }
 
   public async stopDockerDb(): Promise<void> {
-    const dockerService = this.app.container.resolve(DockerService);
     const containerId = this.dockerPgSettings.container_name
-    if (containerId) {
-      this.logger.info('Stopping PostgresDB Docker Container.')
-      await dockerService.runDockerCommand('stop', [containerId])
-      await dockerService.runDockerCommand('rm', [containerId])
-    }
+    if (!containerId) return
+    this.logger.info('Stopping PostgresDB Docker Container.')
+    await this.runDockerDbCommand('stop', containerId);
+  }
+
+  public async removeDockerDb(): Promise<void> {
+    const containerId = this.dockerPgSettings.container_name
+    if (!containerId) return
+    this.logger.info('Removing PostgresDB Docker Container.')
+    await this.runDockerDbCommand('rm', containerId);
   }
 
   public async findDockerDb(): Promise<boolean> {
@@ -71,15 +73,22 @@ export class PostgresDB extends SequelizeAdapter {
     image_tag: 'alpine',
   }
 
-  private getDbConnectionString() {
+  public getDbConnectionString() {
     return createDbConnectionString({
       ...this.settings,
-      host: Boolean(process.env.DOCKER_CTX)
-        ? this.dockerPgSettings.container_name
-        : this.settings.host,
+      host: this.getHostName(),
     });
   }
+  public getHostName() {
+    return Boolean(process.env.DOCKER_CTX)
+      ? this.dockerPgSettings.container_name
+      : this.settings.host
+  }
 
+  private async runDockerDbCommand(cmd: DockerCommand, ...args: string[]) {
+    const dockerService = this.app.container.resolve(DockerService);
+    return await dockerService.runDockerCommand(cmd, [...args])
+  }
   private async getDockerDbContainerId() {
     const dockerService = this.app.container.resolve(DockerService);
     const cName = this.dockerPgSettings.container_name;
