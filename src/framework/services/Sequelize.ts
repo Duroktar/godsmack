@@ -33,7 +33,7 @@ export class SequelizeAdapter extends DatabaseProvider {
     this.logger.info('Testing connection to database...');
     try {
       await this.connection.authenticate({
-        retry: { max: 25 }, logging: true,
+        retry: { max: 25 }, logging: false,
       })
       this.logger.info('Database connection established.');
       return true
@@ -51,11 +51,11 @@ export class SequelizeAdapter extends DatabaseProvider {
     host: '0.0.0.0',
     name: 'godsmack-db',
     dialect: 'postgres',
-    // logging: false,
   }
 
   public mergeDefaultsWithOptions(options: Options | undefined) {
     const defaults: Options = {
+      logging: false,
       define: {
         timestamps: false,
       }
@@ -98,6 +98,5 @@ type SequelizeOptions = {
   host_port: number;
   host: string;
   name: string;
-  logging?: boolean;
   dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql"
 }
