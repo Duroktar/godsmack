@@ -4,16 +4,11 @@ import { Sequelize, QueryTypes, Options, SyncOptions } from 'sequelize'
 
 @Singleton()
 export class SequelizeAdapter extends DatabaseProvider {
-  async connect(db: string, user?: string, pass?: string, options?: Options) {
+  async connect(db: string, options?: Options) {
     this.logger.info('Connecting to Database:', options?.dialect)
     this.logger.info('Connection String:', db)
-    const settings = this.mergeDefaultsWithOptions(options);
-    if (user) {
-      this.connection = new Sequelize(db, user, pass, settings);
-    }
-    else {
-      this.connection = new Sequelize(db, settings);
-    }
+
+    this.getDbConnection(db, options)
     return this
   }
 
@@ -79,7 +74,12 @@ export class SequelizeAdapter extends DatabaseProvider {
     return settings;
   }
 
-  private __connection: Sequelize | null = null
+  private getDbConnection(connectionString: string, options?: Options) {
+    const settings = this.mergeDefaultsWithOptions(options);
+    this.connection = new Sequelize(connectionString, settings);
+  }
+
+  public __connection: Sequelize | null = null
 
   set connection(val: Sequelize) {
     this.__connection = val

@@ -71,7 +71,7 @@ export class DockerService {
   }
 
   public async startDockerApp() {
-    await this.HACK__copyGodsmackFiles()
+    // await this.HACK__copyGodsmackFiles()
     this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')

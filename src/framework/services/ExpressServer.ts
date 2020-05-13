@@ -65,14 +65,27 @@ export class ExpressServer<App extends IConfigureServerApplication<any> = any> e
         handler: Function,
         key: 'query' | 'body',
       ): RequestHandler {
-        return (req: Request, res: Response) => {
+        return async (req: Request, res: Response) => {
           const data = (req as any)[key];
           try {
-            const result = handler(data, { req, res });
-            res.send(result);
+            const result = await handler(data, { req, res });
+            switch (typeof result) {
+              case 'bigint':
+              case 'boolean':
+              case 'function':
+              case 'number':
+              case 'string':
+              case 'symbol':
+              case 'undefined':
+                return res.send(result);
+            }
+            try {
+              res.send(JSON.stringify(result))
+            } catch {
+              res.send(result)
+            }
           }
           catch (e) {
-            // logger.error(e); // TODO
             res.status(e.statusCode ?? 500);
             res.send(e.message);
           }

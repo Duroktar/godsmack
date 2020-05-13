@@ -1,6 +1,7 @@
 import { Singleton } from '../../injector'
 import { DockerService, DockerCommand } from '../Docker';
 import { SequelizeAdapter } from './Sequelize';
+import { Sequelize } from 'sequelize/types';
 
 @Singleton()
 export class PostgresDB extends SequelizeAdapter {
@@ -9,9 +10,8 @@ export class PostgresDB extends SequelizeAdapter {
     const options = this.mergeDefaultsWithOptions({
       dialect: this.settings.dialect,
       host: this.getHostName(),
-      sync: { force: true }
     });
-    return super.connect(url, undefined, undefined, options)
+    return super.connect(url, options)
   }
 
   public async createDockerDB() {
@@ -93,6 +93,15 @@ export class PostgresDB extends SequelizeAdapter {
     const dockerService = this.app.container.resolve(DockerService);
     const cName = this.dockerPgSettings.container_name;
     return await dockerService.getContainerId(cName);
+  }
+
+  set connection(val: Sequelize) {
+    this.__connection = val
+  }
+  get connection(): Sequelize {
+    if (!this.__connection)
+      this.connect()
+    return this.__connection as Sequelize
   }
 }
 

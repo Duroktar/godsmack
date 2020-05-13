@@ -15,14 +15,14 @@ export class Shell {
   }
 
   public async spawn(cmd: string, args: string[], opts?: SpawnOptions) {
-    const options = { ...{ cwd: process.cwd(), log: true }, ...opts }
+    const options = { ...{ cwd: process.cwd(), log: false }, ...opts }
     return new Promise<{ stdout: string, code: number }>((resolve, reject) => {
       const logText = !!options?.log
       const logInfo = this.logger.isLogLevel(LogLevel.ALL, LogLevel.LOG)
       const logError = this.logger.isLogLevel(LogLevel.ALL, LogLevel.ERROR)
       const logDebug = this.logger.isLogLevel(LogLevel.ALL, LogLevel.DEBUG)
 
-      this.logger.info(`Spawning: ${cmd} ${args.join(' ')}, options${JSON.stringify(options)}`)
+      this.logger.debug(`Spawning: ${cmd} ${args.join(' ')}, options${JSON.stringify(options)}`)
 
       let child
       try {
