@@ -1,10 +1,11 @@
-import { ApplicationBuilder, ExpressServer, ApplicationConfigurationService, ApplicationCreationService } from '../framework';
+import { ApplicationBuilder, ApplicationConfigurationService, ApplicationCreationService } from '../framework';
 import { staticTestProps } from './staticTestProps';
-import { IApplication } from '../interfaces';
+import { IApplication, IConfigurationApplication } from '../interfaces';
+import { ExpressServer } from '../framework/services';
 
 function ConfigureServices(c: any) { return c }
 
-function configureFunction(app: IApplication) {
+function configureFunction<T>(app: IConfigurationApplication<T>) {
   const server = app.container.resolve(ExpressServer)
   server.get('/test', (req, res) => res.send('@@@'))
 }
@@ -12,7 +13,9 @@ function configureFunction(app: IApplication) {
 let app: IApplication = ApplicationBuilder.Create({
   ConfigureServices,
   ConfigureServer: app => app.addExpressServer(),
-}).configure(configureFunction)
+})
+
+app.configure(configureFunction)
 
 describe('Application Class', () => {
   const expect = staticTestProps.expect

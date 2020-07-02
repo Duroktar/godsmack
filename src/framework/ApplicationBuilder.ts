@@ -2,6 +2,8 @@ import { Application } from './Application';
 import { ApplicationCreationService } from './ApplicationCreationService';
 import { Container } from './Container';
 import { DockerService } from './Docker';
+import { SettingsService } from './Settings';
+import { TerminalInk } from '../tui/TerminalInk';
 import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService } from '../interfaces';
 
 /**
@@ -25,10 +27,12 @@ export class ApplicationBuilder implements IApplicationBuilder {
     const app = new Application(new Container())
 
     app.container
+      .addSingleton(SettingsService)
       .addSingletonInstance(Application, app)
       .addSingletonInstance(ApplicationCreationService, service)
       .addSingletonInstance(Container, app.container)
       .addSingleton(DockerService)
+      .addSingleton(TerminalInk)
 
     return app
   }

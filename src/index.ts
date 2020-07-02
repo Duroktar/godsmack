@@ -4,6 +4,8 @@ export * as decorators from './injector/decorators'
 export * as services from './framework/services'
 export * as http from './utils/http'
 export * as types from './types'
+export * as TUI from './tui'
+export * from './framework/decorators'
 export * from './interfaces'
 export * from './types'
 
@@ -18,21 +20,16 @@ export {
   DatabaseProvider,
   DebugObjectFactory,
   Disposable,
+  DockerCommand,
   DockerService,
-  ExpressServer,
   FactoryBuilder,
   HttpServerProvider,
-  InMemoryDatabase,
   JavascriptClient,
-  Logger,
-  LogLevel,
   ObjectFactory,
-  PostgresDB,
-  SequelizeAdapter,
+  SettingsService,
   Shell,
   StartupProvider,
-  XMLHttpClient,
-  YargsCliApp,
+  TaskService,
 } from './framework'
 
 export { Injectable, Singleton } from './injector'

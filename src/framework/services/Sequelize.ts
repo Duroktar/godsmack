@@ -1,27 +1,20 @@
+import { Sequelize, Options, SyncOptions } from 'sequelize'
 import { DatabaseProvider } from '../Database';
-import { Singleton } from '../../injector'
-import { Sequelize, QueryTypes, Options, SyncOptions } from 'sequelize'
+import { Singleton } from '../../injector';
 
 @Singleton()
 export class SequelizeAdapter extends DatabaseProvider {
-  async connect(db: string, options?: Options) {
+  async connect(options?: Options) {
+    const connectionString = this.getDbConnectionString()
     this.logger.info('Connecting to Database:', options?.dialect)
-    this.logger.info('Connection String:', db)
-
-    this.getDbConnection(db, options)
+    this.logger.debug('Connection String:', connectionString)
+    this.getDbConnection(connectionString, options)
     return this
   }
-
-  query(...args: Parameters<Sequelize['query']>) {
+  async query(...args: Parameters<Sequelize['query']>) {
     return this.connection.query(...args)
   }
-  insert(...args: Parameters<Sequelize['query']>) {
-    return this.connection.query(args[0], {
-      ...args[1],
-      type: QueryTypes.INSERT,
-    })
-  }
-  syncDatabaseTables(options?: SyncOptions) {
+  async syncDatabaseTables(options?: SyncOptions) {
     return this.connection
       .sync(options)
       .catch((err: any) => {
@@ -43,24 +36,14 @@ export class SequelizeAdapter extends DatabaseProvider {
     }
   }
 
-  public settings: SequelizeOptions = {
-    user: 'admin',
-    pass: 'pass123',
-    port: 5432,
-    host_port: 5432,
-    host: '0.0.0.0',
-    name: 'godsmack-db',
-    dialect: 'postgres',
-  }
-
-  public mergeDefaultsWithOptions(options: Options | undefined) {
+  private mergeDefaultsWithOptions(options?: Options) {
     const defaults: Options = {
       logging: false,
       define: {
         timestamps: false,
       }
     };
-    const settings = {
+    return {
       port: this.settings.port,
       host: this.settings.host,
       name: this.settings.name,
@@ -71,15 +54,13 @@ export class SequelizeAdapter extends DatabaseProvider {
         ...options?.define,
       }
     };
-    return settings;
   }
 
-  private getDbConnection(connectionString: string, options?: Options) {
-    const settings = this.mergeDefaultsWithOptions(options);
-    this.connection = new Sequelize(connectionString, settings);
+  private getDbConnectionString(): string {
+    return createDbConnectionString(this.settings);
   }
 
-  public __connection: Sequelize | null = null
+  private __connection: Sequelize | null = null
 
   set connection(val: Sequelize) {
     this.__connection = val
@@ -89,14 +70,25 @@ export class SequelizeAdapter extends DatabaseProvider {
       throw new Error('Not connected to database.')
     return this.__connection
   }
+
+  private getDbConnection(connectionString?: string, options?: Options) {
+    const settings = this.mergeDefaultsWithOptions(options);
+    if (connectionString) {
+      this.connection = new Sequelize(connectionString, settings);
+    } else {
+      this.connection = new Sequelize(settings);
+    }
+  }
 }
 
-type SequelizeOptions = {
-  pass: string;
-  user: string;
-  port: number;
-  host_port: number;
-  host: string;
+function createDbConnectionString(settings: {
   name: string;
-  dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql"
+  user: string;
+  pass: string;
+  host: string;
+  port: number;
+  dialect: string;
+}) {
+  const { name, user, pass, host, port, dialect } = settings
+  return `${dialect}://${user}:${pass}@${host}:${port}/${name}`;
 }

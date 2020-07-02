@@ -1,6 +1,8 @@
 import { Singleton } from '../injector';
 import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
 import { Logger, LogLevel } from './services';
+import { SettingsService } from './Settings';
+import { IApplicationSettings } from '../interfaces/IApplicationSettings';
 
 type SpawnOptions =
   & SpawnOptionsWithoutStdio
@@ -8,14 +10,18 @@ type SpawnOptions =
 
 @Singleton()
 export class Shell {
+  private settings: IApplicationSettings['shell']
   constructor(
-    public logger: Logger
+    public logger: Logger,
+    private configFactory: SettingsService,
   ) {
     this.logger = logger.For(this)
+    this.settings = configFactory.get('shell')
   }
 
   public async spawn(cmd: string, args: string[], opts?: SpawnOptions) {
-    const options = { ...{ cwd: process.cwd(), log: false }, ...opts }
+    const defaults = { cwd: process.cwd(), log: this.settings.log };
+    const options = { ...defaults, ...opts }
     return new Promise<{ stdout: string, code: number }>((resolve, reject) => {
       const logText = !!options?.log
       const logInfo = this.logger.isLogLevel(LogLevel.ALL, LogLevel.LOG)

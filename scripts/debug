@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+echo $(date)
+node --inspect -r node_modules/.bin/ts-node/register src/main.ts
+
+# "typecheck": "tsc --watch --noEmit -P tsconfig.json",
+# "build": "tsc -P tsconfig.json",
+# "start": "ts-node -P tsconfig.json src/main.ts"

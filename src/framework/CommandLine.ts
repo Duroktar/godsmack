@@ -1,20 +1,29 @@
-import { IApplication, IConfigureCliAppApplication } from "../interfaces";
+import { Injectable } from '../injector';
+import { Application } from './Application';
+import { Logger } from './services';
+import { SettingsService } from './Settings';
+import { IApplicationSettings } from '../interfaces';
 
 interface ICommandLineApp {
   engine: any
   run(): void
 }
 
-export class CliAppProvider<App extends IConfigureCliAppApplication<any> = any> implements ICommandLineApp {
-  constructor(public app: App) { }
+@Injectable()
+export class CliAppProvider implements ICommandLineApp {
+  public logger: Logger
+  public settings: IApplicationSettings['commandline']
+  constructor(public app: Application<any>) {
+    this.settings = app.container
+      .resolve(SettingsService)
+      .get('commandline');
+
+    this.logger = app.container
+      .resolve(Logger)
+      .For(this)
+  }
   public readonly engine: any
   public run() {
     console.log('initializing base CLI app')
-  }
-}
-
-export class NullCliApp extends CliAppProvider {
-  public run() {
-    console.log('initializing Null CLI app')
   }
 }

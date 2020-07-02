@@ -1,0 +1,42 @@
+import { ApplicationBuilder, HttpServerProvider, ClientAdapter, DatabaseProvider, services } from "@trabpukcip/godsmack";
+
+export default ApplicationBuilder.Create({
+  ConfigureServer: app => app
+    .addExpressServer()
+    .useControllers()
+    .useHealthCheck()
+    .serveStaticFiles('www')
+  ,
+  // ConfigureDatabase: app => app
+  //   .addPostgresDatabase()
+  // ,
+  ConfigureServices: ctx => ctx
+    .addSingleton(services.Logger)
+    .addSingleton(ClientAdapter, services.XMLHttpClient)
+  ,
+}).configure(app => app
+  .addJavascriptClient()
+  .onAppStarted(async () => {
+
+    const logger = app.container
+      .resolve(services.Logger)
+      .For(app)
+
+    const server = app.container
+      .resolve(HttpServerProvider)
+
+    // const db = app.container
+    //   .resolve(DatabaseProvider)
+
+    // await db.connect()
+    // await db.testConnection()
+
+    // init models..
+
+    // await db.syncDatabaseTables()
+
+    logger.info('Starting Server')
+
+    server.listen()
+  })
+)

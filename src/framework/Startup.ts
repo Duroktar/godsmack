@@ -1,11 +1,11 @@
-import type { Application } from './Application';
 import { Injectable } from '../injector/decorators';
+import { IApplication } from '../interfaces';
 
 export interface IStartupProvider {
-  configure(app: Application<any>): void
+  configure(app: IApplication): void
 }
 
 @Injectable()
 export class StartupProvider implements IStartupProvider {
-  public configure(app: Application<any>) { }
+  public configure(app: IApplication) { }
 }

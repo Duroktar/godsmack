@@ -1,4 +1,4 @@
-import { Type } from '../types'
+import type { Type } from '../types'
 
 type Proc = (...args: any) => any
 

@@ -1,0 +1,23 @@
+import { IController, Injectable, http, services } from '@trabpukcip/godsmack';
+import { AService } from '../services/aservice';
+const { LogLevel } = services
+
+@Injectable()
+export class AController implements IController<any> {
+  constructor(
+    public logger: services.Logger,
+    public service: AService,
+  ) {
+    this.logger = logger.For(this, LogLevel.ALL)
+  }
+
+  public get = async ({ one = '', many = [] }): Promise<any | any[]> => {
+    if (Array.isArray(many)) {
+      return await this.service.getMany(many)
+    }
+    if (one != null) {
+      return await this.service.getOne(one)
+    }
+    throw new http.BadRequestError()
+  }
+}

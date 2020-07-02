@@ -1,4 +1,4 @@
-import { IController } from "./IController";
+import type { IController } from "./IController";
 
 /**
  * Client Adapter interface for generated clients from

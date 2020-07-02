@@ -1,12 +1,29 @@
-import { IConfigureDatabaseApplication } from "../interfaces"
-import { IDatabaseProvider } from '../interfaces/IDatabase'
+import { SettingsService } from './Settings'
 import { Logger } from './services'
+import type { IApplicationSettings, IConfigureDatabaseApplication } from "../interfaces"
+import type { IDatabaseProvider } from '../interfaces/IDatabase'
 
 export class DatabaseProvider implements IDatabaseProvider {
   public logger: Logger
   public connection: any
-  constructor(public app: IConfigureDatabaseApplication<any>) {
-    this.logger = Logger.For(this)
+  public settings: IApplicationSettings['database']
+  constructor(app: IConfigureDatabaseApplication<any>) {
+    this.logger = app.container
+      .resolve(Logger)
+      .For(this)
+
+    this.settings = app.container
+      .resolve(SettingsService)
+      .get('database')
+  }
+  public createDatabase(...args: any) {
+    throw new Error("Method not implemented.")
+  }
+  public saveDatabase(...args: any): Promise<any> {
+    throw new Error("Method not implemented.")
+  }
+  public loadDatabase(...args: any): Promise<any> {
+    throw new Error("Method not implemented.")
   }
   public connect(...args: any): Promise<any> {
     throw new Error("Method not implemented.")
@@ -20,34 +37,7 @@ export class DatabaseProvider implements IDatabaseProvider {
   public testConnection(...args: any): Promise<any> {
     throw new Error("Method not implemented.")
   }
-  public createDockerDB(...args: any): Promise<any> {
-    throw new Error("Method not implemented.")
-  }
-  public stopDockerDB(...args: any): Promise<any> {
-    throw new Error("Method not implemented.")
-  }
-  public removeDockerDB(...args: any): Promise<any> {
-    throw new Error("Method not implemented.")
-  }
-  public findDockerDb(opts?: any): Promise<boolean> {
-    throw new Error("Method not implemented.")
-  }
   public syncDatabaseTables(opts?: any): Promise<any> {
     throw new Error("Method not implemented.")
-  }
-}
-
-export class NullDatabase extends DatabaseProvider {
-  async connect(o: any) {
-    return true
-  }
-  query<R>(q: string) {
-    return 'NULL DB: query called' as any as R
-  }
-  insert(table: string, row: any) {
-    return 'NULL DB: update called' as any
-  }
-  async testConnection() {
-    return true
   }
 }

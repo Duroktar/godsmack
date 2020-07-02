@@ -5,8 +5,16 @@
   "license": "MIT",
   "files": [
     "src",
-    "build"
+    "build",
+    "scripts",
+    "templates"
   ],
+  "bin": {
+    "gs-build": "./scripts/build",
+    "gs-debug": "./scripts/debug",
+    "gs-init": "./scripts/init",
+    "gs-start": "./scripts/start"
+  },
   "scripts": {
     "build": "tsc -P tsconfig.json",
     "test": "mocha -r ts-node/register src/tests/*.spec* --colors",
@@ -16,24 +24,35 @@
   "devDependencies": {
     "@types/body-parser": "^1.19.0",
     "@types/chai": "^4.2.11",
+    "@types/cron": "^1.7.2",
     "@types/express": "types/express",
+    "@types/ink": "^2.0.3",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.5",
+    "@types/node": "^14.0.1",
+    "@types/nodemailer": "^6.4.0",
+    "@types/react": "^16.9.35",
     "@types/readline-sync": "^1.4.3",
-    "@types/yargs": "^15.0.4",
+    "@types/yargs": "^15.0.5",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
+    "cron": "^1.8.2",
     "cross-env": "^7.0.2",
+    "deepmerge": "^4.2.2",
     "express": "^4.17.1",
+    "import-jsx": "^4.0.0",
+    "ink": "^2.7.1",
     "mocha": "^7.1.2",
-    "pg": "^8.1.0",
+    "nodemailer": "^6.4.6",
+    "pg": "^8.2.0",
     "pg-hstore": "^2.3.3",
+    "react": "^16.13.1",
     "reflect-metadata": "^0.1.13",
-    "sequelize": "^5.21.8",
+    "sequelize": "^5.21.9",
     "sqlite3": "^4.2.0",
+    "ts-debounce": "^2.0.1",
     "ts-node": "^8.10.1",
     "ts-node-dev": "^1.0.0-pre.44",
-    "tslib": "^1.12.0",
+    "tslib": "^2.0.0",
     "typescript": "^3.9.2",
     "yargs": "^15.3.1"
   }

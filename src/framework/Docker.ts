@@ -5,20 +5,6 @@ import { Logger } from './services';
 import { Injectable } from '../injector';
 import { Shell } from './Shell';
 
-export interface SetupStep<F extends (...args: any) => any> {
-  func: F;
-  args: Parameters<F>;
-  msg?: string;
-  err?: any;
-  when?: boolean;
-}
-
-export interface IDockerSetupAction {
-  name: string;
-  label?: string
-  steps: SetupStep<any>[]
-}
-
 @Injectable()
 export class DockerService {
   constructor(
@@ -28,7 +14,16 @@ export class DockerService {
     this.logger = logger.For(this)
   }
 
-  //#region Public API
+  private async HACK__copyGodsmackFiles() {
+    this.logger.info('HACK!! Copying Godsmack files.')
+    await this.shell.spawn('rm', ['-rf', '.godsmack'])
+    await this.shell.spawn('mkdir', ['.godsmack'])
+    return this.shell.spawn("cp", [
+      "-r", "../godsmack", ".godsmack",
+    ]);
+  }
+
+  //#region API
   public installDockerSupport() {
     if (!this.validateInstallation()) {
       this.logger.info('Installing docker files.')
@@ -39,12 +34,9 @@ export class DockerService {
     }
     return this
   }
+  //#endregion
 
-  public registerSetupAction(action: IDockerSetupAction) {
-    this.logger.debug('Registering Docker Setup Action:', action.name)
-    this.__setupActions.push(action)
-  }
-
+  //#region Application
   public validateInstallation() {
     if (this.hasDockerfile() && this.hasDockerfileEjected()) {
       return true
@@ -56,22 +48,8 @@ export class DockerService {
     )
   }
 
-  public async executeSetupActions() {
-    for (let action of this.__setupActions) {
-      this.logger.info('Executing action:', action.name)
-      if (action.label) { this.logger.info(action.label) }
-      for (let { func: method, args, msg, err, when: cond = true } of action.steps) {
-        if (!cond) continue
-        if (msg) { this.logger.debug(msg) }
-        if (await method(...args) === err)
-          throw new Error('REEEEEE')
-      }
-    }
-    return this
-  }
-
   public async startDockerApp() {
-    // await this.HACK__copyGodsmackFiles()
+    await this.HACK__copyGodsmackFiles()
     this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
@@ -107,7 +85,9 @@ export class DockerService {
   public async getAppContainerId() {
     return await this.getContainerId(this.settings.image_tag_name)
   }
+  //#endregion
 
+  //#region Network
   public async createNetworkBridge() {
     return await this.runDockerCommand('network',
       ['create',
@@ -119,7 +99,103 @@ export class DockerService {
     return await this.runDockerCommand('network',
       ['rm', this.settings.network_name])
   }
+  //#endregion
 
+  //#region Database
+  public async createDockerDb() {
+    const hasExistingDockerDb = await this.findDockerDb();
+    if (!hasExistingDockerDb) {
+      this.logger.info('Creating PostgresDB Docker Container. (this may take a few minutes)')
+      const { code } = await this.runDockerDbCommand('run',
+        '--name', this.settings.db.container_name,
+        '--network', this.settings.network_name,
+        '-v', `${this.settings.db.data_volume_dir}:/var/lib/postgresql/data'`,
+        '-p', `${this.settings.db.host_expose_port}:${this.settings.db.port}`,
+        '-e', `POSTGRES_PASSWORD=${this.settings.db.pass}`,
+        '-e', `POSTGRES_USER=${this.settings.db.user}`,
+        '-e', `POSTGRES_DB=${this.settings.db.name}`,
+        '-e', `POSTGRES_HOST=${this.settings.db.host}`,
+        '-e', `POSTGRES_PORT=${this.settings.db.port}`,
+        '-d', `postgres:${this.settings.db.image_tag}`,
+      )
+      if (code === 0) {
+        this.logger.info('Finished Creating PostgresDB Container.')
+      } else {
+        this.logger.error(
+          'There was an Error creating the PostgresDB Container.'
+        )
+      }
+    }
+    return this
+  }
+
+  public async stopDockerDb(): Promise<void> {
+    const containerId = this.settings.db.container_name
+    if (!containerId) return
+    this.logger.info('Stopping PostgresDB Docker Container.')
+    await this.runDockerDbCommand('stop', containerId);
+  }
+
+  public async removeDockerDb(): Promise<void> {
+    const containerId = this.settings.db.container_name
+    if (!containerId) return
+    this.logger.info('Removing PostgresDB Docker Container.')
+    await this.runDockerDbCommand('rm', containerId);
+  }
+
+  public async findDockerDb(): Promise<boolean> {
+    const result = await this.getDockerDbContainerId();
+    if (result) {
+      this.logger.info('Found existing PostgresDB Docker Container.')
+    } else {
+      this.logger.info(
+        'No existing PostgresDB Docker Container was found.'
+      )
+    }
+    return !!result
+  }
+
+  private async runDockerDbCommand(cmd: DockerCommand, ...args: string[]) {
+    return await this.runDockerCommand(cmd, [...args])
+  }
+
+  private async getDockerDbContainerId() {
+    const cName = this.settings.db.container_name;
+    return await this.getContainerId(cName);
+  }
+
+  public getHostName() {
+    return Boolean(process.env.DOCKER_CTX)
+      ? this.settings.db.container_name
+      : this.settings.db.host
+  }
+
+  //#endregion
+
+  //#region Events/Actions
+  private __setupActions: IDockerSetupAction[] = []
+
+  public registerSetupAction(action: IDockerSetupAction) {
+    this.logger.debug('Registering Docker Setup Action:', action.name)
+    this.__setupActions.push(action)
+  }
+
+  public async executeSetupActions() {
+    for (let action of this.__setupActions) {
+      this.logger.info('Executing action:', action.name)
+      if (action.label) { this.logger.info(action.label) }
+      for (let { func: method, args, msg, err, when: cond = true } of action.steps) {
+        if (!cond) continue
+        if (msg) { this.logger.debug(msg) }
+        if (await method(...args) === err)
+          throw new Error('REEEEEE')
+      }
+    }
+    return this
+  }
+  //#endregion
+
+  //#region Helpers
   public async getContainerId(tag: string) {
     const result = await this.runDockerCommand("ps")
     return result.stdout
@@ -133,30 +209,32 @@ export class DockerService {
   public async runDockerCommand(cmd: DockerCommand, args: string[] = [], opts: any = {}) {
     return this.shell.spawn('docker', [cmd, ...args], opts);
   }
-
-  // docker exec -it (docker container ls | grep godsmack-app | awk '{print $1}') /bin/sh
   //#endregion
 
-  private async HACK__copyGodsmackFiles() {
-    this.logger.info('HACK!! Copying Godsmack files.')
-    await this.shell.spawn('rm', ['-rf', '.godsmack'])
-    await this.shell.spawn('mkdir', ['.godsmack'])
-    return this.shell.spawn("cp", [
-      "-r", "../godsmack", ".godsmack",
-    ]);
-  }
-
-  //#region Internals
-  private __setupActions: IDockerSetupAction[] = []
-
-  private __dockerfile = 'Dockerfile'
-  private __dockerignorefile = '.dockerignore'
-
+  //#region Settings
   public settings: DockerSettings = {
     image_tag_name: 'godsmack-app',
     network_name: 'godsmack',
     daemonize_app: false,
+    db: {
+      container_name: 'godsmack-postgres-db',
+      data_volume_dir: '/postgres',
+      image_tag: 'alpine',
+      host_expose_port: 5432,
+
+      // DB
+      user: 'admin',
+      pass: 'pass123',
+      port: 5432,
+      host: '0.0.0.0',
+      name: 'godsmack-db',
+    }
   }
+  //#endregion
+
+  //#region Dockerfile, .dockerignore, etc
+  private __dockerfile = 'Dockerfile'
+  private __dockerignorefile = '.dockerignore'
 
   private hasDockerfile(): boolean {
     return existsSync(this.getDockerfilePath())
@@ -231,7 +309,7 @@ COPY ./www ./www
 ENV DOCKER_CTX=true
 ENV NODE_ENV=${nodeEnv ?? 'development'}
 
-EXPOSE 9229
+# EXPOSE 9229
 EXPOSE ${port}
 CMD [ "npm", "start" ]
 `
@@ -241,14 +319,10 @@ CMD [ "npm", "start" ]
     return `node_modules\nnpm-debug.log`
   }
   //#endregion
+
 }
 
-type DockerSettings = {
-  image_tag_name: string
-  network_name: string
-  daemonize_app: boolean
-}
-
+//#region Types
 export type DockerCommand =
   | 'build'
   | 'start'
@@ -260,3 +334,39 @@ export type DockerCommand =
   | 'ps'
   | 'network'
   ;
+
+export type SetupStep<F extends (...args: any) => any> = {
+  func: F;
+  args: Parameters<F>;
+  msg?: string;
+  err?: any;
+  when?: boolean;
+}
+
+export type IDockerSetupAction = {
+  name: string;
+  label?: string
+  steps: SetupStep<any>[]
+}
+
+type DockerDbSettings = {
+  data_volume_dir: string;
+  container_name: string;
+  image_tag: string;
+
+  // DbSettings more like it..
+  host_expose_port: number;
+  host: string;
+  port: number;
+  pass: string;
+  user: String;
+  name: string;
+}
+
+type DockerSettings = {
+  image_tag_name: string
+  network_name: string
+  daemonize_app: boolean
+  db: DockerDbSettings
+}
+//#endregion

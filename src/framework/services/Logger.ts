@@ -1,4 +1,4 @@
-import { Type } from '../../types'
+import type { ILogger } from '../../interfaces'
 
 export enum LogLevel {
   LOG,
@@ -13,8 +13,8 @@ export enum LogLevel {
   NONE // nothing
 }
 
-export class Logger {
-  public level = LogLevel.VERBOSE
+export class Logger implements ILogger {
+  public level = LogLevel.INFO
   public owner: string = 'Logger'
   public log = (...args: any[]) => {
     if (this.isLogLevel(LogLevel.LOG, LogLevel.INFO, LogLevel.VERBOSE))

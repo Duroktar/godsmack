@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable'
 import { Logger, LogLevel } from '../framework/services/Logger';
 import type { Type, InferType } from '../types';
+import { is_newable } from '../utils/object';
 
 export const SYMBOL_SINGLETON = Symbol.for('SINGLETON')
 
@@ -27,7 +28,7 @@ export class InjectorFactory {
   }
   //#endregion
 
-  //#region private
+  //#region internals
   private types = new Map<string, Type<any>>()
   private dependencies = new Map<string, Type<any>>()
   private singletons = new Map<string, any>()
@@ -37,7 +38,7 @@ export class InjectorFactory {
     let resolved: any = (this.hasDependency(t)) ? this.getDependency(t) : t;
 
     // tokens are required dependencies, while injections are resolved tokens from the Injector
-    const tokens: Type<any>[] = Reflect.getMetadata('design:paramtypes', resolved) || [];
+    const tokens: Type<any>[] = Reflect.getMetadata('design:paramtypes', resolved)?.filter((o: any) => o != null) || [];
 
     if (tokens.find(o => o.name === 'Object')) {
       const error = `Unable to resolve dependencies for => ${resolved.name}, deps => ${tokens.map(o => o.name)}`;
@@ -89,7 +90,7 @@ export class InjectorFactory {
 
   addSingleton<T>(newable: Type<T>, injections?: any): T {
     this.logger.debug('Setting singleton to NEW target instance:', this.getTypeName(newable), newable)
-    const newObject: T = injections
+    const newObject: T = (injections && is_newable(newable))
       ? this.createObject(newable, injections)
       : this.resolve(newable);
 

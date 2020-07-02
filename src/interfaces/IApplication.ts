@@ -1,17 +1,20 @@
-import { StartupProvider } from '../framework/Startup';
-import { CliAppProvider } from '../framework/CommandLine';
-import { YargsCliApp } from "../framework/services/YargsCliApp";
-import { DatabaseProvider } from '../framework/Database';
-import { HttpServerProvider } from '../framework/HttpServer';
-import { ExpressServer } from "../framework/services/ExpressServer";
-import { ObjectFactory } from '../framework/Factory';
-import { FactoryTypeRecord, IFactory } from './IFactory';
-import { EmptyType } from '../types';
-import { Application } from '../framework/Application';
-import { Container, InferContainerT, ApplicationConfigurationService, ApplicationCreationService, PostgresDB } from '../framework';
-import { IHttpServer } from './IHttpServer';
-import { DockerService } from '../framework/Docker';
-import { IContainer } from './IContainer';
+import type { FactoryTypeRecord, IFactory } from './IFactory';
+import type { EmptyType, DeepPartial } from '../types';
+import type { IHttpServer } from './IHttpServer';
+import type { IContainer } from './IContainer';
+import type { IClient } from './IClient';
+
+import type {
+  Container, InferContainerT, ApplicationConfigurationService,
+  CliAppProvider, ObjectFactory, StartupProvider, HttpServerProvider,
+  ApplicationCreationService, DatabaseProvider, TaskService, SettingsService,
+} from '../framework';
+
+import type { DockerService } from '../framework/Docker';
+import type { IDatabaseProvider } from './IDatabase';
+import type { ExpressServer, YargsCliApp, PostgresDB, MailerService } from '../framework/services';
+import type { IApplicationSettings } from './IApplicationSettings';
+import type { TerminalInk } from '../tui/TerminalInk';
 
 /**
  * The default Application Interface
@@ -50,6 +53,38 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   test: (argv?: string[]) => Promise<void>;
+  /**
+   * Used to add and configure an Object Factory
+   * for the Application
+   *
+   * @memberof IApplication
+   */
+  useFactory: (factory: IFactory) => this;
+  /**
+   * Used to add and configure an HTTP Server Client
+   * for the Application to serve on the network.
+   *
+   * @memberof IApplication
+   */
+  useClient: (client: IClient) => this;
+  /**
+   * Use cron triggers.
+   *
+   * @memberof IApplication
+   */
+  useCronTriggers: (path?: string) => this;
+  /**
+   * Use an email service.
+   *
+   * @memberof IApplication
+   */
+  useNodeMailer: () => this;
+  /**
+   * Used for configuring the application
+   *
+   * @memberof IApplication
+   */
+  useSettings: (config: DeepPartial<IApplicationSettings>) => this;
   /**
    * Used to add and configure a Database Provider
    * to the Application
@@ -98,7 +133,7 @@ export interface IApplication<AppContainer = any> {
    * @returns {this} The application instance for chaining
    * @memberof IApplication
    */
-  addDefaultClient(): this
+  addJavascriptClient(): this
   /**
    * Called when the Application starts.
    *
@@ -108,16 +143,15 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   onAppStarted(cb: () => Promise<any> | void): void;
+
   /**
-   * The Application DI container. Used to register and
-   * resolve the various dependencies for the program.
+   * Adds a default postgres database to be used as the
+   * Application DatabaseProvider.
    *
+   * @returns {PostgresDB}
    * @memberof IApplication
    */
-  container: MergeDefaultProviders<AppContainer>;
-
   addPostgresDatabase(): PostgresDB
-
   /**
    * Configures the application to run on docker, creating
    * all the necessary files in the root project directory
@@ -128,14 +162,37 @@ export interface IApplication<AppContainer = any> {
    */
   addDockerSupport(): this
 
+  /**
+   * Uses a nicer Ink.js based TUI instead of the standard
+   * out and error channels.
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addTerminalInk(): this
+  /**
+   * If the current DatabaseProvider allows it, this will
+   * configure and start a database in a docker instance
+   * automatically.
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
   addDockerDBSupport(): this
 
   // TODO / wishlist
   // addLiveReloading(): this
-  // addSettings(config: any): this
   // addSinglePageApp(): this
   // addCronJobs(): this
   // addCreateReactApp(): this
+
+  /**
+   * The Application DI container. Used to register and
+   * resolve the various dependencies for the program.
+   *
+   * @memberof IApplication
+   */
+  container: MergeDefaultProviders<AppContainer>;
 }
 
 /**
@@ -163,7 +220,7 @@ export interface IApplicationCreationService<T extends any = any> {
    *
    * @memberof IApplicationCreationService
    */
-  ConfigureDatabase?: (app: IConfigureDatabaseApplication) => DatabaseProvider;
+  ConfigureDatabase?: (app: IConfigureDatabaseApplication) => IDatabaseProvider;
   /**
    * Used to configure a CLI application
    *
@@ -184,6 +241,8 @@ export type IBuiltApplication<C> = Pick<
   | 'test'
   | 'addDockerSupport'
   | 'addDockerDBSupport'
+  | 'addTerminalInk'
+  | 'useSettings'
 >
 
 export type IConfigureServerApplication<C = any> = Pick<
@@ -216,7 +275,7 @@ export type IConfigureFactoryApplication<C = any> = Pick<
 export type IConfigurationApplication<C = any> = Pick<
   IApplication<C>,
   | 'container'
-  | 'addDefaultClient'
+  | 'addJavascriptClient'
   | 'onAppStarted'
 >
 
@@ -234,21 +293,10 @@ export interface IApplicationConfigurationClass<T> {
    *
    * @memberof IApplicationConfigurationClass
    */
-  configure: (app: IApplication<T>) => void
+  configure: (app: IConfigurationApplication<T>) => void
 };
 
-export type IApplicationService = (app: IApplication<any>, server: HttpServerProvider) => void
-
-/**
- * Hooks used internally to setup the application
- *
- * @export
- * @interface IApplicationServiceHooks
- */
-export interface IApplicationServiceHooks {
-  configure(): void
-  exit(): void
-}
+export type IApplicationService = (app: IApplication, server: HttpServerProvider) => void
 
 
 export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
@@ -261,4 +309,8 @@ export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | CliAppProvider
   | StartupProvider
   | DockerService
+  | SettingsService
+  | TaskService
+  | MailerService
+  | TerminalInk
   , EmptyType>>

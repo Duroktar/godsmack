@@ -1,19 +1,23 @@
 import { ApplicationConfigurationService } from './ApplicationConfigurationService';
 import { ApplicationCreationService } from './ApplicationCreationService';
+import { FactoryBuilder } from "./FactoryBuilder";
+import { ObjectFactory } from './Factory';
+import { DockerService } from './Docker';
 import { CliAppProvider } from './CommandLine';
-import { YargsCliApp } from "./services/YargsCliApp";
 import { JavascriptClient } from './Client';
 import { DatabaseProvider } from './Database';
-import { DockerService } from './Docker';
-import { FactoryBuilder } from "./FactoryBuilder";
-import { Logger, PostgresDB } from './services';
-import { ObjectFactory } from './Factory';
 import { HttpServerProvider } from './HttpServer';
 import { ExpressServer } from "./services/ExpressServer";
-import { IApplication, IApplicationServiceHooks } from '../interfaces/IApplication';
-import { IFactory, FactoryTypeRecord } from '../interfaces/IFactory';
-import { IClient, IHttpServer, MergeDefaultProviders } from '../interfaces';
-import { Type } from '../types';
+import { YargsCliApp } from "./services/YargsCliApp";
+import { Logger, PostgresDB, MailerService } from './services';
+import type { IApplication, IApplicationCreationService } from '../interfaces/IApplication';
+import type { IFactory, FactoryTypeRecord } from '../interfaces/IFactory';
+import type { IClient, IHttpServer, IDatabaseProvider, MergeDefaultProviders, ITaskService, IApplicationSettings } from '../interfaces';
+import type { Type, DeepPartial } from '../types';
+import { TaskService } from './Tasks';
+import { SettingsService } from './Settings';
+import { TerminalInk } from '../tui/TerminalInk';
+import { TuiLoggerService } from '../tui';
 
 /**
  * Default implementation of the IApplication interface
@@ -52,7 +56,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public stop = async () => { await this.destroyApplication() }
 
-  public useFactory = (factory: IFactory<Record<string, Type<any>>>) => {
+  public useFactory = (factory: IFactory) => {
     if (factory)
       this.container.addSingletonInstance<Type<IFactory>>(ObjectFactory, factory)
     return this
@@ -70,7 +74,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  public addDatabase = (database: DatabaseProvider) => {
+  public addDatabase = (database: IDatabaseProvider) => {
     if (database)
       this.container.addSingletonInstance(DatabaseProvider, database)
     return this
@@ -79,6 +83,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public addCliApp = (cliApp: CliAppProvider) => {
     if (cliApp)
       this.container.addSingletonInstance(CliAppProvider, cliApp)
+    return this
+  }
+
+  public addTaskService = (service: ITaskService) => {
+    if (service)
+      this.container.addSingletonInstance<Type<ITaskService>>(TaskService, service)
     return this
   }
 
@@ -117,11 +127,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public addPostgresDatabase(): PostgresDB {
-    return new PostgresDB(this)
+    return new PostgresDB(this);
   }
 
   public addYargsCliApp(): YargsCliApp {
-    return new YargsCliApp(this)
+    return new YargsCliApp(this);
   }
 
   public addDefaultFactory<T extends FactoryTypeRecord>(
@@ -134,7 +144,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return factory
   }
 
-  public addDefaultClient(path?: string) {
+  public addJavascriptClient(path?: string) {
     const client: IClient = this.container
       .addSingleton(JavascriptClient)
       .resolve(JavascriptClient)
@@ -143,29 +153,61 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this.useClient(client)
   }
 
-  /* Private API */
-
-  private __isDockerizingApp = false
-
-  private __hooks: IApplicationServiceHooks = {
-    configure: () => null,
-    exit: () => null,
+  public addTerminalInk() {
+    this.container
+      .addSingleton(Logger, TuiLoggerService)
+      .addSingleton(TerminalInk)
+      .resolve(TerminalInk)
+      .setApp(this)
+    this.__hasTerminalInk = true;
+    return this
   }
 
-  private __onAppStarted: Function = () => { }
+  public useCronTriggers = (path?: string): this => {
+    const service = new TaskService(this);
+    service.useCronTriggers(path)
+    this.__hasTaskRunner = true
+    return this.addTaskService(service)
+  }
+
+  public useNodeMailer = (): this => {
+    this.container.addSingleton(MailerService)
+    this.__hasMailer = true
+    return this
+  }
+
+  public useSettings = (config: DeepPartial<IApplicationSettings>): this => {
+    this.container.resolve(SettingsService).update(config)
+    return this
+  }
+
+  /* Private API */
+
+  // TODO: move these into ApplicationSettings
+  private __isDockerizingApp = false
+  private __hasTaskRunner = false
+  private __hasMailer = false
+  private __hasTerminalInk = false
+  ////////////////////////////////////////////
+
+  private __onAppStarted: Function = () => { } // this should be pub/sub
 
   private async __initializeApplication(args?: string[]) {
-    const creationService = this.container
-      .resolve(ApplicationCreationService)
+    // PRELUDE: If using the TUI then set it up right away.
+    if (this.__hasTerminalInk && !this.__isDockerizingApp) {
+      this.container.resolve(TerminalInk).start()
+    }
 
-    // Set this up first, since it can potentially be used by stuff
-    // in configuration handlers below..
+    // STEP 1 --------------------------------------------
+    const creationService = this.container
+      .resolve<IApplicationCreationService>(ApplicationCreationService)
+
+    // Factory comes first, since it can potentially be used by stuff
+    // in the configuration handlers below..
     const factory = creationService.ConfigureFactory?.(this)
     if (factory) this.useFactory(factory)
 
-    const database = creationService.ConfigureDatabase?.(this)
-    if (database) this.addDatabase(database)
-
+    // STEP 2 ---------------------------------------------
     const docker = this.container.resolve(DockerService)
 
     if (this.__isDockerizingApp || this.__isDockerizingDB) {
@@ -195,15 +237,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     }
 
     if (this.__isDockerizingDB) {
-      const db = this.container
-        .resolve(DatabaseProvider)
-
-      const createDbCallback = () => db
-        .createDockerDB()
+      const createDbCallback = () => docker
+        .createDockerDb()
         .catch(err => console.error(err));
 
-      const removeDbCallback = () => db
-        .removeDockerDB()
+      const removeDbCallback = () => docker
+        .removeDockerDb()
         .catch(err => console.error(err));
 
       docker
@@ -227,40 +266,55 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     }
 
     if (this.__isDockerizingApp) {
-      // If we're setting up to launch in docker than we don't need
+      // If we're preparing to launch in docker then we don't need
       // to do the rest of this stuff because the app is going to
       // spawn itself back up with the DOCKER_CTX env var set anyways
-      // so just return after executing the docker install/setup.
+      // so we can just exit the whole app once done awaiting.
 
       await docker
         .installDockerSupport()
-        .startDockerApp()
+        .startDockerApp();
 
-      return;
+      process.exit(0);
     }
 
-    // Setup the other (optional) dependencies.
+    // STEP 3 ---------------------------------------------
+    // Setup any other (optional) dependencies.
+    this.addDatabase(creationService.ConfigureDatabase?.(this)!) // DB first since controllers usually depend on a repo with a db sometwhere..
     this.addCliApp(creationService.ConfigureCliApp?.(this)!)
     this.addServer(creationService.ConfigureServer?.(this)!)
 
+    // STEP 4 ---------------------------------------------
     // Configure application services so they can be used by the
-    // Application Configuration Service that gets called next.
+    // Application Configuration Service handler.
     creationService.ConfigureServices(this.container)
 
+    // STEP 5 ---------------------------------------------
     // This should be where the bulk of the application logic is
     // handled so we call it last to make sure all the previous
-    // steps/configuration has taken effect.
+    // steps/configuration have taken effect.
     this.container.resolve(ApplicationConfigurationService).configure(this)
 
+    // STEP 6 ---------------------------------------------
+    // Initialize any other goodies..
+    if (this.__hasMailer) {
+      await this.container.resolve(MailerService).initializeService()
+    }
+
+    if (this.__hasTaskRunner) {
+      await this.container.resolve(TaskService).initializeJobs()
+    }
+
+    // STEP 7 ---------------------------------------------
+    // Profit..
     await this.__onAppStarted()
   }
 
   private async destroyApplication() {
-    this.__hooks.exit()
     if (this.__isDockerizingDB) {
       await this.container
-        .resolve(DatabaseProvider)
-        .stopDockerDB()
+        .resolve(DockerService)
+        .stopDockerDb()
     }
   }
 }

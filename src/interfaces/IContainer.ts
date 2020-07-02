@@ -1,6 +1,6 @@
-import { EmptyType, Type, InferType } from '../types';
-import { Container } from '../framework/Container';
-import { InjectorFactory } from '../injector/Injector';
+import type { EmptyType, Type, InferType } from '../types';
+import type { Container } from '../framework/Container';
+import type { InjectorFactory } from '../injector/Injector';
 
 /**
  * Interface for an Application DI container.

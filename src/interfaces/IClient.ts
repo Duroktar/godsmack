@@ -1,4 +1,4 @@
-import { IApplication } from './IApplication';
+import type { IApplication } from './IApplication';
 
 /**
  * Application Client interface. Used to register
@@ -15,10 +15,10 @@ export interface IClient {
    * the controllers registered to the application available
    * as generated IClientAdapter implementations.
    *
-   * @param {IApplication<any>} app
+   * @param {IApplication} app
    * @param {string} endpoint
    * @returns {this}
    * @memberof IClient
    */
-  applyMiddleware(app: IApplication<any>, endpoint?: string): this
+  applyMiddleware(app: IApplication, endpoint?: string): this
 }

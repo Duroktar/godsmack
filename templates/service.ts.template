@@ -1,0 +1,21 @@
+import { Injectable, http, services } from '@trabpukcip/godsmack';
+const { LogLevel } = services
+
+@Injectable()
+export class AService {
+  constructor(
+    public logger: services.Logger,
+  ) {
+    this.logger = logger.For(this, LogLevel.ALL)
+  }
+
+  async getOne(args: any): Promise<any> {
+    this.logger.info(args)
+    throw new http.NotFoundError()
+  }
+
+  async getMany(args: any): Promise<any[]> {
+    this.logger.info(args)
+    throw new http.NotFoundError()
+  }
+}

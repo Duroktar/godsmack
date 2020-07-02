@@ -4,7 +4,6 @@ import { Container } from './Container';
 import { DatabaseProvider } from './Database';
 import { InMemoryDatabase } from "./services/MemoryDB";
 import { HttpServerProvider } from './HttpServer';
-import { ExpressServer } from "./services/ExpressServer";
 import type { StaticTestProps, InferApplicationTypes } from '../types';
 import type { IApplication, IApplicationService, MergeDefaultProviders } from '../interfaces';
 
@@ -73,15 +72,17 @@ export class TestApplication<T> extends Application<T> {
     ]
 
     const app = ApplicationBuilder.Create({
+      ConfigureDatabase: app => app.container
+        .resolve(InMemoryDatabase)
+        .createDatabase('users')
+        .createDatabase('hats')
+        .createDatabase('userHats'),
+      ConfigureServer: app => app
+        .addExpressServer()
+        .registerServices(...services),
       ConfigureServices: container => container
         .addSingleton(TestDoDo, TestDoDo)
         .addSingleton(BoogerWhoop, HammerWho),
-      ConfigureServer: app => new ExpressServer(app)
-        .registerServices(...services),
-      ConfigureDatabase: app => new InMemoryDatabase(app)
-        .createDatabase('users')
-        .createDatabase('hats')
-        .createDatabase('userHats')
     })
 
     class NoNo { }
@@ -95,7 +96,7 @@ export class TestApplication<T> extends Application<T> {
       // @ts-expect-error
       app.container.resolve(NoNo)
 
-      const db = app.container.resolve(DatabaseProvider)
+      const db = app.container.resolve(InMemoryDatabase)
       db.insert('users', { id: 1, name: 'Admin' })
       db.insert('users', { id: 2, name: 'Test User' })
 

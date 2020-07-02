@@ -1,21 +1,30 @@
 import createRouter from 'express/lib/router'
 import { RequestHandler } from 'express'
+import { Singleton } from '../injector'
+import { Application } from './Application'
+import { SettingsService } from './Settings'
 import { Logger } from './services/Logger'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
-import { Type } from '../types'
-import { IApplicationService, IHttpServer, IConfigureServerApplication } from "../interfaces"
 import { createUrlFrom } from '../utils/http'
+import type { Type } from '../types'
+import type { IApplicationService, IHttpServer, IApplicationSettings, IController } from "../interfaces"
 
-const CONTROLLER = 'Controller'
-
-export class HttpServerProvider<App extends IConfigureServerApplication<any> = any> implements IHttpServer {
-  public readonly __server = mockServerInstance
-  public port = 3000
-  public host = 'localhost'
-  public https = false
+@Singleton()
+export class HttpServerProvider implements IHttpServer {
+  public logger: Logger
+  public __server = mockServerInstance
   public controllers: Map<string, Type<any>> = new Map()
+  public settings: IApplicationSettings['httpServer']
 
-  constructor(public readonly app: App) { }
+  constructor(public app: Application<any>) {
+    this.settings = app.container
+      .resolve(SettingsService)
+      .get('httpServer');
+
+    this.logger = app.container
+      .resolve(Logger)
+      .For(this)
+  }
 
   public get(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
     this.__server.get(path, ...handlers)
@@ -37,10 +46,8 @@ export class HttpServerProvider<App extends IConfigureServerApplication<any> = a
     services.forEach((service) => service(this.app as any, this as any))
     return this
   }
-  public listen(port?: number, host?: string) {
-    if (port) this.port = port
-    if (host) this.host = host
-    this.__server.listen(this.port, this.onServerStarted)
+  public listen() {
+    this.__server.listen(this.settings.port, this.onServerStarted)
   }
   public onServerStarted() {
     const url = this.formatServerUrl()
@@ -54,14 +61,18 @@ export class HttpServerProvider<App extends IConfigureServerApplication<any> = a
     this.__server.use(mountPoint, ...handlers)
     return this
   }
-  public useControllers(controllerDir: string = 'controllers') {
+  public useControllers(dirname?: string) {
     const glob = require('glob');
     const path = require('path');
     const cwd = process.cwd()
-
     const tsconfig = getTsConfigFile(cwd)
 
-    const relPath = path.join(tsconfig.options.rootDir || cwd, controllerDir)
+    const settings = this.getControllerSettings()
+
+    const rootDir = tsconfig.options.rootDir || cwd;
+    const controllerDir = dirname || settings.dirname;
+
+    const relPath = path.join(rootDir, controllerDir)
 
     glob.sync(relPath + '/**/*.ts').forEach((file: string) => {
       const dep = require(path.resolve(file));
@@ -70,13 +81,13 @@ export class HttpServerProvider<App extends IConfigureServerApplication<any> = a
 
       const cName = Object
         .keys(dep)
-        .find(name => name.endsWith(CONTROLLER));
+        .find(name => name.endsWith(settings.postfix));
 
       if (!cName) return
 
-      const klass = dep[cName]
+      const klass: Type<IController<any>> = dep[cName]
       const endpoint = cName
-        .slice(0, cName.indexOf(CONTROLLER)) // this may need to be changed..
+        .slice(0, cName.indexOf(settings.postfix)) // this may need to be changed..
         .toLowerCase()
 
       if (!endpoint) return
@@ -88,12 +99,15 @@ export class HttpServerProvider<App extends IConfigureServerApplication<any> = a
     return this
   }
 
-  public get logger() {
-    return this.app.container.resolve(Logger).For(this)
+  public formatServerUrl() {
+    const { host, https, port } = this.settings
+    return createUrlFrom(host, port, { https })
   }
 
-  public formatServerUrl() {
-    return createUrlFrom(this.host, this.port, { https: this.https })
+  private getControllerSettings() {
+    return this.app.container
+      .resolve(SettingsService)
+      .get('controllers');
   }
 }
 
