@@ -9,7 +9,9 @@ import { DatabaseProvider } from './Database';
 import { HttpServerProvider } from './HttpServer';
 import { ExpressServer } from "./services/ExpressServer";
 import { YargsCliApp } from "./services/YargsCliApp";
-import { Logger, PostgresDB, MailerService } from './services';
+import { Logger, MailerService } from './services';
+import { PostgresDB as SequelizePostgresDB } from './services/sequelize/PostgresDB';
+import { PostgresDB as TypeORMPostgresDB } from './services/typeorm/PostgresDB';
 import type { IApplication, IApplicationCreationService } from '../interfaces/IApplication';
 import type { IFactory, FactoryTypeRecord } from '../interfaces/IFactory';
 import type { IClient, IHttpServer, IDatabaseProvider, MergeDefaultProviders, ITaskService, IApplicationSettings } from '../interfaces';
@@ -126,8 +128,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return new ExpressServer(this)
   }
 
-  public addPostgresDatabase(): PostgresDB {
-    return new PostgresDB(this);
+  public addPostgresDatabase(): SequelizePostgresDB {
+    return new SequelizePostgresDB(this);
+  }
+
+  public addTypeORMPostgresDB(): TypeORMPostgresDB {
+    return new TypeORMPostgresDB(this);
   }
 
   public addYargsCliApp(): YargsCliApp {

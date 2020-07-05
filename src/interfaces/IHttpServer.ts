@@ -1,4 +1,5 @@
 import type { IApplicationService } from './IApplication';
+import { HttpServerErrorHandlerFn } from '../framework/HttpServerErrorHandler';
 
 export type PathArgument = string | RegExp | (string | RegExp)[]
 export type RequestHandler = (...args: any[]) => any
@@ -92,4 +93,13 @@ export interface IHttpServer {
    * @memberof IHttpServer
    */
   onServerStarted(): void
+
+  /**
+   * Register an error handler callback.
+   *
+   * @param {HttpServerErrorHandlerFn} handler
+   * @returns {this}
+   * @memberof IHttpServer
+   */
+  registerErrorHandler(handler: HttpServerErrorHandlerFn): this
 }

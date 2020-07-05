@@ -5,7 +5,13 @@ abstract class ControllerError extends Error {
 
 export class BadRequestError extends ControllerError {
   public statusCode: number = 400
-  public message: string = "Bad Request"
+  public message: string
+  public errors?: any[]
+  constructor(message?: string | any[]) {
+    super(typeof message === 'string' ? message : undefined)
+    this.message = typeof message === 'string' ? message : "Bad Request"
+    this.errors = typeof message === 'string' ? [] : message
+  }
 }
 
 export class UnauthorizedError extends ControllerError {

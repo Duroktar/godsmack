@@ -40,4 +40,7 @@ export class DatabaseProvider implements IDatabaseProvider {
   public syncDatabaseTables(opts?: any): Promise<any> {
     throw new Error("Method not implemented.")
   }
+  public transaction(op: Function): Promise<any> {
+    throw new Error("Method not implemented.")
+  }
 }

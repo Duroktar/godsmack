@@ -12,7 +12,9 @@ import type {
 
 import type { DockerService } from '../framework/Docker';
 import type { IDatabaseProvider } from './IDatabase';
-import type { ExpressServer, YargsCliApp, PostgresDB, MailerService } from '../framework/services';
+import type { ExpressServer, YargsCliApp, MailerService } from '../framework/services';
+import type { PostgresDB as SequelizePostgresDB } from '../framework/services/sequelize/PostgresDB';
+import type { PostgresDB as TypeORMPostgresDB } from '../framework/services/typeorm/PostgresDB';
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { TerminalInk } from '../tui/TerminalInk';
 
@@ -146,12 +148,22 @@ export interface IApplication<AppContainer = any> {
 
   /**
    * Adds a default postgres database to be used as the
-   * Application DatabaseProvider.
+   * Application DatabaseProvider. (sequelize)
    *
-   * @returns {PostgresDB}
+   * @returns {SequelizePostgresDB}
    * @memberof IApplication
    */
-  addPostgresDatabase(): PostgresDB
+  addPostgresDatabase(): SequelizePostgresDB
+
+  /**
+   * Adds a postgres database to be used as the
+   * Application DatabaseProvider. (TypeORM)
+   *
+   * @returns {TypeORMPostgresDB}
+   * @memberof IApplication
+   */
+  addTypeORMPostgresDB(): TypeORMPostgresDB
+
   /**
    * Configures the application to run on docker, creating
    * all the necessary files in the root project directory
@@ -257,6 +269,7 @@ export type IConfigureDatabaseApplication<C = any> = Pick<
   | 'container'
   | 'addDatabase'
   | 'addPostgresDatabase'
+  | 'addTypeORMPostgresDB'
 >
 
 export type IConfigureCliAppApplication<C = any> = Pick<

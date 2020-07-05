@@ -9,6 +9,9 @@ export * from './framework/decorators'
 export * from './interfaces'
 export * from './types'
 
+export * as pgErrors from './utils/pgErrorCodes'
+export * as typeormErrors from './utils/typeOrmErrors'
+
 export {
   Application,
   ApplicationBuilder,

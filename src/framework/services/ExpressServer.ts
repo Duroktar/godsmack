@@ -1,11 +1,14 @@
-import bodyParser from 'body-parser';
-import express, { Request, Response, RequestHandler } from 'express';
-import { Singleton } from '../../injector';
-import { HttpServerProvider } from '../HttpServer';
+import bodyParser from "body-parser";
+import express, { Request, Response, RequestHandler } from "express";
+import { Singleton } from "../../injector";
+import { HttpServerProvider } from "../HttpServer";
 import type { IController } from "../../interfaces";
-import type { Type } from '../../types';
-import { ROUTE_DATA } from '../../constants';
-import { PathMetadata } from '../decorators';
+import type { Type } from "../../types";
+import { ROUTE_DATA, AUTH_DATA } from "../../constants";
+import { PathMetadata } from "../decorators";
+import { AuthMetadata } from "../decorators/auth";
+import { AuthService } from "./AuthService";
+import { http } from "../../utils";
 
 @Singleton()
 export class ExpressServer extends HttpServerProvider {
@@ -20,11 +23,11 @@ export class ExpressServer extends HttpServerProvider {
    * @returns
    * @memberof ExpressServer
    */
-  public useHealthCheck(path: string = '/health') {
+  public useHealthCheck(path: string = "/health") {
     this.get(path, (req, res) => {
-      res.send({ 'ServerId': ExpressServer.name, 'Status': 'OK' });
+      res.send({ ServerId: ExpressServer.name, Status: "OK" });
     });
-    this.logger.info('Health checks enabled @', path);
+    this.logger.info("Health checks enabled @", path);
     return this;
   }
   /**
@@ -36,7 +39,7 @@ export class ExpressServer extends HttpServerProvider {
    */
   public parseJsonBody(options?: bodyParser.OptionsJson) {
     this.__server.use(bodyParser.json(options));
-    this.logger.info('JSON body parsing enabled');
+    this.logger.info("JSON body parsing enabled");
     return this;
   }
   /**
@@ -48,7 +51,10 @@ export class ExpressServer extends HttpServerProvider {
    * @returns
    * @memberof ExpressServer
    */
-  public serveStaticFiles(path: string, options?: Parameters<typeof express.static>[1]) {
+  public serveStaticFiles(
+    path: string,
+    options?: Parameters<typeof express.static>[1]
+  ) {
     this.__server.use(express.static(path, options));
     this.logger.info(`Serving static files from dir: ${path}`);
     return this;
@@ -57,101 +63,171 @@ export class ExpressServer extends HttpServerProvider {
 
   //#region Internals
   public onServerStarted = () => {
-    ;[...this.controllers.keys()].forEach(endpoint => {
-      const klass: Type<IController<any>> | undefined = this.controllers.get(endpoint);
+    const authService = this.app.container.resolve(AuthService);
+    [...this.controllers.keys()].forEach((endpoint) => {
+      const klass: Type<IController<any>> | undefined = this.controllers.get(
+        endpoint
+      );
 
-      if (!klass)
-        return;
+      if (!klass) return;
 
       const instance: any = this.app.container.resolve<IController<any>>(klass);
 
-      ;['create', 'get', 'delete', 'patch', 'update'].forEach(reqType => {
-        this.setupHandler(instance, reqType, endpoint);
+      const authenticatedRoutes: Record<string, AuthMetadata[]> = (
+        (Reflect.getMetadata(AUTH_DATA, klass) as AuthMetadata[]) ?? []
+      )?.reduce((acc, val) => ({ ...acc, [val.methodName]: val }), {});
+
+      ["create", "get", "delete", "patch", "update"].forEach((reqType) => {
+        const auth = authenticatedRoutes[reqType];
+        this.setupHandler(
+          instance,
+          reqType,
+          endpoint,
+          undefined,
+          auth,
+          authService
+        );
       });
 
       const extendedRoutes = Reflect.getMetadata(ROUTE_DATA, klass);
+
       if (extendedRoutes) {
         for (let route of extendedRoutes as PathMetadata[]) {
-          const { path, methodName } = route
-          const reqType = takeLeadingWord(methodName)
-          const subPath = path.startsWith('/') ? path : '/' + path
-          this.setupHandler(instance, reqType, endpoint + subPath, methodName);
+          const { path, methodName } = route;
+          const auth = authenticatedRoutes[methodName];
+          const reqType = takeLeadingWord(methodName);
+          const subPath = path.startsWith("/") ? path : "/" + path;
+          this.setupHandler(
+            instance,
+            reqType,
+            endpoint + subPath,
+            methodName,
+            auth,
+            authService
+          );
         }
       }
     });
 
-    super.onServerStarted()
+    super.onServerStarted();
   };
 
-  private setupHandler(instance: any, reqType: string, endpoint: string, methodName = reqType) {
+  private setupHandler(
+    instance: any,
+    reqType: string,
+    endpoint: string,
+    methodName = reqType,
+    auth: AuthMetadata[] | null = null,
+    authService: AuthService | null = null
+  ) {
     if (instance[methodName] != null) {
-      this.logger.info('Setting up controller:', endpoint, 'handler:', methodName);
+      this.logger.info(
+        "Setting up controller:",
+        endpoint,
+        "handler:",
+        methodName
+      );
       switch (reqType) {
-        case 'create':
-          this.post(endpoint, this.makeHandler(instance[methodName], 'body'));
+        case "create":
+          this.post(
+            endpoint,
+            this.makeHandler(instance[methodName], "body", auth, authService)
+          );
           break;
-        case 'get':
-          this.get(endpoint, this.makeHandler(instance[methodName], 'query'));
+        case "get":
+          this.get(
+            endpoint,
+            this.makeHandler(instance[methodName], "query", auth, authService)
+          );
           break;
-        case 'delete':
-          this.delete(endpoint, this.makeHandler(instance[methodName], 'body'));
+        case "delete":
+          this.delete(
+            endpoint,
+            this.makeHandler(instance[methodName], "body", auth, authService)
+          );
           break;
-        case 'patch':
-          this.patch(endpoint, this.makeHandler(instance[methodName], 'body'));
+        case "patch":
+          this.patch(
+            endpoint,
+            this.makeHandler(instance[methodName], "body", auth, authService)
+          );
           break;
-        case 'update':
-          this.update(endpoint, this.makeHandler(instance[methodName], 'body'));
+        case "update":
+          this.update(
+            endpoint,
+            this.makeHandler(instance[methodName], "body", auth, authService)
+          );
           break;
         default:
-          throw new Error('Server has unimplemented Controller Method: ' + reqType);
+          throw new Error(
+            "Server has unimplemented Controller Method: " + reqType
+          );
       }
     }
   }
 
-  private makeHandler(handler: Function, key: 'query' | 'body'): RequestHandler {
+  private makeHandler(
+    handler: Function,
+    key: "query" | "body",
+    auth: AuthMetadata[] | null,
+    authService: AuthService | null
+  ): RequestHandler {
     return async (req: Request, res: Response) => {
       const data = (req as any)[key];
+
       try {
+        if (auth != null) {
+          try {
+            if (authService == null)
+              throw new Error("No auth service registered.");
+            const authHeaderName = authService.settings.headerName;
+            const authHeader = req.header(authHeaderName);
+            data.__auth = authService.authorizeFlow(authHeader);
+          } catch (err) {
+            this.logger.error(err);
+            throw new http.UnauthorizedError();
+          }
+        }
+
         const result = await handler(data, { req, res });
+
         switch (typeof result) {
-          case 'bigint':
-          case 'boolean':
-          case 'function':
-          case 'number':
-          case 'string':
-          case 'symbol':
-          case 'undefined':
+          case "bigint":
+          case "boolean":
+          case "function":
+          case "number":
+          case "string":
+          case "symbol":
+          case "undefined":
             return res.send(result);
         }
         try {
-          res.send(JSON.stringify(result))
-        } catch {
-          res.send(result)
+          res.send(JSON.stringify(result));
+        } catch (serializationError) {
+          res.send(this.errorHandler.onError(serializationError, { req, res }));
         }
+      } catch (handlerError) {
+        res.send(this.errorHandler.onError(handlerError, { req, res }));
       }
-      catch (e) {
-        res.status(e.statusCode ?? 500);
-        res.send(e.message);
-      }
-      return
+      return;
     };
   }
 
-  public useControllers(controllerDir: string = 'controllers') {
+  public useControllers(controllerDir: string = "controllers") {
     this.parseJsonBody();
-    this.logger.info('Using Controllers from dir:', controllerDir);
+    this.logger.info("Using Controllers from dir:", controllerDir);
     return super.useControllers(controllerDir);
   }
   //#endregion
 }
 
 function takeLeadingWord(text: string) {
-  let res = ""
-  let cursor = 0
-  let nextChar = text.charAt(cursor)
+  let res = "";
+  let cursor = 0;
+  let nextChar = text.charAt(cursor);
   do {
-    res += nextChar
-    nextChar = text.charAt(++cursor)
-  } while (cursor < text.length && nextChar.toUpperCase() !== nextChar)
-  return res
+    res += nextChar;
+    nextChar = text.charAt(++cursor);
+  } while (cursor < text.length && nextChar.toUpperCase() !== nextChar);
+  return res;
 }

@@ -33,6 +33,13 @@ export class SettingsService {
 }
 
 const getBaseSettings = (): IApplicationSettings => ({
+  auth: {
+    expiresIn: 15,
+    headerName: 'Authorization',
+    headerTokenPrefix: 'Bearer',
+    saltRounds: 10,
+    secret: 'gcbfinYRQjbz4bla//EtDEBhZp0eKZ+o0Te8JRDOBEPuib9kBb9DYHu3PlRY+taBIhnn00TNKpC70+Lt3/+blYQ6/TqZ1kOBVgxdDSMFHsgh15D8N/fszRb/kh77eoF+qlgLldoEutXNT1HaEQup7ZQ1yFyTuTuX5OGh1O6T/pYCJybuMf0PFWZETonlxnjvcMfU1AYFfe046HaKy6TAZJYR8na3xLFQL0ubWDow6uT+QUhJ6+VdjewR/tHIHbNO7hDYkmTyxrGQ8yrcLCGjAqnAze5EpWwXL+dP9ZEeDtNRmzIqmA7USUDlWocKBIkYJLm2aPudBP1iLX64E+Hi2A=='
+  },
   client: {
     endpoint: '/__client.js',
   },
@@ -46,10 +53,8 @@ const getBaseSettings = (): IApplicationSettings => ({
     user: 'admin',
     pass: 'pass123',
     port: 5432,
-    host_port: 5432,
     host: '0.0.0.0',
     name: 'godsmack-db',
-    dialect: 'postgres',
   },
   docker: {
     image_tag_name: 'godsmack-app',

@@ -1,5 +1,5 @@
-import { SequelizeAdapter } from './Sequelize';
-import { Singleton } from '../../injector';
+import { SequelizeAdapter } from '../Sequelize';
+import { Singleton } from '../../../injector';
 
 @Singleton()
 export class PostgresDB extends SequelizeAdapter {

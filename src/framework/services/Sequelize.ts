@@ -44,8 +44,12 @@ export class SequelizeAdapter extends DatabaseProvider {
       }
     };
     return {
+      dialect: 'postgres' as "mysql" | "postgres" | "sqlite" | "mariadb" | "mssql",
       port: this.settings.port,
       host: this.settings.host,
+      user: this.settings.user,
+      pass: this.settings.pass,
+      host_port: 5432,
       name: this.settings.name,
       ...defaults,
       ...options,
@@ -57,7 +61,8 @@ export class SequelizeAdapter extends DatabaseProvider {
   }
 
   private getDbConnectionString(): string {
-    return createDbConnectionString(this.settings);
+    const options = this.mergeDefaultsWithOptions()
+    return createDbConnectionString(options);
   }
 
   private __connection: Sequelize | null = null

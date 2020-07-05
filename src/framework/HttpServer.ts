@@ -6,12 +6,14 @@ import { SettingsService } from './Settings'
 import { Logger } from './services/Logger'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
 import { createUrlFrom } from '../utils/http'
-import type { Type } from '../types'
+import { HttpServerErrorHandler, HttpServerErrorHandlerFn } from './HttpServerErrorHandler'
 import type { IApplicationService, IHttpServer, IApplicationSettings, IController } from "../interfaces"
+import type { Type } from '../types'
 
 @Singleton()
 export class HttpServerProvider implements IHttpServer {
   public logger: Logger
+  public errorHandler: HttpServerErrorHandler
   public __server = mockServerInstance
   public controllers: Map<string, Type<any>> = new Map()
   public settings: IApplicationSettings['httpServer']
@@ -24,6 +26,9 @@ export class HttpServerProvider implements IHttpServer {
     this.logger = app.container
       .resolve(Logger)
       .For(this)
+
+    this.errorHandler = app.container
+      .resolve(HttpServerErrorHandler)
   }
 
   public get(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
@@ -46,9 +51,17 @@ export class HttpServerProvider implements IHttpServer {
     services.forEach((service) => service(this.app as any, this as any))
     return this
   }
+
+  public registerErrorHandler<Err = any, Req = any, Res = any>(handler: HttpServerErrorHandlerFn<Err, Req, Res>): this {
+    this.logger.info('Registering Error Handler callback..')
+    this.errorHandler.addEventHandler('error', handler)
+    return this
+  }
+
   public listen() {
     this.__server.listen(this.settings.port, this.onServerStarted)
   }
+
   public onServerStarted() {
     const url = this.formatServerUrl()
     this.logger.info('Server listening at', url)
