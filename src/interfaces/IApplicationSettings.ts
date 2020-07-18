@@ -1,7 +1,6 @@
-import type { LogLevel } from '../framework/services';
+import type { LogLevel } from "../framework/services";
 
 export interface IApplicationSettings {
-
   /**
    * Authorization Plugin Settings
    *
@@ -127,6 +126,20 @@ export interface IApplicationSettings {
      * @type {string}
      */
     name: string;
+
+    /**
+     * Enable logging
+     *
+     * @type {boolean}
+     */
+    logging: boolean;
+
+    /**
+     * Enable caching queries.
+     *
+     * @type {boolean}
+     */
+    cache: boolean;
   };
 
   /**
@@ -148,13 +161,13 @@ export interface IApplicationSettings {
       image_tag: string;
       host_expose_port: number;
     };
-  }
+  };
 
   /**
    * Object Factory Settings
    *
    */
-  factory: {}
+  factory: {};
 
   /**
    * Http Server Provider Settings
@@ -179,7 +192,7 @@ export interface IApplicationSettings {
      * @type {boolean}
      */
     https: boolean;
-  }
+  };
 
   /**
    * Logging Provider Settings
@@ -187,21 +200,21 @@ export interface IApplicationSettings {
    */
   logger: {
     lvl: LogLevel;
-  }
+  };
 
   /**
    * Email Service Provider Settings
    *
    */
   mailer: {
-    host: string
-    port: number
-    secure: boolean
+    host: string;
+    port: number;
+    secure: boolean;
     auth: {
-      type: 'OAuth2';
+      type: "OAuth2";
       user: string;
-    }
-  }
+    };
+  };
 
   /**
    * Oauth2 Plugin Settings
@@ -215,7 +228,7 @@ export interface IApplicationSettings {
     accessToken: string;
     expires: number;
     redirectEmail: string;
-  }
+  };
 
   /**
    * Shell Service Settings
@@ -223,13 +236,13 @@ export interface IApplicationSettings {
    */
   shell: {
     log: boolean;
-  }
+  };
 
   /**
    * Startup Service Settings
    *
    */
-  startup: {}
+  startup: {};
 
   /**
    * Cron Job/Task Service Settings
@@ -246,5 +259,5 @@ export interface IApplicationSettings {
      */
     dirname: string;
     postfix: string;
-  }
+  };
 }

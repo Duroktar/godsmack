@@ -6,44 +6,54 @@
  * @template T
  */
 export interface IController<T extends any> {
+  [key: string]: any
+
   /**
    * Used to register a get request handler.
    *
-   * @param {*} req
+   * @param {*} params
    * @returns {T}
    * @memberof IController
    */
-  get?(req: any): T
+  get?(params: any, meta: any, ...rest: any[]): T
+  /**
+   * Used to register a post request handler.
+   *
+   * @param {*} data
+   * @returns {T}
+   * @memberof IController
+   */
+  create?(data: any, meta: any, ...rest: any[]): T
+  /**
+   * Also used to register a post request handler.
+   *
+   * @param {*} data
+   * @returns {T}
+   * @memberof IController
+   */
+  post?(data: any, meta: any, ...rest: any[]): T
   /**
    * Used to register a patch request handler.
    *
-   * @param {*} req
+   * @param {*} data
    * @returns {T}
    * @memberof IController
    */
-  create?(req: any): T
-  /**
-   * Used to register a patch request handler.
-   *
-   * @param {*} req
-   * @returns {T}
-   * @memberof IController
-   */
-  patch?(req: any): T
+  patch?(data: any, meta: any, ...rest: any[]): T
   /**
    * Used to register a update request handler.
    *
-   * @param {*} req
+   * @param {*} data
    * @returns {T}
    * @memberof IController
    */
-  update?(req: any): T
+  update?(data: any, meta: any, ...rest: any[]): T
   /**
    * Used to register a delete request handler.
    *
-   * @param {*} req
+   * @param {*} data
    * @returns {T}
    * @memberof IController
    */
-  delete?(req: any): T
+  delete?(data: any, meta: any, ...rest: any[]): T
 }

@@ -6,6 +6,11 @@ import { is_newable } from '../utils/object';
 
 export const SYMBOL_SINGLETON = Symbol.for('SINGLETON')
 
+type ResolvedInjections<T> = {
+  resolved: any;
+  injections: T[];
+};
+
 export class InjectorFactory {
 
   public logger: Logger = Logger.For(InjectorFactory, LogLevel.NONE)
@@ -16,7 +21,8 @@ export class InjectorFactory {
   }
 
   public resolve<T>(target: Type<any>): T {
-    const { resolved, injections } = this.resolveTokens<T>(target);
+
+    const { resolved, injections } = this.getResolvedInjections<T>(target);
 
     if (this.isSingleton(resolved)) {
       this.logger.debug('Resolving singleton for dependency =>', this.getTypeName(resolved))
@@ -50,6 +56,25 @@ export class InjectorFactory {
     this.registerDependencies(...tokens);
 
     return { resolved, injections };
+  }
+
+  //#endregion
+
+  //#region cache
+  private __injectionCache = new Map()
+
+  private getResolvedInjections<T>(target: Type<any>) {
+
+    let resolvedInjections: ResolvedInjections<T>
+
+    if (this.__injectionCache.has(target)) {
+      resolvedInjections = this.__injectionCache.get(target)
+    } else {
+      resolvedInjections = this.resolveTokens<T>(target);
+      this.__injectionCache.set(target, resolvedInjections)
+    }
+
+    return resolvedInjections
   }
   //#endregion
 

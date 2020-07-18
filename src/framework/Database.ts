@@ -34,6 +34,9 @@ export class DatabaseProvider implements IDatabaseProvider {
   public insert(...args: any): any {
     throw new Error("Method not implemented.")
   }
+  public bulkInsert(...args: any): any {
+    throw new Error("Method not implemented.")
+  }
   public testConnection(...args: any): Promise<any> {
     throw new Error("Method not implemented.")
   }

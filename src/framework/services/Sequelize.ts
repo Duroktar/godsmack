@@ -23,7 +23,7 @@ export class SequelizeAdapter extends DatabaseProvider {
       })
   }
   async testConnection() {
-    this.logger.info('Testing connection to database...');
+    this.logger.info('Testing database connection..');
     try {
       await this.connection.authenticate({
         retry: { max: 25 }, logging: false,

@@ -9,8 +9,15 @@ export class Container<T = EmptyType> implements IContainer<T> {
   /* Public api */
   constructor(private injector: InjectorFactory = Injector) { }
 
+  private __resolverCache = new Map()
+
   public resolve<Target extends T>(target: Type<Target>): Target {
-    return this.injector.resolve(target)
+    if (this.__resolverCache.has(target)) {
+      return this.__resolverCache.get(target)
+    }
+    const resolved = this.injector.resolve(target);
+    this.__resolverCache.set(target, resolved)
+    return resolved as Target
   }
 
   public addTransient<T>(type: Type<T>, impl: Type<T> = type) {

@@ -36,6 +36,14 @@ export interface IHttpServer {
    */
   update(path: PathArgument, ...handlers: RequestHandler[]): void;
   /**
+   * Used for registering put request handlers with the server.
+   *
+   * @param {PathArgument} path
+   * @param {...RequestHandler[]} handlers
+   * @memberof IHttpServer
+   */
+  put(path: PathArgument, ...handlers: RequestHandler[]): void;
+  /**
    * Used for registering patch request handlers with the server.
    *
    * @param {PathArgument} path

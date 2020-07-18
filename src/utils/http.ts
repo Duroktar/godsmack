@@ -1,16 +1,21 @@
 abstract class ControllerError extends Error {
   public abstract statusCode: number
   public abstract message: string
+  public errorMessage: string | null
+  constructor(message?: string) {
+    super(message)
+    this.errorMessage = message ?? null
+  }
 }
 
 export class BadRequestError extends ControllerError {
   public statusCode: number = 400
   public message: string
-  public errors?: any[]
-  constructor(message?: string | any[]) {
-    super(typeof message === 'string' ? message : undefined)
-    this.message = typeof message === 'string' ? message : "Bad Request"
-    this.errors = typeof message === 'string' ? [] : message
+  public errors: any[]
+  constructor(message?: string | any[], defaultMessage = "Bad Request") {
+    super(typeof message === 'string' ? message : defaultMessage)
+    this.message = typeof message === 'string' ? message : defaultMessage
+    this.errors = typeof message === 'string' ? [] : message ?? []
   }
 }
 

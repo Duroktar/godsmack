@@ -1,4 +1,3 @@
-import createRouter from 'express/lib/router'
 import { RequestHandler } from 'express'
 import { Singleton } from '../injector'
 import { Application } from './Application'
@@ -7,7 +6,7 @@ import { Logger } from './services/Logger'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
 import { createUrlFrom } from '../utils/http'
 import { HttpServerErrorHandler, HttpServerErrorHandlerFn } from './HttpServerErrorHandler'
-import type { IApplicationService, IHttpServer, IApplicationSettings, IController } from "../interfaces"
+import type { IApplicationService, IHttpServer, IApplicationSettings, IController, PathArgument } from "../interfaces"
 import type { Type } from '../types'
 
 @Singleton()
@@ -31,19 +30,22 @@ export class HttpServerProvider implements IHttpServer {
       .resolve(HttpServerErrorHandler)
   }
 
-  public get(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
+  public get(path: PathArgument, ...handlers: RequestHandler[]) {
     this.__server.get(path, ...handlers)
   }
-  public post(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
+  public post(path: PathArgument, ...handlers: RequestHandler[]) {
     this.__server.post(path, ...handlers)
   }
-  public update(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
+  public update(path: PathArgument, ...handlers: RequestHandler[]) {
     this.__server.update(path, ...handlers)
   }
-  public patch(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
+  public patch(path: PathArgument, ...handlers: RequestHandler[]) {
     this.__server.patch(path, ...handlers)
   }
-  public delete(path: createRouter.PathArgument, ...handlers: createRouter.RequestHandler[]) {
+  public put(path: PathArgument, ...handlers: RequestHandler[]) {
+    this.__server.put(path, ...handlers)
+  }
+  public delete(path: PathArgument, ...handlers: RequestHandler[]) {
     this.__server.delete(path, ...handlers)
   }
 

@@ -1,18 +1,22 @@
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import express, { Request, Response, RequestHandler } from "express";
+import { resolve } from 'path';
 import { Singleton } from "../../injector";
 import { HttpServerProvider } from "../HttpServer";
 import type { IController } from "../../interfaces";
 import type { Type } from "../../types";
-import { ROUTE_DATA, AUTH_DATA } from "../../constants";
-import { PathMetadata } from "../decorators";
-import { AuthMetadata } from "../decorators/auth";
-import { AuthService } from "./AuthService";
+import { ROUTE_DATA, AUTH_ROUTE_DATA, AUTH_ROLES_CLAIM, CONTROLLER_ARGS_DATA, AUTH_OWNER_CLAIM } from "../../constants";
+import { PathMetadata, HttpParamType } from "../decorators";
+import { JwtClaim, RolesClaimMetadata, JwtClaimMetadata, OwnerClaimMetadata } from "../decorators/auth";
+import { AuthUtilsService, JwtPayload, JwtAuthData } from "./AuthService";
 import { http } from "../../utils";
+import { assertNever } from '../../utils/assert';
+import { ParamMetadata } from '../decorators/utils';
 
 @Singleton()
 export class ExpressServer extends HttpServerProvider {
-  public __server: express.Server = express();
+  public __server = express();
 
   //#region Public Api
   /**
@@ -42,6 +46,24 @@ export class ExpressServer extends HttpServerProvider {
     this.logger.info("JSON body parsing enabled");
     return this;
   }
+
+  /**
+   * Enables Cookie parsing.
+   *
+   * @param {string} secret
+   * @param {cookieParser.CookieParseOptions} [options]
+   * @returns
+   * @memberof ExpressServer
+   */
+  public parseCookies(secret?: string, options?: cookieParser.CookieParseOptions) {
+    this.__server.use(cookieParser(secret, options) as any);
+    this.logger.info("Cookie parsing enabled");
+    return this;
+  }
+
+  private useSpaFallback: boolean | string = false
+  private spaFallbackPath!: string // set when useSpaFallback is set
+
   /**
    * Used to enable static file serving from a directory
    * of choice.
@@ -53,9 +75,11 @@ export class ExpressServer extends HttpServerProvider {
    */
   public serveStaticFiles(
     path: string,
-    options?: Parameters<typeof express.static>[1]
+    options?: Parameters<typeof express.static>[1] & { spaFallback?: boolean | string | null },
   ) {
     this.__server.use(express.static(path, options));
+    this.useSpaFallback = options?.spaFallback ?? false;
+    this.spaFallbackPath = path;
     this.logger.info(`Serving static files from dir: ${path}`);
     return this;
   }
@@ -63,7 +87,7 @@ export class ExpressServer extends HttpServerProvider {
 
   //#region Internals
   public onServerStarted = () => {
-    const authService = this.app.container.resolve(AuthService);
+    const authService = this.app.container.resolve(AuthUtilsService);
     [...this.controllers.keys()].forEach((endpoint) => {
       const klass: Type<IController<any>> | undefined = this.controllers.get(
         endpoint
@@ -73,19 +97,31 @@ export class ExpressServer extends HttpServerProvider {
 
       const instance: any = this.app.container.resolve<IController<any>>(klass);
 
-      const authenticatedRoutes: Record<string, AuthMetadata[]> = (
-        (Reflect.getMetadata(AUTH_DATA, klass) as AuthMetadata[]) ?? []
+      const grantedRoutes: Record<string, JwtClaim> = (
+        (Reflect.getMetadata(AUTH_ROUTE_DATA, klass) as JwtClaimMetadata[]) ?? []
+      )?.reduce((acc, val) => ({ ...acc, [val.methodName]: val }), {});
+
+      const grantedRoles: Record<string, RolesClaimMetadata> = (
+        (Reflect.getMetadata(AUTH_ROLES_CLAIM, klass) as RolesClaimMetadata[]) ?? []
+      )?.reduce((acc, val) => ({ ...acc, [val.methodName]: val }), {});
+
+      const grantedOwners: Record<string, OwnerClaimMetadata> = (
+        (Reflect.getMetadata(AUTH_OWNER_CLAIM, klass) as OwnerClaimMetadata[]) ?? []
       )?.reduce((acc, val) => ({ ...acc, [val.methodName]: val }), {});
 
       ["create", "get", "delete", "patch", "update"].forEach((reqType) => {
-        const auth = authenticatedRoutes[reqType];
+        const auth = grantedRoutes[reqType];
+        const roles = grantedRoles[reqType];
+        const owners = grantedOwners[reqType];
         this.setupHandler(
           instance,
           reqType,
           endpoint,
           undefined,
           auth,
-          authService
+          roles,
+          owners,
+          authService,
         );
       });
 
@@ -94,7 +130,9 @@ export class ExpressServer extends HttpServerProvider {
       if (extendedRoutes) {
         for (let route of extendedRoutes as PathMetadata[]) {
           const { path, methodName } = route;
-          const auth = authenticatedRoutes[methodName];
+          const auth = grantedRoutes[methodName];
+          const roles = grantedRoles[methodName];
+          const owners = grantedOwners[methodName];
           const reqType = takeLeadingWord(methodName);
           const subPath = path.startsWith("/") ? path : "/" + path;
           this.setupHandler(
@@ -103,11 +141,29 @@ export class ExpressServer extends HttpServerProvider {
             endpoint + subPath,
             methodName,
             auth,
-            authService
+            roles,
+            owners,
+            authService,
           );
         }
       }
     });
+
+    // Register this last or it will swallow the any handler request
+    // set up after it.
+    if (this.useSpaFallback) {
+
+      const { spaFallbackPath, useSpaFallback } = this
+
+      const htmlFileName = typeof useSpaFallback === 'string'
+        ? useSpaFallback
+        : 'index.html';
+
+      // All GET request handled by INDEX file
+      this.__server.get('*', function (req: Request, res: Response) {
+        res.sendFile(resolve(spaFallbackPath, htmlFileName));
+      });
+    }
 
     super.onServerStarted();
   };
@@ -117,46 +173,42 @@ export class ExpressServer extends HttpServerProvider {
     reqType: string,
     endpoint: string,
     methodName = reqType,
-    auth: AuthMetadata[] | null = null,
-    authService: AuthService | null = null
+    authType: JwtClaim | null = null,
+    requiredRoles: RolesClaimMetadata | null = null,
+    requiredOwners: OwnerClaimMetadata | null = null,
+    authService: AuthUtilsService | null = null
   ) {
     if (instance[methodName] != null) {
-      this.logger.info(
-        "Setting up controller:",
-        endpoint,
-        "handler:",
-        methodName
-      );
+
+      let logString = "Setting up controller " + "(" + reqType + "): " + endpoint;
+      if (methodName !== reqType) logString += " (handler=" + methodName + ")"
+      this.logger.info(logString);
+
+      const authArgs = [authType, requiredRoles, requiredOwners, authService] as const
+
+      const makeHandlerWithDataFrom = (t: 'body' | 'query') => {
+        return this.makeHandler(instance[methodName], instance, t, ...authArgs)
+      }
+
       switch (reqType) {
         case "create":
-          this.post(
-            endpoint,
-            this.makeHandler(instance[methodName], "body", auth, authService)
-          );
+        case "post":
+          this.post(endpoint, makeHandlerWithDataFrom("body"));
           break;
         case "get":
-          this.get(
-            endpoint,
-            this.makeHandler(instance[methodName], "query", auth, authService)
-          );
+          this.get(endpoint, makeHandlerWithDataFrom("query"));
           break;
         case "delete":
-          this.delete(
-            endpoint,
-            this.makeHandler(instance[methodName], "body", auth, authService)
-          );
+          this.delete(endpoint, makeHandlerWithDataFrom("body"));
           break;
         case "patch":
-          this.patch(
-            endpoint,
-            this.makeHandler(instance[methodName], "body", auth, authService)
-          );
+          this.patch(endpoint, makeHandlerWithDataFrom("body"));
+          break;
+        case "put":
+          this.put(endpoint, makeHandlerWithDataFrom("body"));
           break;
         case "update":
-          this.update(
-            endpoint,
-            this.makeHandler(instance[methodName], "body", auth, authService)
-          );
+          this.update(endpoint, makeHandlerWithDataFrom("body"));
           break;
         default:
           throw new Error(
@@ -168,28 +220,87 @@ export class ExpressServer extends HttpServerProvider {
 
   private makeHandler(
     handler: Function,
+    handlerThisCtx: any,
     key: "query" | "body",
-    auth: AuthMetadata[] | null,
-    authService: AuthService | null
+    authType: JwtClaim | null,
+    requiredRoles: RolesClaimMetadata | null,
+    requiredOwners: OwnerClaimMetadata | null,
+    authService: AuthUtilsService | null
   ): RequestHandler {
+
+    const needsAuthService = (authType || requiredRoles || requiredOwners);
+
+    if (needsAuthService && authService == null)
+      throw new Error('No Auth Service setup to handle auth decorators.');
+
     return async (req: Request, res: Response) => {
-      const data = (req as any)[key];
+
+      type ReqData = {
+        [key: string]: any;
+        __query: any;
+        __body: any;
+        __auth?: JwtPayload<JwtAuthData>;
+      };
+
+      const reqData = {
+        ...req[key],
+        __query: req.query,
+        __body: req.body,
+      } as ReqData;
 
       try {
-        if (auth != null) {
-          try {
-            if (authService == null)
-              throw new Error("No auth service registered.");
-            const authHeaderName = authService.settings.headerName;
-            const authHeader = req.header(authHeaderName);
-            data.__auth = authService.authorizeFlow(authHeader);
-          } catch (err) {
-            this.logger.error(err);
-            throw new http.UnauthorizedError();
+
+        if (needsAuthService && authService) {
+          const authHeader = authService.getAuthHeaderFromRequest(req);
+          const authRoles = requiredRoles?.roles;
+
+          reqData.__auth = authService.authorizeFlow(authHeader, authRoles);
+        }
+
+        let customArgs: ParamMetadata<HttpParamType>[];
+
+        customArgs = Reflect.getOwnMetadata(
+          CONTROLLER_ARGS_DATA,
+          handlerThisCtx.constructor,
+          handler.name,
+        ) || [];
+
+
+        function applyArgs(type: HttpParamType) {
+          switch (type) {
+            case 'BODY': return req.body;
+            case 'QUERY': return req.query;
+            case 'REQ': return req;
+            case 'RES': return res;
+            case 'CTX': return { req, res };
+            case 'USER_ID': return reqData.__auth?.userId;
+            default:
+              assertNever(type)
           }
         }
 
-        const result = await handler(data, { req, res });
+        // if (requiredOwners && authService) {
+        //   // TODO
+        //   console.log({ authService, TODO: 'FINISH ME' })
+        //   console.log({ requiredOwners, TODO: 'FINISH ME' })
+        // }
+
+        let args: any[] = [reqData];
+
+        if (customArgs.length > 0) {
+          customArgs
+            .filter(arg => arg.propertyKey === handler.name)
+            .sort((a, b) => a.parameterIndex - b.parameterIndex)
+            .forEach(arg => {
+              args[arg.parameterIndex] = applyArgs(arg.type)
+            })
+        }
+
+        args.push({ req, res }) // Always pass as the last argument to handler
+
+        res.setHeader('Content-Type', 'application/json; charset=utf-8') // default
+
+        const result = await handler.apply(handlerThisCtx, args);
 
         switch (typeof result) {
           case "bigint":
@@ -200,16 +311,13 @@ export class ExpressServer extends HttpServerProvider {
           case "symbol":
           case "undefined":
             return res.send(result);
+          default:
+            return res.send(JSON.stringify(result));
         }
-        try {
-          res.send(JSON.stringify(result));
-        } catch (serializationError) {
-          res.send(this.errorHandler.onError(serializationError, { req, res }));
-        }
-      } catch (handlerError) {
-        res.send(this.errorHandler.onError(handlerError, { req, res }));
       }
-      return;
+      catch (handlerError) {
+        return res.send(this.errorHandler.onError(handlerError, { req, res }));
+      }
     };
   }
 

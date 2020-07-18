@@ -44,6 +44,8 @@ export interface IDatabaseProvider {
    */
   insert(...args: any): any
 
+  bulkInsert(...args: any): any
+
   /**
    * Wrap an operation in a transaction.
    *

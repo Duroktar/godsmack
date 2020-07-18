@@ -7,7 +7,7 @@ function ConfigureServices(c: any) { return c }
 
 function configureFunction<T>(app: IConfigurationApplication<T>) {
   const server = app.container.resolve(ExpressServer)
-  server.get('/test', (req, res) => res.send('@@@'))
+  server.get('/test', (req: any, res: any) => res.send('@@@'))
 }
 
 let app: IApplication = ApplicationBuilder.Create({

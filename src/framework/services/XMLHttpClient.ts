@@ -9,61 +9,69 @@ export type JsonResult<T> = Promise<{
 
 @Injectable()
 export class XMLHttpClient<T extends any = any> extends ClientAdapter {
-  get(req?: any): JsonResult<T> {
-    // console.log('get request to:', this.path)
-    return this.__send(req, this.path, 'GET')
+  get(req?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'GET', options)
   }
-  create(req?: any): JsonResult<T> {
-    // console.log('post request to:', this.path)
-    return this.__send(req, this.path, 'POST')
+  create(req?: any, params?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'POST', options, params)
   }
-  patch(req?: any): JsonResult<T> {
-    // console.log('patch request to:', this.path)
-    return this.__send(req, this.path, 'PATCH')
+  patch(req?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'PATCH', options)
   }
-  update(req?: any): JsonResult<T> {
-    // console.log('update request to:', this.path)
-    return this.__send(req, this.path, 'UPDATE')
+  update(req?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'UPDATE', options)
   }
-  delete(req?: any): JsonResult<T> {
-    // console.log('delete request to:', this.path)
-    return this.__send(req, this.path, 'DELETE')
+  delete(req?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'DELETE', options)
   }
-  private __send = (data: any, path: string, type: string = 'GET', options?: any): JsonResult<T> => {
+  private __send = (data: any, path: string, type: string = 'GET', options?: any, extraparams?: any): JsonResult<T> => {
     const xhr = new XMLHttpRequest();
     return new Promise((resolve, reject) => {
       xhr.withCredentials = true
-      options?.headers?.forEach(([key, value]: any) => {
-        xhr.setRequestHeader(key, value)
-      })
-      xhr.addEventListener('load', function (this: any, ev) {
-        resolve({
+
+      xhr.addEventListener('load', function (this: XMLHttpRequest, ev) {
+        const wasSuccess = this.status == 200;
+        const handle = wasSuccess ? resolve : reject;
+
+        handle({
           json: () => JSON.parse(this.responseText),
-          text: () => this.responseText,
-          ok: true,
+          text: () => wasSuccess ? this.responseText : this.statusText,
+          ok: wasSuccess,
         });
       });
-      xhr.addEventListener('error', function (this: any, ev) {
+
+      xhr.addEventListener('error', function (this: XMLHttpRequest, ev) {
         reject({
           json: () => { },
           text: () => this.responseText,
           ok: false,
         });
       });
-      if (type === 'GET') {
-        let leader = '?'
-        let params: any = []
 
+      const params = new URLSearchParams()
+      let payload: string | null = null
+
+      if (type === 'GET') {
         for (let key in data) {
-          params.push(leader)
-          params.push(`${key}=${data[key]}`);
-          leader = '&'
+          params.set(key, data[key])
         }
-        xhr.open(type, path + params.join(''));
-      } else {
-        xhr.open(type, path);
+      } else if (data !== null) {
+        payload = JSON.stringify(data)
       }
-      xhr.send(data && JSON.stringify(data));
+
+      for (let key in extraparams) {
+        params.set(key, data[key])
+      }
+
+      xhr.open(type, path + params.toString());
+
+      xhr.setRequestHeader("content-type", "application/json");
+
+      options?.headers?.forEach(([key, value]: [string, string]) =>
+        xhr.setRequestHeader(key, value)
+      )
+
+      xhr.send(payload);
     })
   }
 }
