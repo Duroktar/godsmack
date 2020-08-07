@@ -60,13 +60,17 @@ export class HttpServerProvider implements IHttpServer {
     return this
   }
 
-  public listen() {
-    this.__server.listen(this.settings.port, this.onServerStarted)
+  public listen(port?: any) {
+    this.__server.listen(port ?? this.settings.port, this.onServerStarted)
   }
 
   public onServerStarted() {
     const url = this.formatServerUrl()
     this.logger.info('Server listening at', url)
+  }
+
+  public serveStaticFiles(...args: any[]) {
+    return this
   }
 
   public use(

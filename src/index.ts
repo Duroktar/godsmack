@@ -12,6 +12,7 @@ export * from './types'
 
 export * as pgErrors from './utils/pgErrorCodes'
 export * as typeormErrors from './utils/typeOrmErrors'
+export * as typeormDecorators from './framework/services/typeorm/decorators'
 
 export {
   Application,

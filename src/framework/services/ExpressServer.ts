@@ -7,10 +7,9 @@ import { HttpServerProvider } from "../HttpServer";
 import type { IController } from "../../interfaces";
 import type { Type } from "../../types";
 import { ROUTE_DATA, AUTH_ROUTE_DATA, AUTH_ROLES_CLAIM, CONTROLLER_ARGS_DATA, AUTH_OWNER_CLAIM } from "../../constants";
-import { PathMetadata, HttpParamType } from "../decorators";
+import { PathMetadata, HttpParamType, ReqData, getDecoratorArgs } from "../decorators";
 import { JwtClaim, RolesClaimMetadata, JwtClaimMetadata, OwnerClaimMetadata } from "../decorators/auth";
 import { AuthUtilsService, JwtPayload, JwtAuthData } from "./AuthService";
-import { http } from "../../utils";
 import { assertNever } from '../../utils/assert';
 import { ParamMetadata } from '../decorators/utils';
 
@@ -235,13 +234,6 @@ export class ExpressServer extends HttpServerProvider {
 
     return async (req: Request, res: Response) => {
 
-      type ReqData = {
-        [key: string]: any;
-        __query: any;
-        __body: any;
-        __auth?: JwtPayload<JwtAuthData>;
-      };
-
       const reqData = {
         ...req[key],
         __query: req.query,
@@ -265,20 +257,6 @@ export class ExpressServer extends HttpServerProvider {
           handler.name,
         ) || [];
 
-
-        function applyArgs(type: HttpParamType) {
-          switch (type) {
-            case 'BODY': return req.body;
-            case 'QUERY': return req.query;
-            case 'REQ': return req;
-            case 'RES': return res;
-            case 'CTX': return { req, res };
-            case 'USER_ID': return reqData.__auth?.userId;
-            default:
-              assertNever(type)
-          }
-        }
-
         // if (requiredOwners && authService) {
         //   // TODO
         //   console.log({ authService, TODO: 'FINISH ME' })
@@ -292,7 +270,12 @@ export class ExpressServer extends HttpServerProvider {
             .filter(arg => arg.propertyKey === handler.name)
             .sort((a, b) => a.parameterIndex - b.parameterIndex)
             .forEach(arg => {
-              args[arg.parameterIndex] = applyArgs(arg.type)
+              let payload = getDecoratorArgs(arg, req, res, reqData);
+              if (arg.options?.length) {
+                const prop = arg.options[0]
+                payload = payload[prop]
+              }
+              args[arg.parameterIndex] = payload
             })
         }
 

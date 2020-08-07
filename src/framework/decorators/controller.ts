@@ -1,5 +1,8 @@
+import type { Request, Response } from 'express'
 import { ROUTE_DATA } from '../../constants';
-import { paramDecoratorFactory } from './utils';
+import { paramDecoratorFactory, ParamMetadata } from './utils';
+import { assertNever } from '../../utils/assert';
+import { JwtPayload, JwtAuthData } from '../services';
 
 export type PathMetadata = {
   path: string;
@@ -20,6 +23,7 @@ export type HttpParamType =
   | 'CTX'
   | 'BODY'
   | 'QUERY'
+  | 'PARAMS'
   | 'USER_ID'
   ;
 
@@ -35,14 +39,44 @@ export function Ctx(): ParameterDecorator {
   return paramDecoratorFactory<HttpParamType>('CTX')
 }
 
-export function Body(): ParameterDecorator {
-  return paramDecoratorFactory<HttpParamType>('BODY')
+export function Body(...params: string[]): ParameterDecorator {
+  return paramDecoratorFactory<HttpParamType>('BODY', ...params)
 }
 
-export function Query(): ParameterDecorator {
-  return paramDecoratorFactory<HttpParamType>('QUERY')
+export function Query(...params: string[]): ParameterDecorator {
+  return paramDecoratorFactory<HttpParamType>('QUERY', ...params)
+}
+
+export function Params(...params: string[]): ParameterDecorator {
+  return paramDecoratorFactory<HttpParamType>('PARAMS', ...params)
 }
 
 export function UserId(): ParameterDecorator {
   return paramDecoratorFactory<HttpParamType>('USER_ID')
+}
+
+export type ReqData = {
+  [key: string]: any;
+  __query: any;
+  __body: any;
+  __auth?: JwtPayload<JwtAuthData>;
+};
+
+export function getDecoratorArgs(
+  arg: ParamMetadata<HttpParamType>,
+  req: Request,
+  res: Response,
+  reqData: ReqData,
+) {
+  switch (arg.type) {
+    case 'BODY': return req.body;
+    case 'QUERY': return req.query;
+    case 'REQ': return req;
+    case 'RES': return res;
+    case 'CTX': return { req, res };
+    case 'PARAMS': return req.params;
+    case 'USER_ID': return reqData.__auth?.userId;
+    default:
+      assertNever(arg.type)
+  }
 }

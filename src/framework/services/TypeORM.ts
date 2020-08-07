@@ -7,7 +7,6 @@ import {
 } from "typeorm";
 import { DatabaseProvider } from "../Database";
 import { Singleton } from "../../injector";
-import { LogLevel } from "./Logger";
 
 @Singleton()
 export class TypeORMAdapter extends DatabaseProvider {
@@ -24,7 +23,7 @@ export class TypeORMAdapter extends DatabaseProvider {
     return this.connection.query(query, parameters, queryRunner);
   }
   async syncDatabaseTables(options?: { dropTables: boolean }) {
-    return this.connection
+    return await this.connection
       .synchronize(options?.dropTables)
       .catch((err: any) => {
         this.logger.info("there was an error syncing tables");

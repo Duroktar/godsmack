@@ -18,6 +18,9 @@ export class XMLHttpClient<T extends any = any> extends ClientAdapter {
   patch(req?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'PATCH', options)
   }
+  put(req?: any, options?: any): JsonResult<T> {
+    return this.__send(req, this.path, 'PUT', options)
+  }
   update(req?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'UPDATE', options)
   }
@@ -63,7 +66,8 @@ export class XMLHttpClient<T extends any = any> extends ClientAdapter {
         params.set(key, data[key])
       }
 
-      xhr.open(type, path + params.toString());
+      const urlParams = params.toString();
+      xhr.open(type, path + (urlParams.length ? '?' + urlParams : ''));
 
       xhr.setRequestHeader("content-type", "application/json");
 

@@ -54,6 +54,8 @@ export class TaskService implements ITaskService {
 
       if (!taskCtorName) return
 
+      this.logger.info(`Setting up Cron Trigger (${taskCtorName}) cName=${cName}`);
+
       this.tasks.set(taskCtorName, klass);
     });
 
@@ -95,6 +97,8 @@ export class TaskService implements ITaskService {
       this.logger.debug('Job Instance:', instance)
       this.jobs.set(task.name, this.__createCronTrigger(instance))
     }
+
+    if (this.settings.runAllOnStart) this.startAll()
   }
 
   private __createCronTrigger = (props: ICronTrigger) => {

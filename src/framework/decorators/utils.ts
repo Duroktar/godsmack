@@ -6,17 +6,17 @@ export type ParamMetadata<T> = {
   parameterIndex: number
 
   /**
-   * TODO
+   * Used to pick params with the Body and Query decorators.
    *
-   * @type {*}
+   * @type {string[]}
    */
-  options: any[]
+  options: string[]
 };
 
-export const paramDecoratorFactory = <T>(type: T, ...args: any[]): ParameterDecorator => {
+export const paramDecoratorFactory = <T>(type: T, ...params: string[]): ParameterDecorator => {
   return (target, propertyKey, parameterIndex) => {
     const existing: ParamMetadata<T>[] = Reflect.getMetadata(CONTROLLER_ARGS_DATA, target.constructor, propertyKey) || [];
-    existing.push({ propertyKey, type, parameterIndex, options: args })
+    existing.push({ propertyKey, type, parameterIndex, options: params })
     return Reflect.defineMetadata(CONTROLLER_ARGS_DATA, existing, target.constructor, propertyKey);
   }
 }

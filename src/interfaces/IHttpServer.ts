@@ -60,9 +60,7 @@ export interface IHttpServer {
    */
   delete(path: PathArgument, ...handlers: RequestHandler[]): void;
   /**
-   * Starts the server. Optionally, the port can be passed in
-   * here where it should be overwritten by the implementing
-   * IHttpServer class.
+   * Starts the server. Optionally, the port can be passed as well.
    *
    * @param {number} [port]
    * @memberof IHttpServer
@@ -110,4 +108,13 @@ export interface IHttpServer {
    * @memberof IHttpServer
    */
   registerErrorHandler(handler: HttpServerErrorHandlerFn): this
+
+  /**
+   * Serve static files
+   *
+   * @param {...any[]} any
+   * @returns {this}
+   * @memberof IHttpServer
+   */
+  serveStaticFiles(...any: any[]): this
 }

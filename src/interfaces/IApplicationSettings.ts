@@ -259,5 +259,6 @@ export interface IApplicationSettings {
      */
     dirname: string;
     postfix: string;
+    runAllOnStart: boolean;
   };
 }

@@ -4,15 +4,17 @@ import { Logger, LogLevel } from "./services/Logger";
 import type { IApplicationSettings } from "../interfaces";
 import { DeepPartial } from "../types";
 
+type AllSettings<T> = IApplicationSettings & T
+
 @Singleton()
-export class SettingsService {
+export class SettingsService<AppConfig = {}> {
   constructor(public logger: Logger) {
     this.logger = logger.For(this);
 
     this.__initializeDockerVariables();
   }
 
-  private __settings = getBaseSettings();
+  private __settings: AllSettings<AppConfig> = getBaseSettings() as any;
 
   private __initializeDockerVariables() {
     const settings = this.__settings;
@@ -22,22 +24,22 @@ export class SettingsService {
     }
   }
 
-  public get<K extends keyof IApplicationSettings>(
+  public get<K extends keyof AllSettings<AppConfig>>(
     key: K
-  ): IApplicationSettings[K] {
+  ): AllSettings<AppConfig>[K] {
     return this.__settings[key]!;
   }
 
-  public update(settings: DeepPartial<IApplicationSettings>) {
+  public update(settings: DeepPartial<AllSettings<AppConfig>>) {
     this.__settings = deepmerge(
       this.__settings,
-      settings
-    ) as IApplicationSettings;
+      settings as AppConfig,
+    ) as AllSettings<AppConfig>;
     return this.__settings;
   }
 }
 
-const getBaseSettings = (): IApplicationSettings => ({
+const getBaseSettings = () => ({
   auth: {
     expiresIn: 15,
     headerName: "Authorization",
@@ -107,7 +109,8 @@ const getBaseSettings = (): IApplicationSettings => ({
   },
   startup: {},
   tasks: {
-    postfix: "Task",
+    postfix: "Job",
     dirname: "jobs",
+    runAllOnStart: false,
   },
-});
+} as IApplicationSettings);
