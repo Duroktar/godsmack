@@ -2,7 +2,7 @@ import { Application } from './Application';
 import { ApplicationBuilder } from './ApplicationBuilder';
 import { Container } from './Container';
 import { DatabaseProvider } from './Database';
-import { InMemoryDatabase } from "./services/MemoryDB";
+import { InMemoryDatabase } from "../services/MemoryDB";
 import { HttpServerProvider } from './HttpServer';
 import type { StaticTestProps, InferApplicationTypes } from '../types';
 import type { IApplication, IApplicationService, MergeDefaultProviders } from '../interfaces';

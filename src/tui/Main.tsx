@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { render, Color, Text, Box } from 'ink';
 import { IApplication } from '../interfaces';
-import { Logger } from '../framework/services';
+import { Logger } from '../services';
 import { getLogRecords } from './LoggerService';
 import Newline from './Newline';
 

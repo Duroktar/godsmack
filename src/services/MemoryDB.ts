@@ -1,7 +1,7 @@
-import { DatabaseProvider } from '../Database';
-import { clamp } from '../../utils/clamp';
-import { writeFile, existsSync, readFile } from 'fs';
-import { Singleton } from '../../injector';
+import { existsSync, readFile, writeFile } from 'fs';
+import { DatabaseProvider } from '../framework/Database';
+import { Singleton } from '../injector/decorators';
+import { clamp } from '../utils';
 
 @Singleton()
 export class InMemoryDatabase extends DatabaseProvider {

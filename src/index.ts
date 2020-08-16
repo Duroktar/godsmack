@@ -1,7 +1,7 @@
 export * as framework from './framework'
 export * as injector from './injector'
 export * as decorators from './injector/decorators'
-export * as services from './framework/services'
+export * as services from './services'
 export * as http from './utils/http'
 export * as errors from './utils/error'
 export * as types from './types'
@@ -12,7 +12,7 @@ export * from './types'
 
 export * as pgErrors from './utils/pgErrorCodes'
 export * as typeormErrors from './utils/typeOrmErrors'
-export * as typeormDecorators from './framework/services/typeorm/decorators'
+export * as typeormDecorators from './services/typeorm/decorators'
 
 export {
   Application,

@@ -29,6 +29,15 @@ export class NotFoundError extends ControllerError {
   public message: string = "Not Found"
 }
 
+export class UnprocessableEntityError extends ControllerError {
+  public statusCode: number = 422
+  public message: string
+  constructor(public details?: Record<string, { message: string; value?: any; }>, msg = "Unprocessable Entity") {
+    super(msg)
+    this.message = msg
+  }
+}
+
 export class InternalServerError extends ControllerError {
   public statusCode: number = 500
   public message: string = "Internal Server Error"

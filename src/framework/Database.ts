@@ -1,5 +1,5 @@
 import { SettingsService } from './Settings'
-import { Logger } from './services'
+import { Logger } from '../services'
 import type { IApplicationSettings, IConfigureDatabaseApplication } from "../interfaces"
 import type { IDatabaseProvider } from '../interfaces/IDatabase'
 

@@ -1,5 +1,5 @@
-import { ClientAdapter } from '../ClientAdapter';
-import { Injectable } from '../../injector';
+import { ClientAdapter } from '../framework/ClientAdapter';
+import { Injectable } from '../injector';
 
 export type JsonResult<T> = Promise<{
   json: () => T

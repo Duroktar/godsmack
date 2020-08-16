@@ -22,9 +22,6 @@ export class ClientAdapter implements IClientAdapter<any> {
   patch(req: any): any {
     throw new Error('Method not implemented.');
   }
-  update(req: any): any {
-    throw new Error('Method not implemented.');
-  }
   delete(req: any): any {
     throw new Error('Method not implemented.');
   }

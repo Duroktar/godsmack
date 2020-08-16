@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable'
-import { Logger, LogLevel } from '../framework/services/Logger';
+import { Logger } from '../services/Logger';
 import type { Type, InferType } from '../types';
 import { is_newable } from '../utils/object';
 
@@ -13,7 +13,7 @@ type ResolvedInjections<T> = {
 
 export class InjectorFactory {
 
-  public logger: Logger = Logger.For(InjectorFactory, LogLevel.NONE)
+  public logger: Logger = Logger.For(InjectorFactory)
 
   //#region api
   public registerDependencies(...classes: Type<any>[]) {
@@ -79,12 +79,22 @@ export class InjectorFactory {
   //#endregion
 
   //#region information
-  listDependencies(): string[] {
-    return [...this.dependencies.keys()].map(n => `${n}->${this.dependencies.get(n)?.name}`);
+  listDependencies({ sort = false, log = false } = {}): string[] {
+    let result = [...this.dependencies.keys()].map(n => `${n}->${this.dependencies.get(n)?.name}`);
+    if (sort)
+      result = result.sort();
+    if (log)
+      this.logger.info(result)
+    return result
   }
 
-  listSingletons(): any[] {
-    return [...this.singletons.keys()]
+  listSingletons({ sort = false, log = false } = {}): any[] {
+    let result = [...this.singletons.keys()];
+    if (sort)
+      result = result.sort();
+    if (log)
+      this.logger.info(result)
+    return result
   }
 
   dependenciesAsJSON() {

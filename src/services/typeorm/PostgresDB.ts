@@ -1,6 +1,6 @@
 
 import { TypeORMAdapter } from '../TypeORM';
-import { Singleton } from '../../../injector';
+import { Singleton } from '../../injector';
 
 @Singleton()
 export class PostgresDB extends TypeORMAdapter {

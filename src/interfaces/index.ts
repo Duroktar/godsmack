@@ -1,5 +1,7 @@
 export * from './IApplication'
 export * from './IApplicationBuilder'
+export * from './IApplicationConfigurationService'
+export * from './IApplicationCreationService'
 export * from './IApplicationSettings'
 export * from './IClient'
 export * from './IClientAdapter'

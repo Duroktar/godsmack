@@ -1,7 +1,5 @@
 import type { FactoryTypeRecord, IFactory } from './IFactory';
 import type { EmptyType, DeepPartial } from '../types';
-import type { IHttpServer } from './IHttpServer';
-import type { IContainer } from './IContainer';
 import type { IClient } from './IClient';
 
 import type {
@@ -11,12 +9,13 @@ import type {
 } from '../framework';
 
 import type { DockerService } from '../framework/Docker';
-import type { IDatabaseProvider } from './IDatabase';
-import type { ExpressServer, YargsCliApp, MailerService } from '../framework/services';
-import type { PostgresDB as SequelizePostgresDB } from '../framework/services/sequelize/PostgresDB';
-import type { PostgresDB as TypeORMPostgresDB } from '../framework/services/typeorm/PostgresDB';
+import type { ExpressServer, YargsCliApp, MailerService } from '../services';
+import type { PostgresDB as SequelizePostgresDB } from '../services/sequelize/PostgresDB';
+import type { PostgresDB as TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
+import type { IApplicationConfigurationHandler } from "./IApplicationConfigurationService";
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { TerminalInk } from '../tui/TerminalInk';
+import type { SwaggerService } from '../framework/Swagger';
 
 /**
  * The default Application Interface
@@ -32,10 +31,10 @@ export interface IApplication<AppContainer = any> {
    * the initial setup done by the Application
    * Creation Service.
    *
-   * @type {IApplicationConfigurationCallback<AppContainer>}
+   * @type {IApplicationConfigurationHandler<AppContainer>}
    * @memberof IApplication
    */
-  configure: IApplicationConfigurationCallback<AppContainer>;
+  configure: IApplicationConfigurationHandler<AppContainer>;
   /**
    * Stops the application
    *
@@ -59,6 +58,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure an Object Factory
    * for the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   useFactory: (factory: IFactory) => this;
@@ -66,24 +66,30 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure an HTTP Server Client
    * for the Application to serve on the network.
    *
+   * @returns {this}
    * @memberof IApplication
    */
   useClient: (client: IClient) => this;
   /**
-   * Use cron triggers.
+   * Adds cron triggers to the app. Files in the configured
+   * jobs directory will be automatically run as per their
+   * configuration.
    *
+   * @returns {this}
    * @memberof IApplication
    */
-  useCronTriggers: (path?: string) => this;
+  addCronTriggers: (path?: string) => this;
   /**
    * Use an email service.
    *
+   * @returns {this}
    * @memberof IApplication
    */
   useNodeMailer: () => this;
   /**
    * Used for configuring the application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   useSettings: (config: DeepPartial<IApplicationSettings>) => this;
@@ -91,6 +97,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure a Database Provider
    * to the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   addDatabase: (database: DatabaseProvider) => void;
@@ -98,6 +105,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure a Server Provider
    * to the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   addServer: (server: HttpServerProvider) => void;
@@ -105,6 +113,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure a CliApp Provider
    * to the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   addCliApp: (cliApp: CliAppProvider) => void;
@@ -112,6 +121,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure an Express Server
    * to the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   addExpressServer(): ExpressServer;
@@ -119,6 +129,7 @@ export interface IApplication<AppContainer = any> {
    * Used to add and configure an Yargs CliApp
    * to the Application
    *
+   * @returns {this}
    * @memberof IApplication
    */
   addYargsCliApp(): YargsCliApp;
@@ -192,10 +203,17 @@ export interface IApplication<AppContainer = any> {
    */
   addDockerDBSupport(): this
 
+  /**
+   * Configures the app to use swagger doc generation.
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addSwaggerDocs(): this
+
   // TODO / wishlist
   // addLiveReloading(): this
   // addSinglePageApp(): this
-  // addCronJobs(): this
   // addCreateReactApp(): this
 
   /**
@@ -207,110 +225,7 @@ export interface IApplication<AppContainer = any> {
   container: MergeDefaultProviders<AppContainer>;
 }
 
-/**
- * Interface for the default Application Creation Service
- *
- * @export
- * @interface IApplicationCreationService
- * @template T
- */
-export interface IApplicationCreationService<T extends any = any> {
-  /**
-   * Used to configure dependencies for the program.
-   *
-   * @memberof IApplicationCreationService
-   */
-  ConfigureServices(container: IContainer<any>): T;
-  /**
-   * Used to configure a server for the application
-   *
-   * @memberof IApplicationCreationService
-   */
-  ConfigureServer?: (app: IConfigureServerApplication) => IHttpServer;
-  /**
-   * Used to configure a database for the application
-   *
-   * @memberof IApplicationCreationService
-   */
-  ConfigureDatabase?: (app: IConfigureDatabaseApplication) => IDatabaseProvider;
-  /**
-   * Used to configure a CLI application
-   *
-   * @memberof IApplicationCreationService
-   */
-  ConfigureCliApp?: (app: IConfigureCliAppApplication) => CliAppProvider;
-  /**
-   * Used to configure the default object factory
-   *
-   * @memberof IApplicationCreationService
-   */
-  ConfigureFactory?: (app: IConfigureFactoryApplication) => IFactory;
-};
-
-export type IBuiltApplication<C> = Pick<
-  IApplication<C>,
-  | 'main'
-  | 'test'
-  | 'addDockerSupport'
-  | 'addDockerDBSupport'
-  | 'addTerminalInk'
-  | 'useSettings'
->
-
-export type IConfigureServerApplication<C = any> = Pick<
-  IApplication<C>,
-  | 'container'
-  | 'addExpressServer'
-  | 'addServer'
->
-
-export type IConfigureDatabaseApplication<C = any> = Pick<
-  IApplication<C>,
-  | 'container'
-  | 'addDatabase'
-  | 'addPostgresDatabase'
-  | 'addTypeORMPostgresDB'
->
-
-export type IConfigureCliAppApplication<C = any> = Pick<
-  IApplication<C>,
-  | 'container'
-  | 'addCliApp'
-  | 'addYargsCliApp'
->
-
-export type IConfigureFactoryApplication<C = any> = Pick<
-  IApplication<C>,
-  | 'container'
-  | 'addDefaultFactory'
->
-
-export type IConfigurationApplication<C = any> = Pick<
-  IApplication<C>,
-  | 'container'
-  | 'addJavascriptClient'
-  | 'onAppStarted'
->
-
-/**
- * `IApplicationConfigurationService` callback Interface
- *
- */
-export type IApplicationConfigurationCallback<AppContainer> = (
-  cb: (app: IConfigurationApplication<AppContainer>) => void
-) => IBuiltApplication<AppContainer>;
-
-export interface IApplicationConfigurationClass<T> {
-  /**
-   * Class based interface for `IApplicationConfigurationService`
-   *
-   * @memberof IApplicationConfigurationClass
-   */
-  configure: (app: IConfigurationApplication<T>) => void
-};
-
 export type IApplicationService = (app: IApplication, server: HttpServerProvider) => void
-
 
 export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | InferContainerT<ApplicationContainer>
@@ -323,6 +238,7 @@ export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | StartupProvider
   | DockerService
   | SettingsService
+  | SwaggerService
   | TaskService
   | MailerService
   | TerminalInk

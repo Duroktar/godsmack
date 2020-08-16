@@ -1,4 +1,4 @@
-import { Logger } from '../framework/services';
+import { Logger } from '../services';
 import { IApplication } from '../interfaces';
 import { Singleton } from '../injector';
 import type { Instance } from 'ink';

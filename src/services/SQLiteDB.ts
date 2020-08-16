@@ -1,4 +1,4 @@
-import { Singleton } from '../../injector'
+import { Singleton } from '../injector'
 import { SequelizeAdapter } from './Sequelize';
 
 @Singleton()

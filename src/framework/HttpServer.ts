@@ -1,21 +1,22 @@
-import { RequestHandler } from 'express'
+import { Express, NextFunction, Request, RequestHandler, Response } from 'express'
 import { Singleton } from '../injector'
-import { Application } from './Application'
-import { SettingsService } from './Settings'
-import { Logger } from './services/Logger'
+import type { IApplicationService, IApplicationSettings, IController, IHttpServer, PathArgument } from "../interfaces"
+import { Logger } from '../services/Logger'
+import type { Type } from '../types'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
 import { createUrlFrom } from '../utils/http'
+import { Application } from './Application'
 import { HttpServerErrorHandler, HttpServerErrorHandlerFn } from './HttpServerErrorHandler'
-import type { IApplicationService, IHttpServer, IApplicationSettings, IController, PathArgument } from "../interfaces"
-import type { Type } from '../types'
+import { SettingsService } from './Settings'
 
 @Singleton()
-export class HttpServerProvider implements IHttpServer {
-  public logger: Logger
-  public errorHandler: HttpServerErrorHandler
-  public __server = mockServerInstance
+export class HttpServerProvider<T extends Express = Express> implements IHttpServer {
   public controllers: Map<string, Type<any>> = new Map()
-  public settings: IApplicationSettings['httpServer']
+  public logger: Logger
+
+  private errorHandler: HttpServerErrorHandler
+  private settings: IApplicationSettings['httpServer']
+  public engine: T = mockServerInstance
 
   constructor(public app: Application<any>) {
     this.settings = app.container
@@ -31,22 +32,19 @@ export class HttpServerProvider implements IHttpServer {
   }
 
   public get(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.get(path, ...handlers)
+    this.engine.get(path, ...handlers)
   }
   public post(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.post(path, ...handlers)
-  }
-  public update(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.update(path, ...handlers)
+    this.engine.post(path, ...handlers)
   }
   public patch(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.patch(path, ...handlers)
+    this.engine.patch(path, ...handlers)
   }
   public put(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.put(path, ...handlers)
+    this.engine.put(path, ...handlers)
   }
   public delete(path: PathArgument, ...handlers: RequestHandler[]) {
-    this.__server.delete(path, ...handlers)
+    this.engine.delete(path, ...handlers)
   }
 
   public registerServices(...services: IApplicationService[]): this {
@@ -54,18 +52,33 @@ export class HttpServerProvider implements IHttpServer {
     return this
   }
 
-  public registerErrorHandler<Err = any, Req = any, Res = any>(handler: HttpServerErrorHandlerFn<Err, Req, Res>): this {
+  public mapExpressServer(...services: ((app: T) => void)[]): this {
+    services.forEach(service => service(this.engine))
+    return this
+  }
+
+  private __errorHandler?: (err: any, req: Request, res: Response, next: NextFunction) => any
+
+  public registerErrorHandlingMiddleware<Err>(handler: (err: Err, req: Request, res: Response, next: NextFunction) => any): this {
+    this.logger.info('Registering Error Handler Middleware..')
+    this.__errorHandler = handler
+    return this
+  }
+
+  public registerErrorHandler<Err = any>(handler: HttpServerErrorHandlerFn<Err, Request, Response>): this {
     this.logger.info('Registering Error Handler callback..')
     this.errorHandler.addEventHandler('error', handler)
     return this
   }
 
   public listen(port?: any) {
-    this.__server.listen(port ?? this.settings.port, this.onServerStarted)
+    this.engine.listen(port ?? this.settings.port, this.onServerStarted)
   }
 
   public onServerStarted() {
     const url = this.formatServerUrl()
+    if (this.__errorHandler)
+      this.engine.use(this.__errorHandler)
     this.logger.info('Server listening at', url)
   }
 
@@ -77,9 +90,10 @@ export class HttpServerProvider implements IHttpServer {
     mountPoint: string | RegExp | (string | RegExp)[],
     ...handlers: RequestHandler[]
   ) {
-    this.__server.use(mountPoint, ...handlers)
+    this.engine.use(mountPoint, ...handlers)
     return this
   }
+
   public useControllers(dirname?: string) {
     const glob = require('glob');
     const path = require('path');
@@ -128,10 +142,16 @@ export class HttpServerProvider implements IHttpServer {
       .resolve(SettingsService)
       .get('controllers');
   }
-}
 
-export class NullServer extends HttpServerProvider {
-  public registerServices(...services: IApplicationService[]): this { return this }
+  public useHealthCheck(...any: any[]): this {
+    throw new Error("Method not implemented.")
+  }
+  public parseJsonBody(...any: any[]): this {
+    throw new Error("Method not implemented.")
+  }
+  public parseCookies(...any: any[]): this {
+    throw new Error("Method not implemented.")
+  }
 }
 
 const mockServerInstance: any = { get: () => { }, listen: () => { } }

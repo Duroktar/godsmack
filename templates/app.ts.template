@@ -16,6 +16,7 @@ export default ApplicationBuilder.Create({
   ,
 }).configure(app => app
   .addJavascriptClient()
+  .addSwaggerDocs()
   .onAppStarted(async () => {
 
     const logger = app.container

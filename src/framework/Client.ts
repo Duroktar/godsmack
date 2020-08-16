@@ -1,7 +1,7 @@
 import { ClientAdapter } from './ClientAdapter';
 import { HttpServerProvider } from './HttpServer';
 import { Injectable } from '../injector';
-import { Logger } from './services';
+import { Logger } from '../services';
 import { transpile } from '../utils';
 import type { IApplication, IClient } from '../interfaces';
 import { SettingsService } from './Settings';

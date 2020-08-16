@@ -1,5 +1,5 @@
 import type { IApplicationSettings } from './IApplicationSettings';
-import { Logger } from '../framework/services';
+import { Logger } from '../services';
 
 export interface IDatabaseProvider {
 

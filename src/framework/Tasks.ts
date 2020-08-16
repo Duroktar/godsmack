@@ -1,7 +1,7 @@
 import { ITaskService, IApplicationSettings, ICronTrigger } from "../interfaces";
 import { getTsConfigFile } from '../utils';
 import { CronJob } from 'cron'
-import { Logger } from './services';
+import { Logger } from '../services';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
 import { Type } from '../types';

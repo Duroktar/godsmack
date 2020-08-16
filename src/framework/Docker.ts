@@ -1,7 +1,7 @@
 import { join as joinPath } from 'path';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { getProjectRoot } from '../utils/getProjectRoot';
-import { Logger } from './services';
+import { Logger } from '../services';
 import { Injectable } from '../injector';
 import { Shell } from './Shell';
 
@@ -207,6 +207,7 @@ export class DockerService {
   }
 
   public async runDockerCommand(cmd: DockerCommand, args: string[] = [], opts: any = {}) {
+    this.logger.info('Running Docker Command:', cmd, ', with args: [', args.join(', '), ']');
     return this.shell.spawn('docker', [cmd, ...args], opts);
   }
   //#endregion

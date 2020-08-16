@@ -1,26 +1,27 @@
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
-import express, { Request, Response, RequestHandler } from "express";
+import cors from 'cors';
+import express, { NextFunction, Request, RequestHandler, Response } from "express";
 import { resolve } from 'path';
-import { Singleton } from "../../injector";
-import { HttpServerProvider } from "../HttpServer";
-import type { IController } from "../../interfaces";
-import type { Type } from "../../types";
-import { ROUTE_DATA, AUTH_ROUTE_DATA, AUTH_ROLES_CLAIM, CONTROLLER_ARGS_DATA, AUTH_OWNER_CLAIM } from "../../constants";
-import { PathMetadata, HttpParamType, ReqData, getDecoratorArgs } from "../decorators";
-import { JwtClaim, RolesClaimMetadata, JwtClaimMetadata, OwnerClaimMetadata } from "../decorators/auth";
-import { AuthUtilsService, JwtPayload, JwtAuthData } from "./AuthService";
-import { assertNever } from '../../utils/assert';
-import { ParamMetadata } from '../decorators/utils';
+import { AUTH_OWNER_CLAIM, AUTH_ROLES_CLAIM, AUTH_ROUTE_DATA, CONTROLLER_ARGS_DATA, ROUTE_DATA } from '../constants';
+import { getDecoratorArgs, HttpParamType, JwtClaim, JwtClaimMetadata, OwnerClaimMetadata, PathMetadata, ReqData, RolesClaimMetadata } from '../framework/decorators';
+import { ParamMetadata } from '../framework/decorators/utils';
+import { HttpServerProvider } from '../framework/HttpServer';
+import { SettingsService } from '../framework/Settings';
+import { Singleton } from '../injector/decorators';
+import { IController } from '../interfaces/IController';
+import { IHttpServer } from '../interfaces/IHttpServer';
+import { Type } from '../types';
+import { AuthUtilsService } from './AuthService';
 
 @Singleton()
-export class ExpressServer extends HttpServerProvider {
-  public __server = express();
-
+export class ExpressServer extends HttpServerProvider implements IHttpServer {
   //#region Public Api
+  public engine = express()
+
   /**
    * Used to add and configure Health Check middleware
-   * to the Express server.
+   * to the server.
    *
    * @param {string} [path='/health']
    * @returns
@@ -33,6 +34,25 @@ export class ExpressServer extends HttpServerProvider {
     this.logger.info("Health checks enabled @", path);
     return this;
   }
+
+  /**
+   * Used to add and configure Controller middleware
+   * to the server.
+   *
+   * @param {string} [controllerDir]
+   * @returns
+   * @memberof ExpressServer
+   */
+  public useControllers(controllerDir?: string) {
+    this.parseJsonBody();
+    const controllerSettings = this.app.container
+      .resolve(SettingsService)
+      .get('controllers');
+    const actualControllerDir = controllerDir ?? controllerSettings.dirname
+    this.logger.info("Using Controllers from dir:", actualControllerDir);
+    return super.useControllers(actualControllerDir);
+  }
+
   /**
    * Enables JSON body parsing in requests.
    *
@@ -41,7 +61,7 @@ export class ExpressServer extends HttpServerProvider {
    * @memberof ExpressServer
    */
   public parseJsonBody(options?: bodyParser.OptionsJson) {
-    this.__server.use(bodyParser.json(options));
+    this.engine.use(bodyParser.json(options));
     this.logger.info("JSON body parsing enabled");
     return this;
   }
@@ -55,13 +75,10 @@ export class ExpressServer extends HttpServerProvider {
    * @memberof ExpressServer
    */
   public parseCookies(secret?: string, options?: cookieParser.CookieParseOptions) {
-    this.__server.use(cookieParser(secret, options) as any);
+    this.engine.use(cookieParser(secret, options) as any);
     this.logger.info("Cookie parsing enabled");
     return this;
   }
-
-  private useSpaFallback: boolean | string = false
-  private spaFallbackPath!: string // set when useSpaFallback is set
 
   /**
    * Used to enable static file serving from a directory
@@ -74,18 +91,19 @@ export class ExpressServer extends HttpServerProvider {
    */
   public serveStaticFiles(
     path: string,
-    options?: Parameters<typeof express.static>[1] & { spaFallback?: boolean | string | null },
+    options?: Parameters<typeof express.static>[1] & { spaFallback?: boolean | string | null; cors?: cors.CorsOptions | cors.CorsOptionsDelegate; },
   ) {
-    this.__server.use(express.static(path, options));
-    this.useSpaFallback = options?.spaFallback ?? false;
+    const { spaFallback, cors: corsOptions, ..._options } = options ?? {} as any
+    if (options?.cors) this.engine.use(cors(corsOptions));
+    this.engine.use(express.static(path, _options));
+    this.useSpaFallback = spaFallback ?? false;
     this.spaFallbackPath = path;
     this.logger.info(`Serving static files from dir: ${path}`);
     return this;
   }
   //#endregion
 
-  //#region Internals
-  public onServerStarted = () => {
+  onServerStarted = () => {
     const authService = this.app.container.resolve(AuthUtilsService);
     [...this.controllers.keys()].forEach((endpoint) => {
       const klass: Type<IController<any>> | undefined = this.controllers.get(
@@ -159,13 +177,17 @@ export class ExpressServer extends HttpServerProvider {
         : 'index.html';
 
       // All GET request handled by INDEX file
-      this.__server.get('*', function (req: Request, res: Response) {
+      this.engine.get('*', function (req: Request, res: Response) {
         res.sendFile(resolve(spaFallbackPath, htmlFileName));
       });
     }
 
     super.onServerStarted();
   };
+
+  //#region Internals
+  private useSpaFallback: boolean | string = false
+  private spaFallbackPath!: string // set when useSpaFallback is set
 
   private setupHandler(
     instance: any,
@@ -206,9 +228,6 @@ export class ExpressServer extends HttpServerProvider {
         case "put":
           this.put(endpoint, makeHandlerWithDataFrom("body"));
           break;
-        case "update":
-          this.update(endpoint, makeHandlerWithDataFrom("body"));
-          break;
         default:
           throw new Error(
             "Server has unimplemented Controller Method: " + reqType
@@ -232,7 +251,7 @@ export class ExpressServer extends HttpServerProvider {
     if (needsAuthService && authService == null)
       throw new Error('No Auth Service setup to handle auth decorators.');
 
-    return async (req: Request, res: Response) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
 
       const reqData = {
         ...req[key],
@@ -249,6 +268,11 @@ export class ExpressServer extends HttpServerProvider {
           reqData.__auth = authService.authorizeFlow(authHeader, authRoles);
         }
 
+        if (requiredOwners && authService) {
+          console.log({ authService, TODO: 'FINISH ME' })
+          console.log({ requiredOwners, TODO: 'FINISH ME' })
+        }
+
         let customArgs: ParamMetadata<HttpParamType>[];
 
         customArgs = Reflect.getOwnMetadata(
@@ -256,12 +280,6 @@ export class ExpressServer extends HttpServerProvider {
           handlerThisCtx.constructor,
           handler.name,
         ) || [];
-
-        // if (requiredOwners && authService) {
-        //   // TODO
-        //   console.log({ authService, TODO: 'FINISH ME' })
-        //   console.log({ requiredOwners, TODO: 'FINISH ME' })
-        // }
 
         let args: any[] = [reqData];
 
@@ -281,8 +299,6 @@ export class ExpressServer extends HttpServerProvider {
 
         args.push({ req, res }) // Always pass as the last argument to handler
 
-        res.setHeader('Content-Type', 'application/json; charset=utf-8') // default
-
         const result = await handler.apply(handlerThisCtx, args);
 
         switch (typeof result) {
@@ -292,22 +308,18 @@ export class ExpressServer extends HttpServerProvider {
           case "number":
           case "string":
           case "symbol":
-          case "undefined":
+          case "undefined": {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8')
             return res.send(result);
+          }
           default:
             return res.send(JSON.stringify(result));
         }
       }
       catch (handlerError) {
-        return res.send(this.errorHandler.onError(handlerError, { req, res }));
+        return next(handlerError);
       }
     };
-  }
-
-  public useControllers(controllerDir: string = "controllers") {
-    this.parseJsonBody();
-    this.logger.info("Using Controllers from dir:", controllerDir);
-    return super.useControllers(controllerDir);
   }
   //#endregion
 }

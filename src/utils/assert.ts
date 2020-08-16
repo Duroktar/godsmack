@@ -17,3 +17,9 @@ export const isNullOrUndefined = (n: any): n is null | undefined => isNull(n) ||
 export function assertNever(n: never): n is never {
   return n
 }
+
+export function ASSERT<T>(val: T): Exclude<T, undefined> {
+  if (val === null || val === undefined)
+    throw new Error('Assertion error.')
+  return val as any
+}

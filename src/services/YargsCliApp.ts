@@ -1,5 +1,5 @@
 import yargs from 'yargs';
-import { CliAppProvider } from '../CommandLine';
+import { CliAppProvider } from '../framework/CommandLine';
 
 export class YargsCliApp extends CliAppProvider {
   public readonly engine = yargs;

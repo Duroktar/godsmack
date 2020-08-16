@@ -1,25 +1,27 @@
+import type { IApplicationSettings, IClient, IDatabaseProvider, IHttpServer, ITaskService, MergeDefaultProviders } from '../interfaces';
+import type { IApplication } from '../interfaces/IApplication';
+import { IApplicationCreationService } from "../interfaces/IApplicationCreationService";
+import type { FactoryTypeRecord, IFactory } from '../interfaces/IFactory';
+import { Logger, MailerService } from '../services';
+import { ExpressServer } from "../services/ExpressServer";
+import { PostgresDB as SequelizePostgresDB } from '../services/sequelize/PostgresDB';
+import { PostgresDB as TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
+import { YargsCliApp } from "../services/YargsCliApp";
+import { TuiLoggerService } from '../tui';
+import { TerminalInk } from '../tui/TerminalInk';
+import type { DeepPartial, Type } from '../types';
 import { ApplicationConfigurationService } from './ApplicationConfigurationService';
 import { ApplicationCreationService } from './ApplicationCreationService';
-import { FactoryBuilder } from "./FactoryBuilder";
-import { ObjectFactory } from './Factory';
-import { DockerService } from './Docker';
-import { CliAppProvider } from './CommandLine';
 import { JavascriptClient } from './Client';
+import { CliAppProvider } from './CommandLine';
 import { DatabaseProvider } from './Database';
+import { DockerService } from './Docker';
+import { ObjectFactory } from './Factory';
+import { FactoryBuilder } from "./FactoryBuilder";
 import { HttpServerProvider } from './HttpServer';
-import { ExpressServer } from "./services/ExpressServer";
-import { YargsCliApp } from "./services/YargsCliApp";
-import { Logger, MailerService } from './services';
-import { PostgresDB as SequelizePostgresDB } from './services/sequelize/PostgresDB';
-import { PostgresDB as TypeORMPostgresDB } from './services/typeorm/PostgresDB';
-import type { IApplication, IApplicationCreationService } from '../interfaces/IApplication';
-import type { IFactory, FactoryTypeRecord } from '../interfaces/IFactory';
-import type { IClient, IHttpServer, IDatabaseProvider, MergeDefaultProviders, ITaskService, IApplicationSettings } from '../interfaces';
-import type { Type, DeepPartial } from '../types';
-import { TaskService } from './Tasks';
 import { SettingsService } from './Settings';
-import { TerminalInk } from '../tui/TerminalInk';
-import { TuiLoggerService } from '../tui';
+import { SwaggerService } from './Swagger';
+import { TaskService } from './Tasks';
 
 /**
  * Default implementation of the IApplication interface
@@ -169,7 +171,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  public useCronTriggers = (path?: string): this => {
+  public addCronTriggers = (path?: string): this => {
     const service = new TaskService(this);
     service.useCronTriggers(path)
     this.__hasTaskRunner = true
@@ -179,6 +181,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public useNodeMailer = (): this => {
     this.container.addSingleton(MailerService)
     this.__hasMailer = true
+    return this
+  }
+
+  public addSwaggerDocs() {
+    this.container.addSingleton(SwaggerService)
+    this.__hasSwaggerDocs = true;
     return this
   }
 
@@ -193,6 +201,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   private __isDockerizingApp = false
   private __hasTaskRunner = false
   private __hasMailer = false
+  private __hasSwaggerDocs = false
   private __hasTerminalInk = false
   ////////////////////////////////////////////
 
@@ -309,6 +318,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
     if (this.__hasTaskRunner) {
       await this.container.resolve(TaskService).initializeJobs()
+    }
+
+    if (this.__hasSwaggerDocs) {
+      await this.container.resolve(SwaggerService).initializeService()
     }
 
     // STEP 7 ---------------------------------------------

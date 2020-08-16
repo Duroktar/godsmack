@@ -1,6 +1,6 @@
 import { Singleton } from '../injector';
 import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
-import { Logger, LogLevel } from './services';
+import { Logger, LogLevel } from '../services';
 import { SettingsService } from './Settings';
 import { IApplicationSettings } from '../interfaces/IApplicationSettings';
 

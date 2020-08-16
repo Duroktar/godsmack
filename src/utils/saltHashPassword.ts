@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import * as crypto from 'crypto'
 import { promisify } from 'util';
 
 const pbkdf2 = promisify(crypto.pbkdf2)

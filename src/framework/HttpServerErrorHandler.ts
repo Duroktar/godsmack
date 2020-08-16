@@ -1,8 +1,7 @@
 import type { IHttpServerErrorHandler, RequestContext } from '../interfaces/IHttpServerErrorHandler';
 import { Singleton } from '../injector';
 
-export type HttpServerErrorHandlerFn<E = any, Req = any, Res = any> =
-  (err: E, ctx: RequestContext<Req, Res>) => E;
+export type HttpServerErrorHandlerFn<E = any, Req = any, Res = any> = (err: E, ctx: RequestContext<Req, Res>) => E;
 
 @Singleton()
 export class HttpServerErrorHandler implements IHttpServerErrorHandler {

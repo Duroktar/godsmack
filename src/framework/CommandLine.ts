@@ -1,6 +1,6 @@
 import { Injectable } from '../injector';
 import { Application } from './Application';
-import { Logger } from './services';
+import { Logger } from '../services';
 import { SettingsService } from './Settings';
 import { IApplicationSettings } from '../interfaces';
 

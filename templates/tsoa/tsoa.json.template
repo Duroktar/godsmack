@@ -1,0 +1,41 @@
+{
+  "entryFile": "src/main.ts",
+  "controllerPathGlobs": [
+    "src/controllers/**/*.ts"
+  ],
+  "noImplicitAdditionalProperties": "silently-remove-extras",
+  "routes": {
+    "basePath": "api/v1",
+    "authenticationModule": "src/middleware/auth.ts",
+    "middleware": "express",
+    "middlewareTemplate": "src/generated/routes.template.hbs",
+    "routesDir": "src/generated",
+    "iocModule": "src/utils/ioc",
+    "routesFileName": "routes.ts"
+  },
+  "spec": {
+    "basePath": "api/v1",
+    "contact": {},
+    "description": "Godsmack: Swagger Docs",
+    "host": "localhost:3000",
+    "schemes": ["http"],
+    "license": "",
+    "name": "Godsmack API",
+    "version": "1.0",
+    "securityDefinitions": {
+      "api_key": {
+        "type": "apiKey",
+        "name": "access_token",
+        "in": "query"
+      },
+      "jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "tags": [],
+    "outputDirectory": "src",
+    "specVersion": 3
+  }
+}

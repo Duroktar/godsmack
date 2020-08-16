@@ -1,8 +1,7 @@
-import { Singleton } from '../../injector';
-import { Logger } from '.';
-import { IApplicationSettings } from '../../interfaces';
-import { SettingsService } from '../Settings';
 import NodeMailer from 'nodemailer';
+import { Singleton } from '../injector';
+import { SettingsService } from '../framework';
+import { Logger } from './Logger';
 
 export interface ISendMailResult {
   messageId: string

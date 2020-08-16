@@ -1,4 +1,5 @@
-import type { IApplicationCreationService, IApplication, MergeDefaultProviders } from './IApplication';
+import type { IApplication, MergeDefaultProviders } from './IApplication';
+import { IApplicationCreationService } from "./IApplicationCreationService";
 
 /**
  * Interface for the default Application Builder.

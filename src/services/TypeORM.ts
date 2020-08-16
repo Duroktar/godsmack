@@ -5,12 +5,12 @@ import {
   QueryRunner,
   EntityManager,
 } from "typeorm";
-import { DatabaseProvider } from "../Database";
-import { Singleton } from "../../injector";
+import { DatabaseProvider } from "../framework/Database";
+import { Singleton } from "../injector";
 
 @Singleton()
 export class TypeORMAdapter extends DatabaseProvider {
-  async connect(options?: ConnectionOptions) {
+  async connect(options?: Partial<ConnectionOptions>) {
     this.logger.info("Connecting to Database:", options?.type);
     await this.getDbConnection(undefined, options);
     return this;
@@ -51,10 +51,10 @@ export class TypeORMAdapter extends DatabaseProvider {
     return this.__connection;
   }
 
-  private mergeDatabaseOptions(options?: ConnectionOptions) {
+  private mergeDatabaseOptions(options?: Partial<ConnectionOptions>) {
     return {
       // defaults
-      type: "postgres" as "mysql" | "postgres" | "sqlite" | "mariadb" | "mssql",
+      type: "postgres",
       host: this.settings.host,
       port: this.settings.port,
       username: this.settings.user,
@@ -64,15 +64,14 @@ export class TypeORMAdapter extends DatabaseProvider {
       cache: this.settings.cache,
 
       // this plays nicely this godsmack
-      entities: ["src/entities/*.ts"],
-      subscribers: ["src/subscribers/*.ts"],
-      migrations: ["src/migrations/*.ts"],
+      entities: ["src/entities/**/*.ts"],
+      subscribers: ["src/subscribers/**/*.ts"],
+      migrations: ["src/migrations/**/*.ts"],
       cli: {
         entitiesDir: "src/entities",
         migrationsDir: "src/migrations",
         subscribersDir: "src/subscribers",
       },
-      // synchronize: true, // WARNING
 
       // provided options to merge
       ...options,
@@ -81,7 +80,7 @@ export class TypeORMAdapter extends DatabaseProvider {
 
   private async getDbConnection(
     connectionString?: string,
-    options?: ConnectionOptions
+    options?: Partial<ConnectionOptions>
   ) {
     if (connectionString) {
       this.connection = await createConnection(connectionString);

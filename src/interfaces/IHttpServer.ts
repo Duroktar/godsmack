@@ -28,14 +28,6 @@ export interface IHttpServer {
    */
   post(path: PathArgument, ...handlers: RequestHandler[]): void;
   /**
-   * Used for registering update request handlers with the server.
-   *
-   * @param {PathArgument} path
-   * @param {...RequestHandler[]} handlers
-   * @memberof IHttpServer
-   */
-  update(path: PathArgument, ...handlers: RequestHandler[]): void;
-  /**
    * Used for registering put request handlers with the server.
    *
    * @param {PathArgument} path
@@ -117,4 +109,12 @@ export interface IHttpServer {
    * @memberof IHttpServer
    */
   serveStaticFiles(...any: any[]): this
+
+  useHealthCheck(...any: any[]): this
+  parseJsonBody(...any: any[]): this
+  parseCookies(...any: any[]): this
+  // useSpaFallback: boolean | string
+  // spaFallbackPath: string
+  // setupHandler(...any: any[]): any
+  // makeHandler(...any: any[]): any
 }

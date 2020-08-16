@@ -1,8 +1,8 @@
 import deepmerge from "deepmerge";
 import { Singleton } from "../injector";
-import { Logger, LogLevel } from "./services/Logger";
 import type { IApplicationSettings } from "../interfaces";
-import { DeepPartial } from "../types";
+import { Logger, LogLevel } from "../services/Logger";
+import type { DeepPartial } from "../types";
 
 type AllSettings<T> = IApplicationSettings & T
 
@@ -48,15 +48,20 @@ const getBaseSettings = () => ({
     secret:
       "gcbfinYRQjbz4bla//EtDEBhZp0eKZ+o0Te8JRDOBEPuib9kBb9DYHu3PlRY+taBIhnn00TNKpC70+Lt3/+blYQ6/TqZ1kOBVgxdDSMFHsgh15D8N/fszRb/kh77eoF+qlgLldoEutXNT1HaEQup7ZQ1yFyTuTuX5OGh1O6T/pYCJybuMf0PFWZETonlxnjvcMfU1AYFfe046HaKy6TAZJYR8na3xLFQL0ubWDow6uT+QUhJ6+VdjewR/tHIHbNO7hDYkmTyxrGQ8yrcLCGjAqnAze5EpWwXL+dP9ZEeDtNRmzIqmA7USUDlWocKBIkYJLm2aPudBP1iLX64E+Hi2A==",
   },
+
   client: {
     endpoint: "/__client.js",
   },
+
   commandline: {},
+
   container: {},
+
   controllers: {
     dirname: "controllers",
     postfix: "Controller",
   },
+
   database: {
     user: "admin",
     pass: "pass123",
@@ -66,6 +71,7 @@ const getBaseSettings = () => ({
     logging: false,
     cache: false,
   },
+
   docker: {
     image_tag_name: "godsmack-app",
     network_name: "godsmack",
@@ -77,15 +83,19 @@ const getBaseSettings = () => ({
       host_expose_port: 5432,
     },
   },
+
   factory: {},
+
   httpServer: {
     port: 3000,
     host: "localhost",
     https: false,
   },
+
   logger: {
     lvl: LogLevel.INFO,
   },
+
   mailer: {
     auth: {
       type: "OAuth2",
@@ -95,6 +105,7 @@ const getBaseSettings = () => ({
     port: 465,
     secure: true, // true for 465, false for other ports
   },
+
   oauth2: {
     email: process.env.GMAIL_ADDRESS || "",
     redirectEmail: process.env.GMAIL_OAUTH_REDIRECT_URL || "",
@@ -104,10 +115,37 @@ const getBaseSettings = () => ({
     accessToken: process.env.GMAIL_OAUTH_ACCESS_TOKEN || "",
     expires: Number.parseInt(process.env.GMAIL_OAUTH_TOKEN_EXPIRE || "", 10),
   },
+
   shell: {
     log: false,
   },
+
   startup: {},
+
+  swagger: {
+    generateClient: true,
+    serveDocs: true,
+    baseDocUrl: '/docs',
+    routesImportPath: './generated/routes',
+    middlewareOptions: {
+      swaggerUiOptions: {
+        customSiteTitle: 'Godsmack: Open API v3 Docs',
+        swaggerOptions: {
+          docExpansion: 'none',
+        },
+      }
+    },
+    specGenOptions: {
+      tsoaPath: './tsoa.json',
+      lang: 'typescript-fetch',
+      outputPath: 'client/generated',
+      generatorApiUrl: 'https://generator3.swagger.io/api/generate',
+      generateClient: true,
+      swaggerSpecPath: '/swagger.json',
+      tempFileName: 'typescript-client.zip',
+    }
+  },
+
   tasks: {
     postfix: "Job",
     dirname: "jobs",

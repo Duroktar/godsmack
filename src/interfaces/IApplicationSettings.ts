@@ -1,4 +1,5 @@
-import type { LogLevel } from "../framework/services";
+import type { LogLevel } from "../services";
+import { SwaggerMiddlewareOptions, SwaggerGenOptions } from '../framework/Swagger';
 
 export interface IApplicationSettings {
   /**
@@ -243,6 +244,19 @@ export interface IApplicationSettings {
    *
    */
   startup: {};
+
+  /**
+   * Swagger Service
+   *
+   */
+  swagger: {
+    generateClient: boolean
+    routesImportPath: string
+    serveDocs: boolean
+    baseDocUrl: string
+    middlewareOptions: SwaggerMiddlewareOptions
+    specGenOptions: SwaggerGenOptions,
+  },
 
   /**
    * Cron Job/Task Service Settings

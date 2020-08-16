@@ -41,14 +41,6 @@ export interface IController<T extends any> {
    */
   patch?(data: any, meta: any, ...rest: any[]): T
   /**
-   * Used to register a update request handler.
-   *
-   * @param {*} data
-   * @returns {T}
-   * @memberof IController
-   */
-  update?(data: any, meta: any, ...rest: any[]): T
-  /**
    * Used to register a delete request handler.
    *
    * @param {*} data

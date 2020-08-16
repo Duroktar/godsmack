@@ -1,14 +1,13 @@
-import { Singleton } from '../../injector';
-import { IAuthService } from '../../interfaces/IAuthService';
-import { IApplicationSettings } from '../../interfaces';
-import { SettingsService } from '../Settings';
-import { Logger } from './Logger';
-import { hashPasswordSha512, isSha512PasswordCorrect } from '../../utils/saltHashPassword';
-
-import * as JWT from 'jsonwebtoken';
 import type { Request } from 'express';
-import { isString } from '../../utils/assert';
-import { AuthServiceError } from '../../utils/error';
+import * as JWT from 'jsonwebtoken';
+import { isString } from 'util';
+import { SettingsService } from '../framework/Settings';
+import { Singleton } from '../injector';
+import { IApplicationSettings } from '../interfaces';
+import { IAuthService } from '../interfaces/IAuthService';
+import { AuthServiceError } from '../utils/error';
+import { hashPasswordSha512, isSha512PasswordCorrect } from '../utils/saltHashPassword';
+import { Logger } from './Logger';
 
 export type JwtPayload<T = {}> = T & {
   iat: number;
@@ -43,26 +42,24 @@ export class AuthUtilsService implements IAuthService {
     return JWT.decode(token, options) as any
   }
 
-  public validateAndDecodeRefreshToken<ExtraPayloadData = {}>(req: Request) {
+  public validateAndDecodeRefreshToken<ExtraPayloadData = {}>(req: Pick<Request, 'cookies'>) {
     const { cookies: { refresh_token } } = req
 
     if (!refresh_token)
       throw new AuthServiceError('No refresh token found')
+
+    if (!this.verifyJWT(refresh_token))
+      throw new AuthServiceError('Refresh token is expired')
 
     const decoded = this.decodeJWT<ExtraPayloadData>(refresh_token)
 
     if (!decoded)
       throw new AuthServiceError('Invalid or malformed refresh token')
 
-    const isValid = this.verifyJWT(refresh_token)
-
-    if (!isValid)
-      throw new AuthServiceError('Refresh token is expired')
-
     return decoded
   }
 
-  public getDecodedJwt<ExtraPayloadData = {}>(req: Request) {
+  public getDecodedJwt<ExtraPayloadData = {}>(req: Pick<Request, 'header'>) {
     const authHeader = this.getAuthHeaderFromRequest(req);
     const { headerTokenPrefix: prefix } = this.settings;
 
@@ -107,7 +104,7 @@ export class AuthUtilsService implements IAuthService {
     return decoded
   }
 
-  public getAuthHeaderFromRequest(req: Request) {
+  public getAuthHeaderFromRequest(req: Pick<Request, 'header'>) {
     const authHeaderName = this.settings.headerName;
     return req.header(authHeaderName);
   }

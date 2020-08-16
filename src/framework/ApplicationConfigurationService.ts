@@ -1,6 +1,6 @@
-import { IApplicationConfigurationClass, IConfigurationApplication } from '../interfaces';
+import { IApplicationConfigurationService, IConfigurationApplication } from '../interfaces';
 
 export class ApplicationConfigurationService
-  implements IApplicationConfigurationClass<any> {
+  implements IApplicationConfigurationService<any> {
   configure(app: IConfigurationApplication<any>): void { }
 }

@@ -1,6 +1,6 @@
 import { Sequelize, Options, SyncOptions } from 'sequelize'
-import { DatabaseProvider } from '../Database';
-import { Singleton } from '../../injector';
+import { Singleton } from '../injector/decorators'
+import { DatabaseProvider } from '../framework/Database'
 
 @Singleton()
 export class SequelizeAdapter extends DatabaseProvider {

@@ -1,4 +1,5 @@
-import type { ILogger } from '../../interfaces'
+import type { ILogger } from '../interfaces/ILogger'
+
 
 export enum LogLevel {
   LOG,
