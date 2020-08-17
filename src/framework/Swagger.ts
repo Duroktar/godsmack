@@ -153,7 +153,7 @@ export class SwaggerService {
   private registerSwaggerMiddleware = async () => {
     if (this.settings.serveDocs) {
       const { baseDocUrl: baseUrl, middlewareOptions: options } = this.settings;
-      this.logger.info(`Serving Swagger Docs from ${baseUrl}`);
+      this.logger.info(`Serving Swagger Docs @ ${baseUrl}`);
       const swaggerMiddleware = this.configureSwaggerUIMiddleware(options);
       this.server.engine.use(baseUrl, SwaggerUI.serve, swaggerMiddleware);
     }

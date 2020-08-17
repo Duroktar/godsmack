@@ -93,7 +93,7 @@ export class TaskService implements ITaskService {
 
       if (!instance) continue;
 
-      this.logger.info('Setting up Job:', task.name, '@', instance.cronTime)
+      this.logger.debug('Setting up Job:', task.name, '@', instance.cronTime)
       this.logger.debug('Job Instance:', instance)
       this.jobs.set(task.name, this.__createCronTrigger(instance))
     }
