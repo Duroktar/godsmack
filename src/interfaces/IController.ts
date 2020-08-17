@@ -23,7 +23,7 @@ export interface IController<T extends any> {
    * @returns {T}
    * @memberof IController
    */
-  create?(data: any, meta: any, ...rest: any[]): T
+  signIn?(data: any, meta: any, ...rest: any[]): T
   /**
    * Also used to register a post request handler.
    *
@@ -47,5 +47,5 @@ export interface IController<T extends any> {
    * @returns {T}
    * @memberof IController
    */
-  delete?(data: any, meta: any, ...rest: any[]): T
+  signOut?(data: any, meta: any, ...rest: any[]): T
 }

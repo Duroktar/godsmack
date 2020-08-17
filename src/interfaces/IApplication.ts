@@ -16,6 +16,7 @@ import type { IApplicationConfigurationHandler } from "./IApplicationConfigurati
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { TerminalInk } from '../tui/TerminalInk';
 import type { SwaggerService } from '../framework/Swagger';
+import { IDatabaseProvider } from './IDatabase';
 
 /**
  * The default Application Interface
@@ -100,7 +101,7 @@ export interface IApplication<AppContainer = any> {
    * @returns {this}
    * @memberof IApplication
    */
-  addDatabase: (database: DatabaseProvider) => void;
+  addDatabase: (database: IDatabaseProvider) => void;
   /**
    * Used to add and configure a Server Provider
    * to the Application

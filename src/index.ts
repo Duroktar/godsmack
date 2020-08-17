@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 export * as framework from './framework'
 export * as injector from './injector'
 export * as decorators from './injector/decorators'

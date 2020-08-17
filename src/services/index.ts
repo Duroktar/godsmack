@@ -1,5 +1,6 @@
 export * from './AuthService'
 export * from './ExpressServer'
+export * from './Fetch'
 export * from './Logger'
 export * from './Mailer'
 export * from './MemoryDB'

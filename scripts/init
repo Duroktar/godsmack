@@ -12,6 +12,7 @@ cp node_modules/@trabpukcip/godsmack/templates/tsoa.json.template tsoa.json
 mkdir src
 cp node_modules/@trabpukcip/godsmack/templates/main.ts.template src/main.ts
 cp node_modules/@trabpukcip/godsmack/templates/app.ts.template src/app.ts
+cp node_modules/@trabpukcip/godsmack/templates/tsoa/ioc.ts.template src/ioc.ts
 mkdir src/controllers
 cp node_modules/@trabpukcip/godsmack/templates/controller.ts.template src/controllers/acontroller.ts
 mkdir src/interfaces
@@ -24,10 +25,8 @@ cp node_modules/@trabpukcip/godsmack/templates/tsoa/auth.ts.template src/middlew
 mkdir src/generated
 cp node_modules/@trabpukcip/godsmack/templates/tsoa/routes.template.hbs.template src/generated/routes.template.hbs
 cp node_modules/@trabpukcip/godsmack/templates/tsoa/routes.ts.template src/generated/routes.ts
-mkdir src/utils
-cp node_modules/@trabpukcip/godsmack/templates/tsoa/ioc.ts.template src/utils/ioc.ts
 
 mkdir www
 cp node_modules/@trabpukcip/godsmack/templates/index.html.template www/index.html
 
-yarn add --dev tsoa typescript tslib ts-node ts-node-dev mocha chai @types/node @types/mocha @types/chai
+yarn add --dev tsoa typescript tslib ts-node ts-node-dev @openapitools/openapi-generator-cli mocha chai @types/node @types/mocha @types/chai

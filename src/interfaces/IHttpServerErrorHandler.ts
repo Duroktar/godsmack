@@ -1,8 +1,6 @@
+import type { NextFunction, Request, Response } from 'express'
 
-
-export interface IHttpServerErrorHandler<Request = any, Response = any> {
-  onError(err: Error, ctx: RequestContext<Request, Response>): void;
-}
+export type IHttpServerErrorHandler<Err> = (err: Err, req: Request, res: Response, next: NextFunction) => any
 
 export type RequestContext<Req = any, Res = any> = {
   req: Req;

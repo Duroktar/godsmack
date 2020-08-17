@@ -7,6 +7,8 @@ import {
 } from "typeorm";
 import { DatabaseProvider } from "../framework/Database";
 import { Singleton } from "../injector";
+import { join as pathJoin } from 'path'
+import { SettingsService } from '../framework';
 
 @Singleton()
 export class TypeORMAdapter extends DatabaseProvider {
@@ -52,6 +54,13 @@ export class TypeORMAdapter extends DatabaseProvider {
   }
 
   private mergeDatabaseOptions(options?: Partial<ConnectionOptions>) {
+
+    const { rootDir } = this.app.container
+      .resolve(SettingsService)
+      .get('framework')
+
+    const _src = (path: string) => pathJoin(rootDir, path)
+
     return {
       // defaults
       type: "postgres",
@@ -64,13 +73,13 @@ export class TypeORMAdapter extends DatabaseProvider {
       cache: this.settings.cache,
 
       // this plays nicely this godsmack
-      entities: ["src/entities/**/*.ts"],
-      subscribers: ["src/subscribers/**/*.ts"],
-      migrations: ["src/migrations/**/*.ts"],
+      entities: [_src("entities/**/*.ts")],
+      subscribers: [_src("subscribers/**/*.ts")],
+      migrations: [_src("migrations/**/*.ts")],
       cli: {
-        entitiesDir: "src/entities",
-        migrationsDir: "src/migrations",
-        subscribersDir: "src/subscribers",
+        entitiesDir: _src("entities"),
+        migrationsDir: _src("migrations"),
+        subscribersDir: _src("subscribers"),
       },
 
       // provided options to merge

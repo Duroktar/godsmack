@@ -78,7 +78,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  public addDatabase = (database: IDatabaseProvider) => {
+  public addDatabase = (database: DatabaseProvider) => {
     if (database)
       this.container.addSingletonInstance(DatabaseProvider, database)
     return this

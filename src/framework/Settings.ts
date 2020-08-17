@@ -3,6 +3,7 @@ import { Singleton } from "../injector";
 import type { IApplicationSettings } from "../interfaces";
 import { Logger, LogLevel } from "../services/Logger";
 import type { DeepPartial } from "../types";
+import { ASSERT } from '../utils/assert';
 
 type AllSettings<T> = IApplicationSettings & T
 
@@ -19,7 +20,7 @@ export class SettingsService<AppConfig = {}> {
   private __initializeDockerVariables() {
     const settings = this.__settings;
     if (process.env.DOCKER_CTX) {
-      const { container_name } = settings.docker.db;
+      const { container_name } = ASSERT(settings.docker.db);
       settings.database.host = container_name;
     }
   }
@@ -39,7 +40,7 @@ export class SettingsService<AppConfig = {}> {
   }
 }
 
-const getBaseSettings = () => ({
+const getBaseSettings = (): IApplicationSettings => ({
   auth: {
     expiresIn: 15,
     headerName: "Authorization",
@@ -86,6 +87,10 @@ const getBaseSettings = () => ({
 
   factory: {},
 
+  framework: {
+    rootDir: 'src'
+  },
+
   httpServer: {
     port: 3000,
     host: "localhost",
@@ -123,6 +128,7 @@ const getBaseSettings = () => ({
   startup: {},
 
   swagger: {
+    forceGenerateClient: false,
     generateClient: true,
     serveDocs: true,
     baseDocUrl: '/docs',
@@ -138,11 +144,10 @@ const getBaseSettings = () => ({
     specGenOptions: {
       tsoaPath: './tsoa.json',
       lang: 'typescript-fetch',
-      outputPath: 'client/generated',
-      generatorApiUrl: 'https://generator3.swagger.io/api/generate',
+      outputPath: './client/generated/api',
+      codegenVersion: 'V3',
       generateClient: true,
       swaggerSpecPath: '/swagger.json',
-      tempFileName: 'typescript-client.zip',
     }
   },
 
@@ -151,4 +156,4 @@ const getBaseSettings = () => ({
     dirname: "jobs",
     runAllOnStart: false,
   },
-} as IApplicationSettings);
+});

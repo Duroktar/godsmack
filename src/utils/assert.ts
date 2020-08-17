@@ -23,3 +23,9 @@ export function ASSERT<T>(val: T): Exclude<T, undefined> {
     throw new Error('Assertion error.')
   return val as any
 }
+
+// export function REQUIRED<T>(obj: T): Exclude<Required<T>, undefined> {
+//   if (obj === null || obj === undefined || Object.values(obj).includes(undefined))
+//     throw new Error('REQUIRED Assertion error.')
+//   return obj as any
+// }

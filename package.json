@@ -13,8 +13,7 @@
     "gs-build": "./scripts/build",
     "gs-debug": "./scripts/debug",
     "gs-init": "./scripts/init",
-    "gs-start": "./scripts/start",
-    "gs-seed": "./scripts/seed"
+    "gs-start": "./scripts/start"
   },
   "scripts": {
     "build": "tsc -P tsconfig.json",
@@ -70,6 +69,9 @@
   "dependencies": {
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "ky": "^0.23.0",
+    "ky-universal": "^0.8.1",
     "swagger-ui-express": "^4.1.4",
     "unzipper": "^0.10.11"
   }

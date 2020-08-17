@@ -1,13 +1,13 @@
 import { SettingsService } from './Settings'
 import { Logger } from '../services'
-import type { IApplicationSettings, IConfigureDatabaseApplication } from "../interfaces"
+import type { IApplicationSettings, IApplication } from "../interfaces"
 import type { IDatabaseProvider } from '../interfaces/IDatabase'
 
 export class DatabaseProvider implements IDatabaseProvider {
-  public logger: Logger
   public connection: any
+  public logger: Logger
   public settings: IApplicationSettings['database']
-  constructor(app: IConfigureDatabaseApplication<any>) {
+  constructor(public app: IApplication<any>) {
     this.logger = app.container
       .resolve(Logger)
       .For(this)

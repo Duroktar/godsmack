@@ -20,7 +20,7 @@ export type JwtAuthData = { userId: string; roles: string[]; };
 
 @Singleton()
 export class AuthUtilsService implements IAuthService {
-  public settings: IApplicationSettings['auth']
+  public settings: Required<IApplicationSettings['auth']>
   constructor(
     public settingsService: SettingsService,
     public logger: Logger,

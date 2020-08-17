@@ -12,7 +12,7 @@ export class XMLHttpClient<T extends any = any> extends ClientAdapter {
   get(req?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'GET', options)
   }
-  create(req?: any, params?: any, options?: any): JsonResult<T> {
+  signIn(req?: any, params?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'POST', options, params)
   }
   patch(req?: any, options?: any): JsonResult<T> {
@@ -24,7 +24,7 @@ export class XMLHttpClient<T extends any = any> extends ClientAdapter {
   update(req?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'UPDATE', options)
   }
-  delete(req?: any, options?: any): JsonResult<T> {
+  signOut(req?: any, options?: any): JsonResult<T> {
     return this.__send(req, this.path, 'DELETE', options)
   }
   private __send = (data: any, path: string, type: string = 'GET', options?: any, extraparams?: any): JsonResult<T> => {

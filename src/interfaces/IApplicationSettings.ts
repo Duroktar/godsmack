@@ -170,6 +170,21 @@ export interface IApplicationSettings {
    */
   factory: {};
 
+
+  /**
+   * Godsmack framework specific settings.
+   *
+   */
+  framework: {
+
+    /**
+     * The root folder name for source code in a godsmack project.
+     *
+     * @default "src"
+     */
+    rootDir: string;
+  };
+
   /**
    * Http Server Provider Settings
    *
@@ -251,6 +266,7 @@ export interface IApplicationSettings {
    */
   swagger: {
     generateClient: boolean
+    forceGenerateClient?: boolean
     routesImportPath: string
     serveDocs: boolean
     baseDocUrl: string

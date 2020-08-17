@@ -10,7 +10,7 @@ import { Singleton } from '../injector';
 @Singleton()
 export class TaskService implements ITaskService {
   public logger: Logger
-  public settings: IApplicationSettings['tasks']
+  public settings: Required<IApplicationSettings['tasks']>
   public tasks: Map<string, Type<ICronTrigger>> = new Map()
   public jobs: Map<string, CronJob> = new Map()
 
@@ -54,7 +54,7 @@ export class TaskService implements ITaskService {
 
       if (!taskCtorName) return
 
-      this.logger.info(`Setting up Cron Trigger (${taskCtorName}) cName=${cName}`);
+      this.logger.debug(`Setting up Cron Trigger (${taskCtorName}) cName=${cName}`);
 
       this.tasks.set(taskCtorName, klass);
     });

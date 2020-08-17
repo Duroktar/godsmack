@@ -1,7 +1,7 @@
 import * as express from "express";
 import { ValidateError } from "tsoa";
 import { services } from "@trabpukcip/godsmack";
-import { iocContainer } from "../utils/ioc";
+import { iocContainer } from "../ioc";
 
 export async function expressAuthentication(
   request: express.Request,

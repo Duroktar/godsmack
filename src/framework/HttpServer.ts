@@ -6,15 +6,14 @@ import type { Type } from '../types'
 import { getTsConfigFile } from '../utils/getTsConfigFile'
 import { createUrlFrom } from '../utils/http'
 import { Application } from './Application'
-import { HttpServerErrorHandler, HttpServerErrorHandlerFn } from './HttpServerErrorHandler'
 import { SettingsService } from './Settings'
+import { IHttpServerErrorHandler } from '../interfaces/IHttpServerErrorHandler'
 
 @Singleton()
 export class HttpServerProvider<T extends Express = Express> implements IHttpServer {
   public controllers: Map<string, Type<any>> = new Map()
   public logger: Logger
 
-  private errorHandler: HttpServerErrorHandler
   private settings: IApplicationSettings['httpServer']
   public engine: T = mockServerInstance
 
@@ -27,8 +26,6 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
       .resolve(Logger)
       .For(this)
 
-    this.errorHandler = app.container
-      .resolve(HttpServerErrorHandler)
   }
 
   public get(path: PathArgument, ...handlers: RequestHandler[]) {
@@ -57,17 +54,11 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     return this
   }
 
-  private __errorHandler?: (err: any, req: Request, res: Response, next: NextFunction) => any
-
-  public registerErrorHandlingMiddleware<Err>(handler: (err: Err, req: Request, res: Response, next: NextFunction) => any): this {
+  public registerErrorHandlingMiddleware<Err = any>(
+    errorHandler: IHttpServerErrorHandler<Err>,
+  ): this {
     this.logger.info('Registering Error Handler Middleware..')
-    this.__errorHandler = handler
-    return this
-  }
-
-  public registerErrorHandler<Err = any>(handler: HttpServerErrorHandlerFn<Err, Request, Response>): this {
-    this.logger.info('Registering Error Handler callback..')
-    this.errorHandler.addEventHandler('error', handler)
+    this.engine.use(errorHandler)
     return this
   }
 
@@ -77,8 +68,6 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
 
   public onServerStarted() {
     const url = this.formatServerUrl()
-    if (this.__errorHandler)
-      this.engine.use(this.__errorHandler)
     this.logger.info('Server listening at', url)
   }
 
@@ -118,15 +107,15 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
 
       if (!cName) return
 
-      const klass: Type<IController<any>> = dep[cName]
+      const controller: Type<IController<any>> = dep[cName]
       const endpoint = cName
         .slice(0, cName.indexOf(settings.postfix)) // this may need to be changed..
         .toLowerCase()
 
       if (!endpoint) return
 
-      this.app.container.addSingleton(klass, klass)
-      this.controllers.set('/' + endpoint, klass)
+      this.app.container.addSingleton(controller, controller)
+      this.controllers.set('/' + endpoint, controller)
     });
 
     return this

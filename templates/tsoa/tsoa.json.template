@@ -10,7 +10,7 @@
     "middleware": "express",
     "middlewareTemplate": "src/generated/routes.template.hbs",
     "routesDir": "src/generated",
-    "iocModule": "src/utils/ioc",
+    "iocModule": "src/ioc",
     "routesFileName": "routes.ts"
   },
   "spec": {

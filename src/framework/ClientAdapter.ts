@@ -13,7 +13,7 @@ export class ClientAdapter implements IClientAdapter<any> {
   get(req: any): any {
     throw new Error('Method not implemented.');
   }
-  create(req: any): any {
+  signIn(req: any): any {
     throw new Error('Method not implemented.');
   }
   post(req: any): any {
@@ -22,7 +22,7 @@ export class ClientAdapter implements IClientAdapter<any> {
   patch(req: any): any {
     throw new Error('Method not implemented.');
   }
-  delete(req: any): any {
+  signOut(req: any): any {
     throw new Error('Method not implemented.');
   }
 }

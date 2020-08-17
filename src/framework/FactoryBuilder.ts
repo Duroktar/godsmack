@@ -25,7 +25,7 @@ export class FactoryBuilder<Types extends FactoryTypeRecord> {
       .getDependency(ObjectFactory);
 
     if (!C)
-      throw new Error('Nothing there to build');
+      throw new Error('Nothing to build');
 
     return new C(this.app, this.types);
   }

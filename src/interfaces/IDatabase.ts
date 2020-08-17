@@ -1,5 +1,6 @@
 import type { IApplicationSettings } from './IApplicationSettings';
 import { Logger } from '../services';
+import { IApplication } from './IApplication';
 
 export interface IDatabaseProvider {
 
@@ -30,9 +31,40 @@ export interface IDatabaseProvider {
    */
   testConnection(...args: any): Promise<any>
 
+  /**
+   * TODO
+   *
+   * @param {...any} args
+   * @returns {Promise<any>}
+   * @memberof IDatabaseProvider
+   */
   syncDatabaseTables(...args: any): Promise<any>
+
+  /**
+   * TODO
+   *
+   * @param {...any} args
+   * @returns {*}
+   * @memberof IDatabaseProvider
+   */
   createDatabase(...args: any): any
+
+  /**
+   * TODO
+   *
+   * @param {...any} args
+   * @returns {Promise<any>}
+   * @memberof IDatabaseProvider
+   */
   loadDatabase(...args: any): Promise<any>
+
+  /**
+   * TODO
+   *
+   * @param {...any} args
+   * @returns {Promise<any>}
+   * @memberof IDatabaseProvider
+   */
   saveDatabase(...args: any): Promise<any>
 
   /**
@@ -55,7 +87,29 @@ export interface IDatabaseProvider {
    */
   transaction(op: Function): Promise<any>
 
+  /**
+   * TODO
+   *
+   * @type {Logger}
+   * @memberof IDatabaseProvider
+   */
   logger: Logger
+
+  /**
+   * TODO
+   *
+   * @type {Required<IApplicationSettings['database']>}
+   * @memberof IDatabaseProvider
+   */
+  settings: Required<IApplicationSettings['database']>
+
+  /**
+   * TODO
+   *
+   * @type {*}
+   * @memberof IDatabaseProvider
+   */
   connection: any
-  settings: IApplicationSettings['database']
+
+  app: IApplication
 }

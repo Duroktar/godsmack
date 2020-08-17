@@ -10,10 +10,8 @@
       "problemMatcher": [
         "$tsc-watch"
       ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": "build",
+      "label": "tsc: watch - tsconfig.json"
     },
     {
       "command": "node",
@@ -22,9 +20,7 @@
         "-r",
         "ts-node/register",
         "src/tests/*.spec*",
-        "--colors",
-        // "--reporter",
-        // "json",
+        "--colors"
       ],
       "label": "mocha",
       "group": {
@@ -37,7 +33,6 @@
         "focus": true,
         "panel": "shared"
       },
-      // "isBackground": true,
       "problemMatcher": {
         "owner": "mocha",
         "severity": "error",
@@ -60,6 +55,6 @@
           "endsPattern": "^.*passes.*$"
         }
       }
-    },
+    }
   ]
 }
