@@ -63,9 +63,11 @@ export class Logger implements ILogger {
   static For<T extends any>(klass: T, lvl?: LogLevel) {
     const k = (klass as any)
 
-    const cName = k?.constructor?.name
-      ? k?.constructor?.name : k?.name
-        ? k?.name : null
+    const cName =
+      typeof k === 'string' ? k
+        : k?.constructor?.name ? k?.constructor?.name
+          : k?.name ? k?.name
+            : null
 
     const logger = new Logger()
 

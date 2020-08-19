@@ -1,81 +1,52 @@
 import deepmerge from 'deepmerge';
 import { Request as ExRequest, Response as ExResponse } from "express";
 import { readFileSync, rmdirSync } from "fs";
-import * as SwaggerUI from "swagger-ui-express";
+import * as SwaggerUiExpress from "swagger-ui-express";
 import { HttpServerProvider } from '../framework/HttpServer';
 import { SettingsService } from '../framework/Settings';
 import { Shell } from '../framework/Shell';
 import { Singleton } from "../injector";
-import { IApplicationSettings } from '../interfaces';
+import type { IApplicationSettings, ISwaggerService, SwaggerGenOptions, SwaggerMiddlewareOptions } from '../interfaces';
 import { Logger } from "../services/Logger";
 import { getTsConfigFile } from '../utils';
 import { ASSERT } from '../utils/assert';
 import { doTry } from '../utils/func';
 
-export type SwaggerGenOptions = {
-  lang: string
-  tsoaPath: string
-  outputPath: string
-  generateClient: boolean
-  swaggerSpecPath: string
-  codegenVersion: 'V2' | 'V3'
-}
-
-export interface JsonObject {
-  [key: string]: any;
-}
-
-export interface SwaggerOptions {
-  docExpansion: 'none' | 'list' | 'full';
-}
-
-export interface SwaggerUiOptions {
-  customCss?: string;
-  customCssUrl?: string;
-  customfavIcon?: string;
-  customJs?: string;
-  customSiteTitle?: string;
-  explorer?: boolean;
-  isExplorer?: boolean;
-  swaggerOptions?: SwaggerOptions;
-  swaggerUrl?: string;
-  swaggerUrls?: string[];
-}
-
-export type SwaggerMiddlewareOptions = {
-  swaggerDoc?: JsonObject
-  swaggerOptions?: SwaggerOptions
-  swaggerUiOptions?: SwaggerUiOptions
-  customCss?: string
-  customfavIcon?: string
-  swaggerUrl?: string
-  customSiteTitle?: string
-}
-
 @Singleton()
-export class SwaggerService {
+export class SwaggerService implements ISwaggerService {
   private settings: IApplicationSettings['swagger']
 
   constructor(
     private logger: Logger,
     private shell: Shell,
     private server: HttpServerProvider,
-    cfgService: SettingsService<IApplicationSettings>,
+    settings: SettingsService<IApplicationSettings>,
   ) {
-    this.settings = cfgService.get('swagger')
+    this.settings = settings.get('swagger')
     this.logger = logger.For(this)
   }
 
-  public initializeService = async (options?: SwaggerGenOptions) => {
+  public getPathToSpecFile = (): string => {
+    const { swaggerSpecPath } = this.getGenSettings()
+    return this.getRelativeProjectPath(swaggerSpecPath)
+  }
+
+  public initializeService = async (
+    options?: SwaggerGenOptions,
+  ): Promise<void> => {
     await this.generateSwaggerAssets(options);
     await this.registerSwaggerMiddleware();
     await this.registerRoutesWithServer();
   }
 
   private async generateSwaggerAssets(options?: SwaggerGenOptions) {
-    const { generateClient, lang, tsoaPath, outputPath, swaggerSpecPath } = this.getGenSettings(options)
+    const { lang, tsoaPath, outputPath, swaggerSpecPath } = this.getGenSettings(options)
 
     this.logger.info('Generating Swagger Assets..')
+
+    // -- CONTINUE FLAG
+    if (!this.settings.generateSpec)
+      return
 
     const existingSwaggerFile = this.loadSwaggerSpec(swaggerSpecPath);
 
@@ -83,7 +54,7 @@ export class SwaggerService {
     await this.generateSpecification(tsoaPath);
 
     // -- CONTINUE FLAG
-    if (!generateClient)
+    if (!this.settings.generateClient)
       return
 
     const newSwaggerFile = this.loadSwaggerSpec(swaggerSpecPath);
@@ -111,7 +82,7 @@ export class SwaggerService {
   private async generateSpecification(tsoaPath: string) {
     this.logger.debug('Regenerating server and spec..')
 
-    const response = await this.shell.spawn('tsoa', [
+    const response = await this.shell.spawn('node_modules/.bin/tsoa', [
       'spec-and-routes',
       '-c', tsoaPath,
     ], { log: false })
@@ -155,7 +126,7 @@ export class SwaggerService {
       const { baseDocUrl: baseUrl, middlewareOptions: options } = this.settings;
       this.logger.info(`Serving Swagger Docs @ ${baseUrl}`);
       const swaggerMiddleware = this.configureSwaggerUIMiddleware(options);
-      this.server.engine.use(baseUrl, SwaggerUI.serve, swaggerMiddleware);
+      this.server.engine.use(baseUrl, SwaggerUiExpress.serve, swaggerMiddleware);
     }
   }
 
@@ -163,13 +134,15 @@ export class SwaggerService {
     const routeImportPath = ASSERT(this.settings.routesImportPath);
     const resolvedImportPath = this.getRelativeProjectPath(routeImportPath);
     const generatedRoutesFile = await import(resolvedImportPath);
-    this.server.mapExpressServer(generatedRoutesFile.RegisterRoutes);
+    this.server.registerServices(generatedRoutesFile.RegisterRoutes);
   }
 
-  private configureSwaggerUIMiddleware = (options?: SwaggerMiddlewareOptions) => {
+  private configureSwaggerUIMiddleware = (
+    options?: SwaggerMiddlewareOptions,
+  ) => {
     return async (_req: ExRequest, res: ExResponse) => {
       const specOpts = this.settings.specGenOptions;
-      return res.send(SwaggerUI.generateHTML(
+      return res.send(SwaggerUiExpress.generateHTML(
         options?.swaggerDoc ?? await import(this.getRelativeProjectPath(specOpts.swaggerSpecPath)),
         options?.swaggerUiOptions,
         options?.swaggerOptions,
@@ -181,12 +154,14 @@ export class SwaggerService {
     }
   }
 
-  private getGenSettings(options?: Partial<SwaggerGenOptions>): Required<SwaggerGenOptions> {
+  private getGenSettings(
+    options?: Partial<SwaggerGenOptions>,
+  ): Required<SwaggerGenOptions> {
     return deepmerge(ASSERT(this.settings.specGenOptions), options ?? {}) as any;
   }
 
   private getRelativeProjectPath(...target: string[]) {
-    const path = require('path');
+    const path = require('path') as typeof import('path');
     const cwd = process.cwd()
     const tsconfig = getTsConfigFile(cwd)
 

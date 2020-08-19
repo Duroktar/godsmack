@@ -1,8 +1,13 @@
-import type { IApplicationService } from './IApplication';
-import { IHttpServerErrorHandler } from './IHttpServerErrorHandler';
+import type cors from 'cors';
+import type express from "express";
+import type { HttpServerProvider } from '../framework';
+import type { IHttpServerErrorHandler } from './IHttpServerErrorHandler';
+import { Type } from '../types';
 
+export type HttpServiceSetup = (server: HttpServerProvider) => void
 export type PathArgument = string | RegExp | (string | RegExp)[]
 export type RequestHandler = (...args: any[]) => any
+export type CorsOptions = cors.CorsOptions | cors.CorsOptionsDelegate;
 
 /**
  * Interface for the default application http server.
@@ -80,18 +85,23 @@ export interface IHttpServer {
   /**
    * Used for registering Application Services.
    *
-   * @param {...IApplicationService[]} services
+   * @param {...HttpServiceSetup[]} services
    * @returns {this}
    * @memberof IHttpServer
    */
-  registerServices(...services: IApplicationService[]): this;
+  registerServices(...services: ((server: this) => void)[]): this
   /**
    * Called when the Server is started.
    *
    * @memberof IHttpServer
    */
   onServerStarted(): void
-
+  /**
+   * TODO
+   *
+   * @memberof IHttpServer
+   */
+  onLoadServices(): void
   /**
    * Adds an error handler to the stack.
    *
@@ -100,22 +110,51 @@ export interface IHttpServer {
    * @returns {this}
    * @memberof IHttpServer
    */
-  registerErrorHandlingMiddleware<Err = any>(errorHandler: IHttpServerErrorHandler<Err>): this
-
+  useErrorHandler<Err = any>(errorHandler: IHttpServerErrorHandler<Err>): this
   /**
-   * Serve static files
+   * Used to enable static file serving from a directory
+   * of choice.
    *
    * @param {...any[]} any
    * @returns {this}
    * @memberof IHttpServer
    */
   serveStaticFiles(...any: any[]): this
-
+  /**
+   * Used to add and configure Health Check middleware
+   * to the server.
+   *
+   * @param {...any[]} any
+   * @returns {this}
+   * @memberof IHttpServer
+   */
   useHealthCheck(...any: any[]): this
+  /**
+   * Enables JSON body parsing in requests.
+   *
+   * @param {...any[]} any
+   * @returns {this}
+   * @memberof IHttpServer
+   */
   parseJsonBody(...any: any[]): this
+  /**
+   * Enables Cookie parsing.
+   *
+   * @param {...any[]} any
+   * @returns {this}
+   * @memberof IHttpServer
+   */
   parseCookies(...any: any[]): this
-  // useSpaFallback: boolean | string
-  // spaFallbackPath: string
-  // setupHandler(...any: any[]): any
-  // makeHandler(...any: any[]): any
+  /**
+   * TODO
+   *
+   * @type {Map<string, Type<any>>}
+   * @memberof IHttpServer
+   */
+  controllers: Map<string, Type<any>>
 }
+
+export type ServeStaticFilesOptions = Parameters<typeof express.static>[1] & {
+  spaFallback?: boolean | string | null;
+  cors?: cors.CorsOptions | cors.CorsOptionsDelegate;
+};

@@ -1,5 +1,7 @@
 import type { LogLevel } from "../services";
-import { SwaggerMiddlewareOptions, SwaggerGenOptions } from '../framework/Swagger';
+import type { ServeStaticFilesOptions, CorsOptions } from './IHttpServer';
+import type { SwaggerMiddlewareOptions, SwaggerGenOptions } from '.';
+import type { BuildSchemaOptions } from 'type-graphql';
 
 export interface IApplicationSettings {
   /**
@@ -185,6 +187,11 @@ export interface IApplicationSettings {
     rootDir: string;
   };
 
+  graphQl: {
+    endpoint: string;
+    graphiql: boolean;
+    typeGraphQlOptions: BuildSchemaOptions;
+  },
   /**
    * Http Server Provider Settings
    *
@@ -208,6 +215,24 @@ export interface IApplicationSettings {
      * @type {boolean}
      */
     https: boolean;
+    /**
+     * TODO
+     *
+     * @type {ServeStaticFilesOptions}
+     */
+    serveStaticFileOptions: ServeStaticFilesOptions;
+    /**
+     * TODO
+     *
+     * @type {CorsOptions}
+     */
+    corsOptions?: CorsOptions;
+    /**
+     * TODO
+     *
+     * @type {string}
+     */
+    spaFallbackPath: string;
   };
 
   /**
@@ -266,12 +291,13 @@ export interface IApplicationSettings {
    */
   swagger: {
     generateClient: boolean
+    generateSpec: boolean
     forceGenerateClient?: boolean
     routesImportPath: string
     serveDocs: boolean
     baseDocUrl: string
     middlewareOptions: SwaggerMiddlewareOptions
-    specGenOptions: SwaggerGenOptions,
+    specGenOptions: SwaggerGenOptions
   },
 
   /**

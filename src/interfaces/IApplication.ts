@@ -12,11 +12,16 @@ import type { DockerService } from '../framework/Docker';
 import type { ExpressServer, YargsCliApp, MailerService } from '../services';
 import type { PostgresDB as SequelizePostgresDB } from '../services/sequelize/PostgresDB';
 import type { PostgresDB as TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
-import type { IApplicationConfigurationHandler } from "./IApplicationConfigurationService";
+import type { IApplicationConfigurationHandler } from "./IApplicationConfiguration";
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { TerminalInk } from '../tui/TerminalInk';
 import type { SwaggerService } from '../framework/Swagger';
-import { IDatabaseProvider } from './IDatabase';
+import type { IDatabaseProvider } from './IDatabase';
+import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
+import { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
+import { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
+
+export type IApplicationContainer<T> = Pick<IApplication<T>, 'container'>
 
 /**
  * The default Application Interface
@@ -212,6 +217,22 @@ export interface IApplication<AppContainer = any> {
    */
   addSwaggerDocs(): this
 
+  /**
+   *
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addOpenApiGraphQl(): this
+
+  /**
+   *
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addTypeGraphQl(): this
+
   // TODO / wishlist
   // addLiveReloading(): this
   // addSinglePageApp(): this
@@ -224,9 +245,16 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   container: MergeDefaultProviders<AppContainer>;
+
+  events: IApplicationEventEmitter
 }
 
-export type IApplicationService = (app: IApplication, server: HttpServerProvider) => void
+export enum ApplicationEvent {
+  "@INIT" = '@application-init',
+  BEFORE_START = 'before-start',
+  ON_START = 'on-start',
+  AFTER_START = 'after-start',
+}
 
 export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | InferContainerT<ApplicationContainer>
@@ -238,6 +266,8 @@ export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | CliAppProvider
   | StartupProvider
   | DockerService
+  | OpenApiToGraphQlProvider
+  | TypeGraphQlProvider
   | SettingsService
   | SwaggerService
   | TaskService

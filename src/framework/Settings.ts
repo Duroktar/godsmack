@@ -91,10 +91,20 @@ const getBaseSettings = (): IApplicationSettings => ({
     rootDir: 'src'
   },
 
+  graphQl: {
+    endpoint: '/graphql',
+    graphiql: true,
+    typeGraphQlOptions: {
+      resolvers: ['resolvers/**/*.ts'],
+    }
+  },
+
   httpServer: {
     port: 3000,
     host: "localhost",
     https: false,
+    serveStaticFileOptions: {},
+    spaFallbackPath: 'www',
   },
 
   logger: {
@@ -129,7 +139,8 @@ const getBaseSettings = (): IApplicationSettings => ({
 
   swagger: {
     forceGenerateClient: false,
-    generateClient: true,
+    generateSpec: false,
+    generateClient: false,
     serveDocs: true,
     baseDocUrl: '/docs',
     routesImportPath: './generated/routes',
@@ -138,6 +149,7 @@ const getBaseSettings = (): IApplicationSettings => ({
         customSiteTitle: 'Godsmack: Open API v3 Docs',
         swaggerOptions: {
           docExpansion: 'none',
+          plugins: [require("./SwaggerAuthPlugin").SwaggerAuthPlugin],
         },
       }
     },
@@ -146,7 +158,6 @@ const getBaseSettings = (): IApplicationSettings => ({
       lang: 'typescript-fetch',
       outputPath: './client/generated/api',
       codegenVersion: 'V3',
-      generateClient: true,
       swaggerSpecPath: '/swagger.json',
     }
   },

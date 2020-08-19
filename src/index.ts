@@ -16,6 +16,8 @@ export * as pgErrors from './utils/pgErrorCodes'
 export * as typeormErrors from './utils/typeOrmErrors'
 export * as typeormDecorators from './services/typeorm/decorators'
 
+export * as TypeGraphql from 'type-graphql'
+
 export {
   Application,
   ApplicationBuilder,
@@ -30,6 +32,7 @@ export {
   DockerCommand,
   DockerService,
   FactoryBuilder,
+  OpenApiToGraphQlProvider as GraphQlProvider,
   HttpServerProvider,
   JavascriptClient,
   ObjectFactory,

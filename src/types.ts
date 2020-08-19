@@ -53,7 +53,7 @@ export type QueryRequest<T = {}> = {
   query: T
 }
 
-export type Request<T = {}> =
+export type ApiRequestType<T = {}> =
   | ParamsRequest<T>
   | QueryRequest<T>
   | BodyRequest<T>

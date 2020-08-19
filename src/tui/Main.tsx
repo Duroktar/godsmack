@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, Color, Text, Box } from 'ink';
+import { render, Text, Box, } from 'ink';
 import { IApplication } from '../interfaces';
 import { Logger } from '../services';
 import { getLogRecords } from './LoggerService';
@@ -26,34 +26,28 @@ const Counter = (props: any) => {
   return (
     <Box height={60} flexDirection="column">
       <Box height="33%" flexDirection="column">
-        <Color gray>
-          {log.slice(-20).map((row, index) => (
-            <span key={`${row}-${index}`}>
-              <Text>[LOG]: {row}</Text>
-              <Newline />
-            </span>
-          ))}
-        </Color>
+        {log.slice(-20).map((row, index) => (
+          <span key={`${row}-${index}`}>
+            <Text color='gray'>[LOG]: {row}</Text>
+            <Newline />
+          </span>
+        ))}
       </Box>
       <Box height="33%" flexDirection="column">
-        <Color green>
-          {info.slice(-20).map((row, index) => (
-            <span key={`${row}-${index}`}>
-              <Text>[INFO]: {row}</Text>
-              <Newline />
-            </span>
-          ))}
-        </Color>
+        {info.slice(-20).map((row, index) => (
+          <span key={`${row}-${index}`}>
+            <Text color='green'>[INFO]: {row}</Text>
+            <Newline />
+          </span>
+        ))}
       </Box>
       <Box height="33%" flexDirection="column">
-        <Color red>
-          {error.slice(-20).map((row, index) => (
-            <span key={`${row}-${index}`}>
-              <Text>[ERROR]: {row}</Text>
-              <Newline />
-            </span>
-          ))}
-        </Color>
+        {error.slice(-20).map((row, index) => (
+          <span key={`${row}-${index}`}>
+            <Text color='red'>[ERROR]: {row}</Text>
+            <Newline />
+          </span>
+        ))}
       </Box>
     </Box>
   );

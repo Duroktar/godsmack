@@ -7,7 +7,6 @@ class FindOperatorWithExtras<T> extends FindOperator<T> {
     useParameter?: boolean,
     multipleParameters?: boolean,
   ) {
-    console.log('HEEERE')
     super(type as any, value, useParameter, multipleParameters);
   }
 
@@ -17,7 +16,6 @@ class FindOperatorWithExtras<T> extends FindOperator<T> {
     parameters: string[],
   ): string {
     let self = this as any
-    console.log('this._type', self._type)
 
     // @ts-ignore
     if (this._type === 'ilike') {

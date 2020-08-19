@@ -5,7 +5,7 @@ import { DatabaseProvider } from './Database';
 import { InMemoryDatabase } from "../services/MemoryDB";
 import { HttpServerProvider } from './HttpServer';
 import type { StaticTestProps, InferApplicationTypes } from '../types';
-import type { IApplication, IApplicationService, MergeDefaultProviders } from '../interfaces';
+import type { HttpServiceSetup, MergeDefaultProviders, IApplicationContainer } from '../interfaces';
 
 export class TestApplication<T> extends Application<T> {
   static Test(suite: StaticTestProps) {
@@ -35,18 +35,16 @@ export class TestApplication<T> extends Application<T> {
 
     type DefaultAppContainer = MergeDefaultProviders<Container<TestDoDo | BoogerWhoop>>;
 
-    type ITestApplication = IApplication<DefaultAppContainer>
-
-    const services: IApplicationService[] = [
-      (app: ITestApplication, server: HttpServerProvider) => {
+    const services = <T extends IApplicationContainer<DefaultAppContainer>>(app: T): HttpServiceSetup[] => [
+      (server: HttpServerProvider) => {
         const service = app.container.resolve(TestDoDo)
         server.get(service.url, service.callback)
       },
-      (app: ITestApplication, server: HttpServerProvider) => {
+      ({ app, engine: server }: HttpServerProvider) => {
         const booger = app.container.resolve(BoogerWhoop)
         server.get(booger.url, booger.callback)
       },
-      (app: ITestApplication, server: HttpServerProvider) => {
+      ({ app, engine: server }: HttpServerProvider) => {
         const db = app.container.resolve(DatabaseProvider)
 
         server.get('/users/:id', (req: any, res: any) => {
@@ -79,7 +77,7 @@ export class TestApplication<T> extends Application<T> {
         .createDatabase('userHats'),
       ConfigureServer: app => app
         .addExpressServer()
-        .registerServices(...services),
+        .registerServices(...services(app)),
       ConfigureServices: container => container
         .addSingleton(TestDoDo, TestDoDo)
         .addSingleton(BoogerWhoop, HammerWho),

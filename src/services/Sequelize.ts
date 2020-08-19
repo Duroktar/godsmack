@@ -22,7 +22,7 @@ export class SequelizeAdapter extends DatabaseProvider {
         this.logger.error(err)
       })
   }
-  async testConnection() {
+  async test() {
     this.logger.info('Testing database connection..');
     try {
       await this.connection.authenticate({

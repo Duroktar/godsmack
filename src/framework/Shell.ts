@@ -12,7 +12,7 @@ type SpawnOptions =
 export class Shell {
   private settings: IApplicationSettings['shell']
   constructor(
-    public logger: Logger,
+    private logger: Logger,
     private configFactory: SettingsService,
   ) {
     this.logger = logger.For(this)

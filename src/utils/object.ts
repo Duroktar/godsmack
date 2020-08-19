@@ -8,6 +8,10 @@ export function getDeep<T extends Record<string, any>>(
   }, obj)
 }
 
+export function prop<T = any>(obj: any, key: string): T {
+  return obj[key]
+}
+
 /**
  * Use to determine if an object is newable.
  *

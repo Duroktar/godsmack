@@ -1,4 +1,4 @@
-import type { IConfigurationApplication, IBuiltApplication } from './IApplicationCreationService';
+import type { IConfigurationApplication, IBuiltApplication } from './IApplicationCreation';
 
 export interface IApplicationConfigurationService<T> {
   /**

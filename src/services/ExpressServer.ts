@@ -1,116 +1,26 @@
-import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import cors from 'cors';
 import express, { NextFunction, Request, RequestHandler, Response } from "express";
-import { resolve } from 'path';
 import { AUTH_OWNER_CLAIM, AUTH_ROLES_CLAIM, AUTH_ROUTE_DATA, CONTROLLER_ARGS_DATA, ROUTE_DATA } from '../constants';
 import { getDecoratorArgs, HttpParamType, JwtClaim, JwtClaimMetadata, OwnerClaimMetadata, PathMetadata, ReqData, RolesClaimMetadata } from '../framework/decorators';
 import { ParamMetadata } from '../framework/decorators/utils';
 import { HttpServerProvider } from '../framework/HttpServer';
-import { SettingsService } from '../framework/Settings';
 import { Singleton } from '../injector/decorators';
 import { IController } from '../interfaces/IController';
 import { IHttpServer } from '../interfaces/IHttpServer';
 import { Type } from '../types';
+import { isNullOrUndefined } from '../utils/assert';
 import { AuthUtilsService } from './AuthService';
 
 @Singleton()
 export class ExpressServer extends HttpServerProvider implements IHttpServer {
-  //#region Public Api
   public engine = express()
 
-  /**
-   * Used to add and configure Health Check middleware
-   * to the server.
-   *
-   * @param {string} [path='/health']
-   * @returns
-   * @memberof ExpressServer
-   */
-  public useHealthCheck(path: string = "/health") {
-    this.get(path, (req, res) => {
-      res.send({ ServerId: ExpressServer.name, Status: "OK" });
-    });
-    this.logger.info("Health checks enabled @", path);
-    return this;
-  }
-
-  /**
-   * Used to add and configure Controller middleware
-   * to the server.
-   *
-   * @param {string} [controllerDir]
-   * @returns
-   * @memberof ExpressServer
-   */
-  public useControllers(controllerDir?: string) {
-    this.parseJsonBody();
-    const controllerSettings = this.app.container
-      .resolve(SettingsService)
-      .get('controllers');
-    const actualControllerDir = controllerDir ?? controllerSettings.dirname
-    this.logger.info("Using Controllers from dir:", actualControllerDir);
-    return super.useControllers(actualControllerDir);
-  }
-
-  /**
-   * Enables JSON body parsing in requests.
-   *
-   * @param {bodyParser.OptionsJson} [options]
-   * @returns
-   * @memberof ExpressServer
-   */
-  public parseJsonBody(options?: bodyParser.OptionsJson) {
-    this.engine.use(bodyParser.json(options));
-    this.logger.info("JSON body parsing enabled");
-    return this;
-  }
-
-  /**
-   * Enables Cookie parsing.
-   *
-   * @param {string} secret
-   * @param {cookieParser.CookieParseOptions} [options]
-   * @returns
-   * @memberof ExpressServer
-   */
-  public parseCookies(secret?: string, options?: cookieParser.CookieParseOptions) {
-    this.engine.use(cookieParser(secret, options) as any);
-    this.logger.info("Cookie parsing enabled");
-    return this;
-  }
-
-  /**
-   * Used to enable static file serving from a directory
-   * of choice.
-   *
-   * @param {string} path
-   * @param {Parameters<typeof express.static>[1]} [options]
-   * @returns
-   * @memberof ExpressServer
-   */
-  public serveStaticFiles(
-    path: string,
-    options?: Parameters<typeof express.static>[1] & { spaFallback?: boolean | string | null; cors?: cors.CorsOptions | cors.CorsOptionsDelegate; },
-  ) {
-    const { spaFallback, cors: corsOptions, ..._options } = options ?? {} as any
-    if (options?.cors) this.engine.use(cors(corsOptions));
-    this.engine.use(express.static(path, _options));
-    this.useSpaFallback = spaFallback ?? false;
-    this.spaFallbackPath = path;
-    this.logger.info(`Serving static files from dir: ${path}`);
-    return this;
-  }
-  //#endregion
-
-  onServerStarted = () => {
+  public onLoadServices = () => {
     const authService = this.app.container.resolve(AuthUtilsService);
     [...this.controllers.keys()].forEach((endpoint) => {
-      const klass: Type<IController<any>> | undefined = this.controllers.get(
-        endpoint
-      );
+      const klass = this.controllers.get(endpoint) as Type<IController<any>>;
 
-      if (!klass) return;
+      if (isNullOrUndefined(klass))
+        return;
 
       const instance: any = this.app.container.resolve<IController<any>>(klass);
 
@@ -165,30 +75,9 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
         }
       }
     });
-
-    // Register this last or it will swallow the any handler request
-    // set up after it.
-    if (this.useSpaFallback) {
-
-      const { spaFallbackPath, useSpaFallback } = this
-
-      const htmlFileName = typeof useSpaFallback === 'string'
-        ? useSpaFallback
-        : 'index.html';
-
-      // All GET request handled by INDEX file
-      this.engine.get('*', function (req: Request, res: Response) {
-        res.sendFile(resolve(spaFallbackPath, htmlFileName));
-      });
-    }
-
-    super.onServerStarted();
   };
 
   //#region Internals
-  private useSpaFallback: boolean | string = false
-  private spaFallbackPath!: string // set when useSpaFallback is set
-
   private setupHandler(
     instance: any,
     reqType: string,
@@ -200,10 +89,6 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
     authService: AuthUtilsService | null = null
   ) {
     if (instance[methodName] != null) {
-
-      let logString = "Setting up controller " + "(" + reqType + "): " + endpoint;
-      if (methodName !== reqType) logString += " (handler=" + methodName + ")"
-      this.logger.info(logString);
 
       const authArgs = [authType, requiredRoles, requiredOwners, authService] as const
 

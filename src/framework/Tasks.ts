@@ -9,10 +9,10 @@ import { Singleton } from '../injector';
 
 @Singleton()
 export class TaskService implements ITaskService {
-  public logger: Logger
-  public settings: Required<IApplicationSettings['tasks']>
-  public tasks: Map<string, Type<ICronTrigger>> = new Map()
-  public jobs: Map<string, CronJob> = new Map()
+  private logger: Logger
+  private settings: Required<IApplicationSettings['tasks']>
+  private tasks: Map<string, Type<ICronTrigger>> = new Map()
+  private jobs: Map<string, CronJob> = new Map()
 
   constructor(public app: Application<any>) {
     this.settings = app.container
@@ -25,8 +25,8 @@ export class TaskService implements ITaskService {
   }
 
   useCronTriggers = (dirname?: string): this => {
-    const glob = require('glob');
-    const path = require('path');
+    const fg = require('fast-glob') as typeof import('fast-glob');
+    const path = require('path') as typeof import('path');
     const cwd = process.cwd();
     const tsconfig = getTsConfigFile(cwd);
 
@@ -37,7 +37,7 @@ export class TaskService implements ITaskService {
 
     const relPath = path.join(rootDir, tasksDir);
 
-    glob.sync(relPath + '/**/*.ts').forEach((file: string) => {
+    fg.sync(relPath + '/**/*.ts').forEach((file: string) => {
       const dep = require(path.resolve(file));
 
       if (!dep) return
@@ -86,14 +86,14 @@ export class TaskService implements ITaskService {
     throw new Error("Method not implemented.");
   }
 
-  initializeJobs = async () => {
+  initializeService = async () => {
     this.logger.debug('Initializing Jobs')
     for (let task of this.tasks.values()) {
       const instance = this.app.container.resolve<ICronTrigger>(task);
 
       if (!instance) continue;
 
-      this.logger.debug('Setting up Job:', task.name, '@', instance.cronTime)
+      this.logger.info('Setting up Job:', task.name, '@', instance.cronTime)
       this.logger.debug('Job Instance:', instance)
       this.jobs.set(task.name, this.__createCronTrigger(instance))
     }

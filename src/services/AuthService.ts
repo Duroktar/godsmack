@@ -42,21 +42,16 @@ export class AuthUtilsService implements IAuthService {
     return JWT.decode(token, options) as any
   }
 
+  public validateAndDecodeAccessToken<ExtraPayloadData = {}>(req: Pick<Request, 'query'>) {
+    const { query: { access_token } } = req
+
+    return this.decodeJwtOrThrow<ExtraPayloadData>(access_token);
+  }
+
   public validateAndDecodeRefreshToken<ExtraPayloadData = {}>(req: Pick<Request, 'cookies'>) {
     const { cookies: { refresh_token } } = req
 
-    if (!refresh_token)
-      throw new AuthServiceError('No refresh token found')
-
-    if (!this.verifyJWT(refresh_token))
-      throw new AuthServiceError('Refresh token is expired')
-
-    const decoded = this.decodeJWT<ExtraPayloadData>(refresh_token)
-
-    if (!decoded)
-      throw new AuthServiceError('Invalid or malformed refresh token')
-
-    return decoded
+    return this.decodeJwtOrThrow<ExtraPayloadData>(refresh_token);
   }
 
   public getDecodedJwt<ExtraPayloadData = {}>(req: Pick<Request, 'header'>) {
@@ -120,5 +115,20 @@ export class AuthUtilsService implements IAuthService {
 
   public async isSha512PasswordCorrect(password: string, hash: string, salt: string) {
     return isSha512PasswordCorrect({ hash, salt }, password);
+  }
+
+  private decodeJwtOrThrow<ExtraPayloadData = {}>(refresh_token: any) {
+    if (!refresh_token)
+      throw new AuthServiceError('No refresh token found');
+
+    if (!this.verifyJWT(refresh_token))
+      throw new AuthServiceError('Refresh token is expired');
+
+    const decoded = this.decodeJWT<ExtraPayloadData>(refresh_token);
+
+    if (!decoded)
+      throw new AuthServiceError('Invalid or malformed refresh token');
+
+    return decoded;
   }
 }

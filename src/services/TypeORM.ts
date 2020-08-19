@@ -13,7 +13,7 @@ import { SettingsService } from '../framework';
 @Singleton()
 export class TypeORMAdapter extends DatabaseProvider {
   async connect(options?: Partial<ConnectionOptions>) {
-    this.logger.info("Connecting to Database:", options?.type);
+    this.logger.debug("Connecting to Database:", options?.type);
     await this.getDbConnection(undefined, options);
     return this;
   }
@@ -28,12 +28,12 @@ export class TypeORMAdapter extends DatabaseProvider {
     return await this.connection
       .synchronize(options?.dropTables)
       .catch((err: any) => {
-        this.logger.info("there was an error syncing tables");
-        this.logger.error(err);
+        this.logger.error("there was an error syncing tables");
+        this.logger.debug(err);
       });
   }
-  async testConnection() {
-    this.logger.info("Testing database connection..");
+  async test() {
+    this.logger.debug("Testing database connection..");
     return this.connection.isConnected;
   }
 

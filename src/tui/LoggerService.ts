@@ -30,7 +30,6 @@ export class TuiLoggerService implements ILogger {
     return this
   }
   info(...args: any[]) {
-    // console.log(...args)
     this.records.info.push(args.map(arg => arg.toString()).join(' '))
     return this
   }

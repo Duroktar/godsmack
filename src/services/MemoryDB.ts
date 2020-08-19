@@ -156,7 +156,7 @@ export class InMemoryDatabase extends DatabaseProvider {
     this.__loading = false
   };
 
-  async testConnection() {
+  async test() {
     return this.__connected
   }
 }

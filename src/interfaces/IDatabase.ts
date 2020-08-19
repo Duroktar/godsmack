@@ -29,7 +29,7 @@ export interface IDatabaseProvider {
    * @returns {Promise<any>}
    * @memberof IDatabaseProvider
    */
-  testConnection(...args: any): Promise<any>
+  test(...args: any): Promise<any>
 
   /**
    * TODO
