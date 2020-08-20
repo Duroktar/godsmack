@@ -19,14 +19,14 @@ export class FactoryBuilder<Types extends FactoryTypeRecord> {
   public build(): IFactory<Types> {
     const injector = this.app.container.getInjector()
 
-    injector.addDependency(ObjectFactory, this.factory);
+    injector.insertDependency(ObjectFactory, this.factory);
 
-    const C: typeof ObjectFactory = injector
+    const C = injector
       .getDependency(ObjectFactory);
 
     if (!C)
       throw new Error('Nothing to build');
 
-    return new C(this.app, this.types);
+    return new C(this.app, this.types) as any;
   }
 }

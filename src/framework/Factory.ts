@@ -1,4 +1,4 @@
-import { IFactory, FactoryTypeRecord, GetParams, IApplication } from '../interfaces'
+import { IFactory, FactoryTypeRecord, ParamsOf, IApplication } from '../interfaces'
 import type * as types from '../types'
 
 
@@ -11,32 +11,32 @@ export class ObjectFactory<Types extends FactoryTypeRecord = any> implements IFa
     Object.entries(types).map(([key, value]) => {
       application.container
         .getInjector()
-        .upsertDependency(key, value)
+        .insertDependency(key, value)
     })
   }
 
-  create<K extends keyof Types, Impl extends Types[K]>(
-    type: K,
-    ...params: GetParams<Impl>
-  ): InstanceType<Impl> {
-    const C = this.getInjectorDependency<Impl>(type as any)
-    if (C) return new C(...params as any)
+  create<TypeKey extends keyof Types, Impl extends Types[TypeKey]>(
+    type: TypeKey,
+    ...params: ParamsOf<Impl>[]
+  ) {
+    const C = this.getInjectorDependency<Impl>(type as string)
+    if (C) return new C(...params)
     throw new Error("Factory couldn't create type: " + type)
   }
 
   getTypes(): Record<string, types.Type<any>> {
-    const types = this.application.container
-      .getInjector()
-      .getTypes()
-      .entries()
-
-    return Object.fromEntries(types)
-  }
-
-  getInjectorDependency<T extends any>(klass: types.Type<T>) {
     return this.application.container
       .getInjector()
+      .dependenciesAsJSON()
+  }
+
+  getInjectorDependency<T extends any>(klass: types.Type<T> | string) {
+    const dependency = this.application.container
+      .getInjector()
       .getDependency(klass)
+    if (dependency == null)
+      throw new Error(`Dependency not registered: ${klass}`)
+    return dependency
   }
 }
 

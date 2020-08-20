@@ -12,7 +12,6 @@ import type { IApplication } from './IApplication';
  * @interface IApplicationCreationService
  * @template T
  */
-
 export interface IApplicationCreationService<T extends any = any> {
   /**
    * Used to configure dependencies for the program.

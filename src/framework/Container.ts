@@ -1,12 +1,10 @@
 import { Injector, InjectorFactory } from '../injector/Injector';
-import { createTaggedSingleton } from '../utils/createTaggedSingleton';
 import type { EmptyType, Type, InferType, StaticTestProps } from '../types';
 import type { IContainer } from '../interfaces';
 
 export type InferContainerT<T> = T extends Container<infer C> ? C : never
 
 export class Container<T = EmptyType> implements IContainer<T> {
-  /* Public api */
   constructor(private injector: InjectorFactory = Injector) { }
 
   private __resolverCache = new Map()
@@ -20,37 +18,36 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return resolved as Target
   }
 
-  public addTransient<T>(type: Type<T>, impl: Type<T> = type) {
-    return this.__addInjectorDependency(impl, type.name);
+  public get<T>(target: T | Type<any> | string): T {
+    return this.resolve(target as any) as any
   }
 
-  public addSingleton<T>(type: Type<T>, impl: Type<T> = type) {
-    createTaggedSingleton(type, true); // SIDE-EFFECT
-    createTaggedSingleton(impl, true); // SIDE-EFFECT
-    this.injector.addSingleton(impl)
-    return this.__addInjectorDependency(impl, type.name);
+  public set<T, I extends Type<T>>(type: T | Type<T> | string, impl: I = type as any) {
+    return this.addSingleton(type as any, impl)
+  }
+
+  public addSingleton<T>(type: Type<T> | string, impl: Type<T> = type as any, force = true) {
+    this.injector.registerType(type, impl, force)
+    return this.__getResultType(impl, (type as any).name)
   }
 
   public addSingletonInstance<I extends Type<any>>(
     type: I,
     instance: InferType<I>,
   ): Container<Exclude<InferType<I> | T, EmptyType>> {
-    createTaggedSingleton(type, true); // SIDE-EFFECT
-    this.injector.upsertSingletonInstance(type, instance);
-    return this.__addInjectorDependency(type, type.name); // ensure override (...)
+    this.injector.registerInstance(type, instance)
+    return this as any;
   }
 
-  public getInjector = () => { return this.injector }
-
-  /* Private api */
-  private __addInjectorDependency<I, Key extends string>(
+  private __getResultType<I, Key extends string>(
     type: Type<I>,
     key: Key,
     force = true,
   ): Container<Exclude<I | T, EmptyType>> {
-    this.injector.addDependency(key, type, force)
     return this as any;
   }
+
+  public getInjector = () => { return this.injector }
 
   protected onExit() {
     this.injector.destroyAll()
@@ -58,56 +55,36 @@ export class Container<T = EmptyType> implements IContainer<T> {
 
   /* TESTING */
   static Test({ expect, describe, it }: StaticTestProps) {
-    interface Offspring {
-      foo: string
-      talk(): string
+    const noise1 = 'brappp';
+    const noise2 = 'pfft';
+
+    interface BaseClass {
+      noise(): string
     }
-    interface WithButt {
-      fart(): string
+    class Implementation1 {
+      noise() { return noise1 }
     }
-    class Child implements Offspring {
-      foo = 'Hello!'
-      talk() { return this.foo }
-    }
-    class RetardedChild implements Offspring {
-      foo = 'DERP'
-      talk() { return this.foo }
-    }
-    class FartingAnimal {
-      fart() { return 'brappp' }
-    }
-    class FartingHorse {
-      fart() { return 'pfft' }
-    }
-    class OldPerson {
-      forget() { return 'huh??' }
+    class Implementation2 {
+      noise() { return noise2 }
     }
 
     const container = new Container()
-      .addTransient<Offspring>(Child, RetardedChild)
-      // .addTransient<Offspring>(Child, OldPerson) // <-- should not compile
-      .addSingleton<WithButt>(FartingAnimal, FartingHorse)
+      .addSingleton<BaseClass>(Implementation1, Implementation2)
 
     describe('Container tests', () => {
-      it('work here', () => {
-        expect(container.resolve(Child).talk()).to.equal('DERP')
-        expect(container.resolve(Child)).not.to.equal(container.resolve(Child))
-        // container.resolve(OldPerson) // <-- should not compile
-      })
-
       // Singleton
-      const fartingAnimal = container.resolve(FartingAnimal)
+      const instance = container.resolve(Implementation1)
 
-      it('and here', () => {
-        expect(fartingAnimal).to.equal(container.resolve(FartingAnimal))
-        expect(fartingAnimal.fart()).to.equal('pfft')
+      it('works', () => {
+        expect(instance).to.equal(container.resolve(Implementation1))
+        expect(instance.noise()).to.equal(noise2)
       })
-      it('and also here', () => {
-        expect(container.resolve(FartingAnimal)).to.equal(fartingAnimal)
-        expect(container.resolve(FartingAnimal).fart()).to.equal('pfft')
+      it('and here', () => {
+        expect(container.resolve(Implementation1)).to.equal(instance)
+        expect(container.resolve(Implementation1).noise()).to.equal(noise2)
       })
       it('here too', () => {
-        expect(container.resolve(FartingAnimal)).to.equal(container.resolve(FartingAnimal))
+        expect(container.resolve(Implementation1)).to.equal(container.resolve(Implementation1))
       })
     })
   }

@@ -41,6 +41,23 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   configure: IApplicationConfigurationHandler<AppContainer>;
+
+  /**
+   * The Application DI container. Used to register and
+   * resolve the various dependencies for the program.
+   *
+   * @memberof IApplication
+   */
+  container: MergeDefaultProviders<AppContainer>;
+
+  /**
+   *
+   *
+   * @type {IApplicationEventEmitter}
+   * @memberof IApplication
+   */
+  events: IApplicationEventEmitter
+
   /**
    * Stops the application
    *
@@ -237,16 +254,6 @@ export interface IApplication<AppContainer = any> {
   // addLiveReloading(): this
   // addSinglePageApp(): this
   // addCreateReactApp(): this
-
-  /**
-   * The Application DI container. Used to register and
-   * resolve the various dependencies for the program.
-   *
-   * @memberof IApplication
-   */
-  container: MergeDefaultProviders<AppContainer>;
-
-  events: IApplicationEventEmitter
 }
 
 export enum ApplicationEvent {
@@ -268,9 +275,9 @@ export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<
   | DockerService
   | OpenApiToGraphQlProvider
   | TypeGraphQlProvider
-  | SettingsService
   | SwaggerService
   | TaskService
   | MailerService
   | TerminalInk
+  | SettingsService
   , EmptyType>>

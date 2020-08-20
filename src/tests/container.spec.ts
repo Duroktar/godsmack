@@ -54,9 +54,9 @@ describe('Container Class', () => {
     }
 
     const container = new Container()
-      .addTransient(Cat, FeralCat)
-      .addTransient(Dog, FeralDog)
-      .addTransient(Wolf, FeralWolf)
+      .addSingleton(Cat, FeralCat)
+      .addSingleton(Dog, FeralDog)
+      .addSingleton(Wolf, FeralWolf)
 
     expect(container.resolve(Cat).meow()).to.equal('FUCKING MEOW')
     expect(container.resolve(Dog).bark()).to.equal('FUCKING BARK')

@@ -1,14 +1,11 @@
 import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable'
 import { Logger } from '../services/Logger';
-import type { Type, InferType } from '../types';
-import { is_newable } from '../utils/object';
-
-export const SYMBOL_SINGLETON = Symbol.for('SINGLETON')
+import type { Type } from '../types';
 
 type ResolvedInjections<T> = {
-  resolved: any;
-  injections: T[];
+  resolved: T;
+  injections: Type<any>[];
 };
 
 export class InjectorFactory {
@@ -16,46 +13,107 @@ export class InjectorFactory {
   public logger: Logger = Logger.For(InjectorFactory)
 
   //#region api
-  public registerDependencies(...classes: Type<any>[]) {
-    classes.forEach((cls: Type<any>) => this.addDependency(cls, cls));
+  public registerType<T extends any>(type: Type<T> | string, impl?: Type<T>, force = false) {
+    this.addDependency(type, (impl || type) as any, force)
+    return this
   }
 
-  public resolve<T>(target: Type<any>): T {
+  public registerInstance = <T extends any>(target: Type<T> | string, instance: T): T => {
+    const typeName = this.getTypeName(target);
+    this.instances.set(typeName, instance);
+    return instance
+  }
 
-    const { resolved, injections } = this.getResolvedInjections<T>(target);
+  public resolve<T extends any>(target: Type<T> | string): T {
+    const typeName = this.getTypeName(target)
 
-    if (this.isSingleton(resolved)) {
-      this.logger.debug('Resolving singleton for dependency =>', this.getTypeName(resolved))
-      return this.upsertSingleton(resolved, injections);
+    if (this.instances.has(typeName))
+      return this.instances.get(typeName)
+
+    const upsertAndResolveDependency = (): Type<T> => {
+      const dependency = this.getDependency(target);
+      if (dependency != null)
+        return dependency
+      if (dependency == null && typeof target === 'string')
+        throw new Error(`Target not found: ${target}`)
+      this.insertDependency(typeName, target as Type<T>)
+      return target as Type<T>
     }
 
-    this.logger.debug('Resolving new target instance for dependency =>', this.getTypeName(resolved))
-    return this.createObject<T>(resolved, injections);
+    const resolved: Type<T> = upsertAndResolveDependency()
+
+    const { injections } = this.getResolvedInjections(resolved);
+    this.logger.debug('Resolving dependency =>', typeName)
+
+    return this.registerInstance<T>(typeName, this.createObject(resolved, injections))
+  }
+
+  public hasDependency<T extends any>(target: Type<T> | string): boolean {
+    return this.dependencies.has(this.getTypeName(target))
+  }
+
+  public getDependency<T extends any>(target: Type<T> | string): Type<T> | undefined {
+    return this.dependencies.get(this.getTypeName(target)) as Type<T>
+  }
+
+  public insertDependency<T extends any>(target: Type<T> | string, resolved: Type<T>) {
+    this.addDependency(target, resolved, false);
+    return (typeof target !== 'string') ? target : resolved;
+  }
+
+  public overrideDependency<T extends any>(target: Type<T> | string, resolved: Type<T>) {
+    this.addDependency(target, resolved, true);
+    return (typeof target !== 'string') ? target : resolved;
+  }
+
+  public destroyAll() {
+    const dependencies = this.dependencies.values();
+    for (let each of dependencies) {
+      this.disposeObject(each)
+    }
+    this.dependencies.clear()
+  }
+
+  public listDependencies({ sort = false, log = false } = {}): string[] {
+    let result = [...this.dependencies.keys()];
+    if (sort)
+      result = result.sort();
+    if (log)
+      this.logger.info(result)
+    return result
+  }
+
+  public dependenciesAsJSON() {
+    return [...this.dependencies.keys()].sort().reduce((acc, n) => {
+      const instance = this.dependencies.get(n)
+      return { ...acc, [n]: instance?.constructor?.name }
+    }, {});
   }
   //#endregion
 
   //#region internals
-  private types = new Map<string, Type<any>>()
   private dependencies = new Map<string, Type<any>>()
-  private singletons = new Map<string, any>()
+  private instances = new Map<string, any>()
   private noOverrides: boolean = true;
 
-  private resolveTokens<T>(t: Type<any>) {
-    let resolved: any = (this.hasDependency(t)) ? this.getDependency(t) : t;
+  private resolveTokens<T extends Type<any>>(resolved: T): ResolvedInjections<T> {
+
+    const reflected = Reflect.getMetadata('design:paramtypes', resolved);
 
     // tokens are required dependencies, while injections are resolved tokens from the Injector
-    const tokens: Type<any>[] = Reflect.getMetadata('design:paramtypes', resolved)?.filter((o: any) => o != null) || [];
+    const tokens: Type<any>[] = reflected?.filter((o: any) => o != null) ?? [];
 
-    if (tokens.find(o => o.name === 'Object')) {
-      const error = `Unable to resolve dependencies for => ${resolved.name}, deps => ${tokens.map(o => o.name)}`;
-      const help = `Possible misuse of @Injectable() decorator on class ${resolved.name}`;
-      throw new Error(`${error}\n${help}`);
-    }
+    Promise.resolve(() => {
+      if (tokens.find(o => o.name === 'Object')) {
+        const error = `Unable to resolve dependencies for => ${resolved.name}, deps => ${tokens.map(o => o.name)}`;
+        const help = `Possible misuse of @Injectable() decorator on class ${resolved.name}`;
+        throw new Error(`${error}\n${help}`);
+      }
+    })
 
-    const injections: T[] = tokens.map(token => this.resolve(token));
-    this.registerDependencies(...tokens);
+    tokens.forEach((cls: Type<any>) => this.addDependency(cls, cls));
 
-    return { resolved, injections };
+    return { resolved, injections: tokens.map(token => this.resolve<T>(token)) };
   }
 
   //#endregion
@@ -63,204 +121,55 @@ export class InjectorFactory {
   //#region cache
   private __injectionCache = new Map()
 
-  private getResolvedInjections<T>(target: Type<any>) {
-
-    let resolvedInjections: ResolvedInjections<T>
-
-    if (this.__injectionCache.has(target)) {
-      resolvedInjections = this.__injectionCache.get(target)
-    } else {
-      resolvedInjections = this.resolveTokens<T>(target);
-      this.__injectionCache.set(target, resolvedInjections)
+  private getResolvedInjections(target: Type<any>) {
+    if (!this.__injectionCache.has(target)) {
+      this.__injectionCache.set(target, this.resolveTokens(target))
     }
-
-    return resolvedInjections
-  }
-  //#endregion
-
-  //#region information
-  listDependencies({ sort = false, log = false } = {}): string[] {
-    let result = [...this.dependencies.keys()].map(n => `${n}->${this.dependencies.get(n)?.name}`);
-    if (sort)
-      result = result.sort();
-    if (log)
-      this.logger.info(result)
-    return result
-  }
-
-  listSingletons({ sort = false, log = false } = {}): any[] {
-    let result = [...this.singletons.keys()];
-    if (sort)
-      result = result.sort();
-    if (log)
-      this.logger.info(result)
-    return result
-  }
-
-  dependenciesAsJSON() {
-    return [...this.dependencies.keys()].sort().reduce((acc, n) => {
-      const klass = this.dependencies.get(n)
-      return { ...acc, [n]: klass?.name }
-    }, {});
-  }
-
-  singletonsAsJSON() {
-    return [...this.singletons.keys()].sort().reduce((acc, n) => {
-      const instance = this.singletons.get(n)
-      return { ...acc, [n]: instance.constructor.name }
-    }, {});
-  }
-  //#endregion
-
-  //#region singletons
-  isSingleton(target: Type<any>) {
-    this.logger.debug('Determining if singleton. target =>', target)
-    return (target as any)[SYMBOL_SINGLETON] || this.hasSingleton(target);
-  }
-
-  hasSingleton<T>(target: Type<T>) {
-    this.logger.debug('Looking for singleton for target:', target)
-    return this.singletons.has(this.getTypeName(target))
-  }
-
-  addSingleton<T>(newable: Type<T>, injections?: any): T {
-    this.logger.debug('Setting singleton to NEW target instance:', this.getTypeName(newable), newable)
-    const newObject: T = (injections && is_newable(newable))
-      ? this.createObject(newable, injections)
-      : this.resolve(newable);
-
-    this.singletons.set(this.getTypeName(newable), newObject);
-    return newObject;
-  }
-
-  addSingletonInstance<T extends Type<any>, I extends InferType<T>>(type: T, instance: I): I {
-    this.logger.debug('Setting singleton to EXISTING target instance:', this.getInstanceName(instance), instance)
-    this.singletons.set(this.getTypeName(type), instance);
-    return instance
-  }
-
-  getSingleton<T>(target: Type<T>): T {
-    this.logger.debug('Getting singleton:', this.getTypeName(target))
-    return this.singletons.get(this.getTypeName(target))!
-  }
-
-  upsertSingleton<T>(target: Type<T>, injections: any): T {
-    this.logger.debug('Upserting singleton =>', this.getTypeName(target))
-    const dep = this.upsertDependency(target, target);
-    if (!this.hasSingleton(dep)) {
-      return this.addSingleton(dep, injections);
-    }
-    return this.getSingleton(dep);
-  }
-
-  upsertSingletonInstance<T extends Type<any>>(target: T, instance: InferType<T>): T {
-    this.logger.debug('Upserting singleton instance =>', this.getTypeName(target))
-    const dep = this.upsertDependency(target, instance.constructor);
-    if (!this.hasSingleton(dep)) {
-      return this.addSingletonInstance(dep, instance);
-    }
-    return instance;
+    return this.__injectionCache.get(target)
   }
   //#endregion
 
   //#region dependencies
-  hasDependency<T extends Type<any>>(target: T | string) {
-    return this.dependencies.has(this.getTypeName(target))
-  }
 
-  setDependency<T extends Type<any>>(target: T | string, resolved: T) {
-    return this.addDependency(target, resolved, true);
-  }
+  private addDependency<T extends Type<any>>(target: T | string, resolvedMaybe: T, override = false) {
+    const resolved =
+      typeof target === 'string' ? resolvedMaybe :
+      resolvedMaybe == null ? target : resolvedMaybe;
 
-  addDependency<T extends Type<any>>(target: T | string, resolved: T, override = false) {
-    const targetName = this.getTypeName(target)
     const resolvedName = this.getTypeName(resolved)
+    const targetName = this.getTypeName(target)
+
     if (this.dependencies.has(targetName)) {
-      if (this.noOverrides && !override) {
-        this.logger.debug(`Skipping existing dependency => ${targetName}`)
+      if (this.noOverrides || !override) {
+        this.logger.debug(`Skipping existing dependencies => ${targetName}`)
         return this.dependencies
       }
-      this.logger.debug(`Overriding existing dependency => ${targetName}`)
+      this.logger.debug(`Overriding existing dependencies => ${targetName}`)
     } else {
-      this.logger.debug(`Setting dependency => ${targetName} to => ${resolved}`)
+      this.logger.debug(`Setting dependencies => ${targetName} to => ${resolvedName}`)
     }
-    this.updateTypes<T>(target, targetName, resolved, resolvedName);
-    return this.dependencies.set(targetName, resolved)
-  }
 
-  getDependency<T extends Type<any>>(target: T | string): Type<any> {
-    const tName = this.getTypeName(target);
-    this.logger.debug('Getting dependency =>', tName)
-    if (!this.dependencies.has(tName)) {
-      this.logger.debug(`Dependency not found => ${tName}`)
-    }
-    return this.dependencies.get(tName)!
-  }
-
-  upsertDependency<T extends Type<any>>(target: T | string, resolved: T): T {
-    this.logger.debug('Upserting dependency =>', this.getTypeName(target))
-    if (!this.hasDependency(target)) {
-      this.addDependency(target, resolved);
-    }
-    return (typeof target !== 'string') ? target : resolved;
-  }
-  //#endregion
-
-  //#region types
-  getTypes(): Map<string, Type<any>> {
-    return this.types
-  }
-
-  getType<T extends Type<any>>(type: string | T) {
-    return this.types.get(this.getTypeName(type))
-  }
-
-  private updateTypes<T extends Type<any>>(target: string | T, targetName: string, resolved: T, resolvedName: string) {
-    if (!this.types.has(targetName)) {
-      if (typeof target !== 'string') {
-        this.logger.debug('Updating target Type =>', targetName, 'to target =>', target)
-        this.types.set(targetName, target);
-      }
-      else {
-        this.logger.debug('Updating target Type =>', targetName, 'to resolved =>', resolved)
-        this.types.set(targetName, resolved);
-      }
-    }
-    if (resolvedName !== Object.name && !this.types.has(resolvedName)) {
-      this.logger.debug('Updating resolvedName Type =>', resolvedName, 'to resolved =>', resolved)
-      this.types.set(resolvedName, resolved);
-    }
+    this.dependencies.set(targetName, resolved)
   }
   //#endregion
 
   //#region disposable
-  createObject<T>(target: Type<any>, injections: T[]): T {
+  private createObject<T extends any>(target: Type<T>, injections: Type<any>[]): T {
     return new target(...injections);
   }
 
-  disposeObject<T>(target: Type<any>): void {
+  private disposeObject<T extends typeof Disposable>(target: Type<T>): void {
     return Disposable.Dispose(target)
-  }
-
-  destroyAll() {
-    this.dependencies.clear()
-    for (let each of this.listSingletons()) {
-      this.disposeObject(each)
-    }
-    this.singletons.clear()
   }
   //#endregion
 
   //#region utilities
-  getTypeName = <T extends Type<any>>(t: T | string) => {
+  private getTypeName = <T extends Type<any>>(t: T | string) => {
     const rv = (typeof t === 'string') ? t : t?.name || t?.constructor.name
     if (!rv) {
       throw new Error(`somthing fucky passed to getTypeName => ${t}`)
     }
     return rv
-  }
-  getInstanceName = <T extends any>(t: Type<T>) => {
-    return t.constructor.name
   }
   //#endregion
 };

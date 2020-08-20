@@ -1,5 +1,4 @@
 export { clamp } from './clamp'
-export { createTaggedSingleton } from './createTaggedSingleton'
 export { getTsConfigFile } from './getTsConfigFile'
 export { transpile } from './transpile'
 export * as error from './func'

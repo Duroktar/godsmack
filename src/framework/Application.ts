@@ -251,7 +251,8 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public useSettings = (config: DeepPartial<IApplicationSettings>): this => {
-    this.container.resolve(SettingsService).update(config)
+    const settings = this.container.resolve(SettingsService)
+    settings.update(config)
     return this
   }
 

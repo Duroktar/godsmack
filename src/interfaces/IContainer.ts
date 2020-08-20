@@ -23,15 +23,6 @@ export interface IContainer<T = EmptyType> {
    */
   resolve<Target extends T>(target: Type<Target>): Target;
   /**
-   * Registers a class as a transient dependency to the DI container
-   *
-   * @param {Type<T>} ifce The base class to register
-   * @param {Type<T>} impl The resolved class for that type
-   * @returns The container instance for chaining.
-   * @memberof IContainer
-   */
-  addTransient<T>(ifce: Type<T>, impl?: Type<T>): Container<Exclude<Type<T> | T, EmptyType>>;
-  /**
    * Registers a class as a singleton to the DI container
    *
    * @param {Type<T>} ifce The base class to register
