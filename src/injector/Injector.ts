@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable'
-import { Logger } from '../services/Logger';
+import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
 
 type ResolvedInjections<T> = {
@@ -10,7 +10,7 @@ type ResolvedInjections<T> = {
 
 export class InjectorFactory {
 
-  public logger: Logger = Logger.For(InjectorFactory)
+  public logger: LogFactory = LogFactory.For(InjectorFactory)
 
   //#region api
   public registerType<T extends any>(type: Type<T> | string, impl?: Type<T>, force = false) {
@@ -20,15 +20,15 @@ export class InjectorFactory {
 
   public registerInstance = <T extends any>(target: Type<T> | string, instance: T): T => {
     const typeName = this.getTypeName(target);
-    this.instances.set(typeName, instance);
+    this.instanceCache.set(typeName, instance);
     return instance
   }
 
   public resolve<T extends any>(target: Type<T> | string): T {
     const typeName = this.getTypeName(target)
 
-    if (this.instances.has(typeName))
-      return this.instances.get(typeName)
+    if (this.instanceCache.has(typeName))
+      return this.instanceCache.get(typeName)
 
     const upsertAndResolveDependency = (): Type<T> => {
       const dependency = this.getDependency(target);
@@ -46,10 +46,6 @@ export class InjectorFactory {
     this.logger.debug('Resolving dependency =>', typeName)
 
     return this.registerInstance<T>(typeName, this.createObject(resolved, injections))
-  }
-
-  public hasDependency<T extends any>(target: Type<T> | string): boolean {
-    return this.dependencies.has(this.getTypeName(target))
   }
 
   public getDependency<T extends any>(target: Type<T> | string): Type<T> | undefined {
@@ -93,7 +89,7 @@ export class InjectorFactory {
 
   //#region internals
   private dependencies = new Map<string, Type<any>>()
-  private instances = new Map<string, any>()
+  private instanceCache = new Map<string, any>()
   private noOverrides: boolean = true;
 
   private resolveTokens<T extends Type<any>>(resolved: T): ResolvedInjections<T> {
@@ -132,11 +128,10 @@ export class InjectorFactory {
   //#region dependencies
 
   private addDependency<T extends Type<any>>(target: T | string, resolvedMaybe: T, override = false) {
-    const resolved =
-      typeof target === 'string' ? resolvedMaybe :
-      resolvedMaybe == null ? target : resolvedMaybe;
+    const resolvedType = typeof target === 'string'
+      ? resolvedMaybe : resolvedMaybe == null
+        ? target : resolvedMaybe;
 
-    const resolvedName = this.getTypeName(resolved)
     const targetName = this.getTypeName(target)
 
     if (this.dependencies.has(targetName)) {
@@ -146,10 +141,10 @@ export class InjectorFactory {
       }
       this.logger.debug(`Overriding existing dependencies => ${targetName}`)
     } else {
-      this.logger.debug(`Setting dependencies => ${targetName} to => ${resolvedName}`)
+      const typeName = this.getTypeName(resolvedType)
+      this.logger.debug(`Setting dependencies => ${targetName} to => ${typeName}`)
     }
-
-    this.dependencies.set(targetName, resolved)
+    this.dependencies.set(targetName, resolvedType)
   }
   //#endregion
 

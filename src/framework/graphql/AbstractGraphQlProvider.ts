@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql';
 import { Singleton } from '../../injector';
 import { IGraphQlProvider } from '../../interfaces/IGraphQL';
-import { Logger } from '../../services';
+import { LogFactory } from '../../services/Logger';
 import { HttpServerProvider } from '../HttpServer';
 import { SettingsService } from '../Settings';
 import { SwaggerService } from '../Swagger';
@@ -9,7 +9,7 @@ import { SwaggerService } from '../Swagger';
 @Singleton()
 export class AbstractGraphQlProvider implements IGraphQlProvider {
   constructor(
-    public logger: Logger,
+    public logger: LogFactory,
     public server: HttpServerProvider,
     public config: SettingsService,
     public swagger: SwaggerService,

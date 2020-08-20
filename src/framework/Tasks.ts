@@ -1,15 +1,16 @@
-import { ITaskService, IApplicationSettings, ICronTrigger } from "../interfaces";
+import { CronJob } from 'cron';
+import { Singleton } from '../injector';
+import type { IApplicationSettings, ICronTrigger, ITaskService } from "../interfaces";
+import { LogFactory } from '../services/Logger';
+import type { Type } from '../types';
 import { getTsConfigFile } from '../utils';
-import { CronJob } from 'cron'
-import { Logger } from '../services';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
-import { Type } from '../types';
-import { Singleton } from '../injector';
+import { doTry } from '../utils/func';
 
 @Singleton()
 export class TaskService implements ITaskService {
-  private logger: Logger
+  private logger: LogFactory
   private settings: Required<IApplicationSettings['tasks']>
   private tasks: Map<string, Type<ICronTrigger>> = new Map()
   private jobs: Map<string, CronJob> = new Map()
@@ -20,7 +21,7 @@ export class TaskService implements ITaskService {
       .get('tasks');
 
     this.logger = app.container
-      .resolve(Logger)
+      .resolve(LogFactory)
       .For(this)
   }
 
@@ -37,7 +38,7 @@ export class TaskService implements ITaskService {
 
     const relPath = path.join(rootDir, tasksDir);
 
-    fg.sync(relPath + '/**/*.ts').forEach((file: string) => {
+    fg.sync(relPath + '/**/*.ts').forEach(async (file: string) => {
       const dep = require(path.resolve(file));
 
       if (!dep) return
@@ -63,11 +64,13 @@ export class TaskService implements ITaskService {
   }
 
   startAll = (tickOnStart = false): this => {
-    this.logger.debug('Starting all Jobs')
-    for (let job of this.jobs.values()) {
-      job.start()
-      if (tickOnStart) job.fireOnTick()
-    }
+    doTry(async () => {
+      this.logger.debug('Starting all Jobs')
+      for (let job of this.jobs.values()) {
+        job.start()
+        if (tickOnStart) job.fireOnTick()
+      }
+    })
     return this;
   }
 
@@ -87,18 +90,20 @@ export class TaskService implements ITaskService {
   }
 
   initializeService = async () => {
-    this.logger.debug('Initializing Jobs')
-    for (let task of this.tasks.values()) {
-      const instance = this.app.container.resolve<ICronTrigger>(task);
+    doTry(async () => {
+      this.logger.debug('Initializing Jobs')
+      for (let task of this.tasks.values()) {
+        const instance = this.app.container.resolve<ICronTrigger>(task);
 
-      if (!instance) continue;
+        if (!instance) continue;
 
-      this.logger.info('Setting up Job:', task.name, '@', instance.cronTime)
-      this.logger.debug('Job Instance:', instance)
-      this.jobs.set(task.name, this.__createCronTrigger(instance))
-    }
+        this.logger.info('Setting up Job:', task.name, '@', instance.cronTime)
+        this.logger.debug('Job Instance:', instance)
+        this.jobs.set(task.name, this.__createCronTrigger(instance))
+      }
 
-    if (this.settings.runAllOnStart) this.startAll()
+      if (this.settings.runAllOnStart) this.startAll()
+    })
   }
 
   private __createCronTrigger = (props: ICronTrigger) => {

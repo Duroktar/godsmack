@@ -1,4 +1,4 @@
-import { IApplication, IFactory, FactoryTypeRecord } from '../interfaces';
+import type { IApplication, IFactory, FactoryTypeRecord } from '../interfaces';
 import { ObjectFactory } from './Factory';
 
 export class FactoryBuilder<Types extends FactoryTypeRecord> {

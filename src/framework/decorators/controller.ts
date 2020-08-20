@@ -1,8 +1,8 @@
-import type { Request, Response } from 'express'
+import type { Request, Response } from 'express';
 import { ROUTE_DATA } from '../../constants';
-import { paramDecoratorFactory, ParamMetadata } from './utils';
+import type { JwtAuthData, JwtPayload } from '../../services/AuthService';
 import { assertNever } from '../../utils/assert';
-import { JwtPayload, JwtAuthData } from '../../services';
+import { paramDecoratorFactory, ParamMetadata } from './utils';
 
 export type PathMetadata = {
   path: string;

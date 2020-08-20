@@ -1,12 +1,12 @@
 import { Singleton } from '../injector/decorators'
-import { Logger } from './Logger'
+import { LogFactory } from './Logger'
 import * as ky from 'ky-universal'
 import type { Options } from 'ky'
 
 @Singleton()
 export class FetchService {
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
   ) {
     this.logger = logger.For(this)
   }

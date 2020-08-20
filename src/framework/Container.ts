@@ -18,17 +18,13 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return resolved as Target
   }
 
-  public get<T>(target: T | Type<any> | string): T {
-    return this.resolve(target as any) as any
-  }
-
-  public set<T, I extends Type<T>>(type: T | Type<T> | string, impl: I = type as any) {
-    return this.addSingleton(type as any, impl)
-  }
-
-  public addSingleton<T>(type: Type<T> | string, impl: Type<T> = type as any, force = true) {
+  public addSingleton<Base extends any, Impl extends Type<Base> = any, Ret extends Type<Base> = any>(
+    type: Ret,
+    impl: Impl = type as any,
+    force = true,
+  ): Container<Ret | InferType<Ret> | T> {
     this.injector.registerType(type, impl, force)
-    return this.__getResultType(impl, (type as any).name)
+    return this
   }
 
   public addSingletonInstance<I extends Type<any>>(

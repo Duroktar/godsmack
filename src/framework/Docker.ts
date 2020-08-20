@@ -1,14 +1,14 @@
 import { join as joinPath } from 'path';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { getProjectRoot } from '../utils/getProjectRoot';
-import { Logger } from '../services';
+import { LogFactory } from '../services/Logger';
 import { Injectable } from '../injector';
 import { Shell } from './Shell';
 
 @Injectable()
 export class DockerService {
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
     private shell: Shell,
   ) {
     this.logger = logger.For(this)

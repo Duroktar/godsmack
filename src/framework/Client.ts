@@ -1,7 +1,7 @@
 import { ClientAdapter } from './ClientAdapter';
 import { HttpServerProvider } from './HttpServer';
 import { Injectable } from '../injector';
-import { Logger } from '../services';
+import { LogFactory } from '../services/Logger';
 import { transpile } from '../utils';
 import type { IApplication, IClient } from '../interfaces';
 import { SettingsService } from './Settings';
@@ -11,7 +11,7 @@ import { IApplicationSettings } from '../interfaces/IApplicationSettings';
 export class JavascriptClient implements IClient {
   private settings: IApplicationSettings['client']
   constructor(
-    public logger: Logger,
+    public logger: LogFactory,
     public server: HttpServerProvider,
     public configFactory: SettingsService,
   ) {

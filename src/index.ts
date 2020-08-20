@@ -1,13 +1,7 @@
 require('dotenv').config()
 
-export * as framework from './framework'
-export * as injector from './injector'
-export * as decorators from './injector/decorators'
-export * as services from './services'
 export * as http from './utils/http'
 export * as errors from './utils/error'
-export * as types from './types'
-export * as TUI from './tui'
 export * from './framework/decorators'
 export * from './interfaces'
 export * from './types'
@@ -18,23 +12,20 @@ export * as typeormDecorators from './services/typeorm/decorators'
 
 export * as TypeGraphql from 'type-graphql'
 
+export { LogFactory, LogLevel } from './services/Logger'
+
 export {
   Application,
   ApplicationBuilder,
   ApplicationConfigurationService,
   ApplicationCreationService,
-  CliAppProvider,
-  ClientAdapter,
   Container,
   DatabaseProvider,
-  DebugObjectFactory,
   Disposable,
-  DockerCommand,
-  DockerService,
   FactoryBuilder,
-  OpenApiToGraphQlProvider as GraphQlProvider,
+  TypeGraphQlProvider,
+  OpenApiToGraphQlProvider,
   HttpServerProvider,
-  JavascriptClient,
   ObjectFactory,
   SettingsService,
   Shell,

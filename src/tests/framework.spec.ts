@@ -1,7 +1,7 @@
 import { ApplicationBuilder, ApplicationConfigurationService, ApplicationCreationService } from '../framework';
 import { staticTestProps } from './staticTestProps';
 import { IApplication, IConfigurationApplication } from '../interfaces';
-import { ExpressServer } from '../services';
+import { ExpressServer } from '../services/ExpressServer';
 
 function ConfigureServices(c: any) { return c }
 

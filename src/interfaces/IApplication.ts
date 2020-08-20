@@ -9,17 +9,19 @@ import type {
 } from '../framework';
 
 import type { DockerService } from '../framework/Docker';
-import type { ExpressServer, YargsCliApp, MailerService } from '../services';
-import type { PostgresDB as SequelizePostgresDB } from '../services/sequelize/PostgresDB';
-import type { PostgresDB as TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
+import type { ExpressServer } from '../services/ExpressServer';
+import type { YargsCliApp } from '../services/YargsCliApp';
+import type { MailerService } from '../services/Mailer';
+import type { SequelizePostgresDB } from '../services/sequelize/PostgresDB';
+import type { TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
 import type { IApplicationConfigurationHandler } from "./IApplicationConfiguration";
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { TerminalInk } from '../tui/TerminalInk';
 import type { SwaggerService } from '../framework/Swagger';
 import type { IDatabaseProvider } from './IDatabase';
 import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
-import { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
-import { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
+import type { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
+import type { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
 
 export type IApplicationContainer<T> = Pick<IApplication<T>, 'container'>
 
@@ -261,6 +263,8 @@ export enum ApplicationEvent {
   BEFORE_START = 'before-start',
   ON_START = 'on-start',
   AFTER_START = 'after-start',
+  BEFORE_CONFIG = 'before-config',
+  AFTER_CONFIG = 'after-config',
 }
 
 export type MergeDefaultProviders<ApplicationContainer> = Container<Exclude<

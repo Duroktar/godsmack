@@ -7,7 +7,7 @@ import { IApplicationSettings } from '../interfaces';
 import { IAuthService } from '../interfaces/IAuthService';
 import { AuthServiceError } from '../utils/error';
 import { hashPasswordSha512, isSha512PasswordCorrect } from '../utils/saltHashPassword';
-import { Logger } from './Logger';
+import { LogFactory } from './Logger';
 
 export type JwtPayload<T = {}> = T & {
   iat: number;
@@ -23,90 +23,10 @@ export class AuthUtilsService implements IAuthService {
   public settings: Required<IApplicationSettings['auth']>
   constructor(
     public settingsService: SettingsService,
-    public logger: Logger,
+    public logger: LogFactory,
   ) {
     this.logger = logger.For(this)
     this.settings = settingsService.get('auth')
-  }
-
-  public createJWT(data: string | object | Buffer, options?: JWT.SignOptions): string {
-    const defaultOptions: JWT.SignOptions = { expiresIn: '15min' }
-    return JWT.sign(data, this.settings.secret, { ...defaultOptions, ...options })
-  }
-
-  public verifyJWT(token: string, options?: JWT.VerifyOptions): string | object {
-    return JWT.verify(token, this.settings.secret, options)
-  }
-
-  public decodeJWT<T>(token: string, options?: JWT.DecodeOptions): JwtPayload<T> | null {
-    return JWT.decode(token, options) as any
-  }
-
-  public validateAndDecodeAccessToken<ExtraPayloadData = {}>(req: Pick<Request, 'query'>) {
-    const { query: { access_token } } = req
-
-    return this.decodeJwtOrThrow<ExtraPayloadData>(access_token);
-  }
-
-  public validateAndDecodeRefreshToken<ExtraPayloadData = {}>(req: Pick<Request, 'cookies'>) {
-    const { cookies: { refresh_token } } = req
-
-    return this.decodeJwtOrThrow<ExtraPayloadData>(refresh_token);
-  }
-
-  public getDecodedJwt<ExtraPayloadData = {}>(req: Pick<Request, 'header'>) {
-    const authHeader = this.getAuthHeaderFromRequest(req);
-    const { headerTokenPrefix: prefix } = this.settings;
-
-    if (!isString(authHeader) || !authHeader.startsWith(prefix))
-      throw new AuthServiceError('Invalid Bearer Token (missing prefix)');
-
-    return this.getDecodedJwtFromAuthHeader<ExtraPayloadData>(authHeader);
-  }
-
-  public getDecodedJwtFromAuthHeader<ExtraPayloadData = {}>(authHeader: string) {
-    const token = this.getBearerTokenFromAuthHeader(authHeader);
-
-    if (!token)
-      throw new AuthServiceError('Invalid or missing Bearer Token');
-
-    const jwt = this.verifyJWT(token);
-
-    if (!jwt)
-      throw new AuthServiceError('Failed to decode Bearer Token');
-
-    return jwt as JwtPayload<ExtraPayloadData>
-  }
-
-  public authorizeFlow(authHeader: string | undefined, requiredRoles?: string[] | null) {
-
-    if (!isString(authHeader))
-      throw new AuthServiceError('Invalid Authorization Claims')
-
-    const decoded = this.getDecodedJwtFromAuthHeader<JwtAuthData>(authHeader);
-
-    if (!requiredRoles)
-      return decoded;
-
-    const has = (role: string) => decoded.roles.includes(role)
-
-    const isAuthorized = requiredRoles
-      .reduce((acc, role) => has(role) || acc, false);
-
-    if (!isAuthorized)
-      throw new AuthServiceError('Not authorized to view this resource')
-
-    return decoded
-  }
-
-  public getAuthHeaderFromRequest(req: Pick<Request, 'header'>) {
-    const authHeaderName = this.settings.headerName;
-    return req.header(authHeaderName);
-  }
-
-  public getBearerTokenFromAuthHeader(header: string) {
-    const { headerTokenPrefix } = this.settings;
-    return header.substring(headerTokenPrefix.length).trim()
   }
 
   public async hashPasswordSha512(password: string) {
@@ -117,17 +37,74 @@ export class AuthUtilsService implements IAuthService {
     return isSha512PasswordCorrect({ hash, salt }, password);
   }
 
-  private decodeJwtOrThrow<ExtraPayloadData = {}>(refresh_token: any) {
-    if (!refresh_token)
-      throw new AuthServiceError('No refresh token found');
+  public jwtAuthorizationFlow(req: Pick<Request, 'header'>, requiredRoles?: string[] | null) {
+    const decoded = this.verifyJwtFromHeadersOrThrow<JwtAuthData>(req);
 
-    if (!this.verifyJWT(refresh_token))
-      throw new AuthServiceError('Refresh token is expired');
+    if (!requiredRoles)
+      return decoded;
 
-    const decoded = this.decodeJWT<ExtraPayloadData>(refresh_token);
+    if (!this.userHasPermission(requiredRoles, decoded.roles))
+      throw new AuthServiceError('Not authorized to view this resource')
+
+    return decoded
+  }
+
+  public userHasPermission(requiredRoles: string[], userRoles: string[]) {
+    if (requiredRoles.length === 0)
+      return true
+    for (let role of requiredRoles) {
+      if (!userRoles.includes(role))
+        continue
+      return true
+    }
+    return false
+  }
+
+  public createJWT(data: string | object | Buffer, options?: JWT.SignOptions): string {
+    const defaultOptions: JWT.SignOptions = { expiresIn: '15min' }
+    return JWT.sign(data, this.settings.secret, { ...defaultOptions, ...options })
+  }
+
+  public verifyJWT<T>(token: string, options?: JWT.VerifyOptions): JwtPayload<T> | null {
+    return JWT.verify(token, this.settings.secret, options) as any
+  }
+
+  public decodeJWT<T>(token: string, options?: JWT.DecodeOptions): JwtPayload<T> | null {
+    return JWT.decode(token, options) as any
+  }
+
+  public verifyAccessTokenFromQueryOrThrow<ExtraPayloadData = {}>(req: Pick<Request, 'query'>) {
+    const { query: { access_token } } = req
+
+    return this.verifyJwtOrThrow<ExtraPayloadData>(String(access_token));
+  }
+
+  public verifyRefreshTokenFromCookieOrThrow<ExtraPayloadData = {}>(req: Pick<Request, 'cookies'>) {
+    const { cookies: { refresh_token } } = req
+
+    return this.verifyJwtOrThrow<ExtraPayloadData>(String(refresh_token));
+  }
+
+  public verifyJwtFromHeadersOrThrow<ExtraPayloadData = {}>(req: Pick<Request, 'header'>) {
+    const { headerTokenPrefix: prefix, headerName } = this.settings;
+    const authHeader = req.header(headerName);
+
+    if (!isString(authHeader) || !authHeader.startsWith(prefix))
+      throw new AuthServiceError('Invalid Bearer Token (missing prefix)');
+
+    const token = authHeader.substring(prefix.length).trim();
+
+    return this.verifyJwtOrThrow<ExtraPayloadData>(token);
+  }
+
+  private verifyJwtOrThrow<ExtraPayloadData = {}>(token: string) {
+    if (!token)
+      throw new AuthServiceError('Token not found');
+
+    const decoded = this.verifyJWT<ExtraPayloadData>(token);
 
     if (!decoded)
-      throw new AuthServiceError('Invalid or malformed refresh token');
+      throw new AuthServiceError('Token expired');
 
     return decoded;
   }

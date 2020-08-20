@@ -5,7 +5,9 @@
   "license": "MIT",
   "files": [
     "src",
-    "build",
+    "dist",
+    "framework",
+    "services",
     "scripts",
     "templates"
   ],

@@ -1,7 +1,8 @@
-import type { LogLevel } from "../services";
+import type { LogLevel } from "../services/Logger";
 import type { ServeStaticFilesOptions, CorsOptions } from './IHttpServer';
 import type { SwaggerMiddlewareOptions, SwaggerGenOptions } from '.';
 import type { BuildSchemaOptions } from 'type-graphql';
+import jwt from 'express-jwt';
 
 export interface IApplicationSettings {
   /**
@@ -235,6 +236,7 @@ export interface IApplicationSettings {
     spaFallbackPath: string;
   };
 
+  jwt: jwt.Options;
   /**
    * Logging Provider Settings
    *

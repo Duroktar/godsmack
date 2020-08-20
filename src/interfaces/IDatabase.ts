@@ -1,6 +1,6 @@
 import type { IApplicationSettings } from './IApplicationSettings';
-import { Logger } from '../services';
-import { IApplication } from './IApplication';
+import type { LogFactory } from '../services/Logger';
+import type { IApplication } from './IApplication';
 
 export interface IDatabaseProvider {
 
@@ -90,10 +90,10 @@ export interface IDatabaseProvider {
   /**
    * TODO
    *
-   * @type {Logger}
+   * @type {LogFactory}
    * @memberof IDatabaseProvider
    */
-  logger: Logger
+  logger: LogFactory
 
   /**
    * TODO

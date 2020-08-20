@@ -1,6 +1,6 @@
 import type { EmptyType, Type, InferType } from '../types';
-import type { Container } from '../framework/Container';
 import type { InjectorFactory } from '../injector/Injector';
+import { Container } from '../framework';
 
 /**
  * Interface for an Application DI container.
@@ -25,12 +25,12 @@ export interface IContainer<T = EmptyType> {
   /**
    * Registers a class as a singleton to the DI container
    *
-   * @param {Type<T>} ifce The base class to register
-   * @param {Type<T>} impl The resolved class for that type
+   * @param ifce The base class to register
+   * @param impl The resolved class for that type
    * @returns The container instance for chaining.
    * @memberof IContainer
    */
-  addSingleton<T>(ifce: Type<T>, impl?: Type<T>): Container<Exclude<Type<T> | T, EmptyType>>;
+  addSingleton<S extends any>(ifce: Type<S>, impl?: Type<S>): Container<Exclude<Type<S> | S, EmptyType>>;
   /**
    * Registers an instance of a class as a singleton to the DI container
    *

@@ -1,4 +1,4 @@
-import { IFactory, FactoryTypeRecord, ParamsOf, IApplication } from '../interfaces'
+import type { IFactory, FactoryTypeRecord, ParamsOf, IApplication } from '../interfaces'
 import type * as types from '../types'
 
 

@@ -147,40 +147,34 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
       try {
 
         if (needsAuthService && authService) {
-          const authHeader = authService.getAuthHeaderFromRequest(req);
-          const authRoles = requiredRoles?.roles;
-
-          reqData.__auth = authService.authorizeFlow(authHeader, authRoles);
+          reqData.__auth = authService.jwtAuthorizationFlow(req, requiredRoles?.roles);
         }
 
         if (requiredOwners && authService) {
-          console.log({ authService, TODO: 'FINISH ME' })
-          console.log({ requiredOwners, TODO: 'FINISH ME' })
+          console.error({ authService, TODO: 'FINISH ME' })
+          console.error({ requiredOwners, TODO: 'FINISH ME' })
+          throw new Error('Not implemented yet.. Use Tsoa Controllers instead.')
         }
 
-        let customArgs: ParamMetadata<HttpParamType>[];
+        const args: any[] = [reqData];
 
-        customArgs = Reflect.getOwnMetadata(
-          CONTROLLER_ARGS_DATA,
-          handlerThisCtx.constructor,
-          handler.name,
-        ) || [];
-
-        let args: any[] = [reqData];
-
-        if (customArgs.length > 0) {
-          customArgs
-            .filter(arg => arg.propertyKey === handler.name)
-            .sort((a, b) => a.parameterIndex - b.parameterIndex)
-            .forEach(arg => {
-              let payload = getDecoratorArgs(arg, req, res, reqData);
-              if (arg.options?.length) {
-                const prop = arg.options[0]
-                payload = payload[prop]
-              }
-              args[arg.parameterIndex] = payload
-            })
-        }
+        (
+          (Reflect.getOwnMetadata(
+            CONTROLLER_ARGS_DATA,
+            handlerThisCtx.constructor,
+            handler.name,
+          ) || []) as ParamMetadata<HttpParamType>[]
+        )
+          .filter(arg => arg.propertyKey === handler.name)
+          .sort((a, b) => a.parameterIndex - b.parameterIndex)
+          .forEach(arg => {
+            let payload = getDecoratorArgs(arg, req, res, reqData);
+            if (arg.options?.length) {
+              const prop = arg.options[0]
+              payload = payload[prop]
+            }
+            args[arg.parameterIndex] = payload
+          });
 
         args.push({ req, res }) // Always pass as the last argument to handler
 

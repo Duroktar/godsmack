@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { render, Text, Box, } from 'ink';
 import { IApplication } from '../interfaces';
-import { Logger } from '../services';
+import { LogFactory } from '../services/Logger';
 import { getLogRecords } from './LoggerService';
 import Newline from './Newline';
 
@@ -13,7 +13,7 @@ const Counter = (props: any) => {
 
   React.useEffect(() => {
     const doit = () => {
-      const logger = props.app.container.resolve(Logger)
+      const logger = props.app.container.resolve(LogFactory)
       const records = getLogRecords(logger)
       setInfo([...records.info])
       setLog([...records.log])

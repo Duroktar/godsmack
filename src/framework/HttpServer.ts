@@ -6,34 +6,35 @@ import express, { Express, Request, RequestHandler, Response } from "express";
 import { resolve } from 'path';
 import { Singleton } from '../injector';
 import type { IApplicationSettings, IController, IHttpServerErrorHandler, IHttpServerEventEmitter, PathArgument, IHttpServer } from "../interfaces";
-import { Logger } from '../services/Logger';
+import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
 import { getTsConfigFile } from '../utils/getTsConfigFile';
 import { createUrlFrom } from '../utils/http';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
+import jwt from 'express-jwt';
 
 @Singleton()
 export class HttpServerProvider<T extends Express = Express> implements IHttpServer {
   private settings: IApplicationSettings['httpServer']
-  private logger: Logger
+  private logger: LogFactory
   public controllers: Map<string, Type<any>> = new Map()
   public engine: T = mockServerInstance
   public events: IHttpServerEventEmitter
 
   constructor(public app: Application<any>) {
+    this.logger = app.container
+      .resolve(LogFactory)
+      .For(this);
+
     this.settings = app.container
       .resolve(SettingsService)
       .get('httpServer');
 
-    this.logger = app.container
-      .resolve(Logger)
-      .For(this)
+    this.events = new AwaitableEventEmitter();
 
-    this.events = new AwaitableEventEmitter()
-
-    this.events.once(HttpServerEvent.ON_LOAD_SERVICES, this.onLoadServices)
-    this.events.once(HttpServerEvent.ON_START_HTTP_SERVER, this.onServerStarted)
+    this.events.once(HttpServerEvent.ON_START_HTTP_SERVER, this.onServerStarted);
+    this.events.once(HttpServerEvent.ON_LOAD_SERVICES, this.onLoadServices);
   }
 
   //  -- 1. MIDDLEWARE
@@ -193,6 +194,14 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
       this.engine.use(cors(corsOpts), express.static(path, _options));
       this.logger.info(`Serving static files from dir: ${path}`);
       return this;
+    })
+    return this
+  }
+
+  public useJwtExpress() {
+    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, () => {
+      const jwtSettings = this.app.container.resolve(SettingsService);
+      this.engine.use(jwt(jwtSettings.get('jwt')))
     })
     return this
   }

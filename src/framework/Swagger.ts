@@ -7,7 +7,7 @@ import { SettingsService } from '../framework/Settings';
 import { Shell } from '../framework/Shell';
 import { Singleton } from "../injector";
 import type { IApplicationSettings, ISwaggerService, SwaggerGenOptions, SwaggerMiddlewareOptions } from '../interfaces';
-import { Logger } from "../services/Logger";
+import { LogFactory } from "../services/Logger";
 import { getTsConfigFile } from '../utils';
 import { ASSERT } from '../utils/assert';
 import { doTry } from '../utils/func';
@@ -17,7 +17,7 @@ export class SwaggerService implements ISwaggerService {
   private settings: IApplicationSettings['swagger']
 
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
     private shell: Shell,
     private server: HttpServerProvider,
     settings: SettingsService<IApplicationSettings>,
@@ -131,7 +131,7 @@ export class SwaggerService implements ISwaggerService {
   }
 
   private registerRoutesWithServer = async () => {
-    const routeImportPath = ASSERT(this.settings.routesImportPath);
+    const routeImportPath = this.settings.routesImportPath;
     const resolvedImportPath = this.getRelativeProjectPath(routeImportPath);
     const generatedRoutesFile = await import(resolvedImportPath);
     this.server.registerServices(generatedRoutesFile.RegisterRoutes);
@@ -157,7 +157,7 @@ export class SwaggerService implements ISwaggerService {
   private getGenSettings(
     options?: Partial<SwaggerGenOptions>,
   ): Required<SwaggerGenOptions> {
-    return deepmerge(ASSERT(this.settings.specGenOptions), options ?? {}) as any;
+    return deepmerge(this.settings.specGenOptions, options ?? {}) as any;
   }
 
   private getRelativeProjectPath(...target: string[]) {

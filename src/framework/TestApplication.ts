@@ -4,12 +4,21 @@ import { Container } from './Container';
 import { DatabaseProvider } from './Database';
 import { InMemoryDatabase } from "../services/MemoryDB";
 import { HttpServerProvider } from './HttpServer';
-import type { StaticTestProps, InferApplicationTypes } from '../types';
+import { StaticTestProps, InferApplicationTypes, nameof } from '../types';
 import type { HttpServiceSetup, MergeDefaultProviders, IApplicationContainer } from '../interfaces';
+import { LogFactory } from '../services/Logger';
 
 export class TestApplication<T> extends Application<T> {
   static Test(suite: StaticTestProps) {
-    class TestDoDo {
+    interface IBaseClass {
+      url: string
+      dodo: string
+      setDodo(v: string): void
+      getDodo(): { dodo: string }
+      callback(req: any, res: any): void
+    }
+
+    class TestDoDo implements IBaseClass {
       url: string = '/test'
       dodo: string = 'dodo'
       setDodo = (v: string) => { this.dodo = v }
@@ -17,7 +26,7 @@ export class TestApplication<T> extends Application<T> {
       callback = (req: any, res: any) => res.send(this.getDodo())
     }
 
-    class BoogerWhoop {
+    class BoogerWhoop implements IBaseClass {
       url: string = '/booger'
       dodo: string = 'BoogerWhoop'
       setDodo = (v: string) => { this.dodo = v }
@@ -25,7 +34,7 @@ export class TestApplication<T> extends Application<T> {
       callback = (req: any, res: any) => res.send(this.getDodo())
     }
 
-    class HammerWho {
+    class HammerWho implements IBaseClass {
       url: string = '/booger'
       dodo: string = 'HammerWho'
       setDodo = (v: string) => { this.dodo = v }
@@ -79,8 +88,10 @@ export class TestApplication<T> extends Application<T> {
         .addExpressServer()
         .registerServices(...services(app)),
       ConfigureServices: container => container
+        // .addSingleton(LogFactory)
         .addSingleton(TestDoDo, TestDoDo)
-        .addSingleton(BoogerWhoop, HammerWho),
+        .addSingleton(nameof<IBaseClass>(), BoogerWhoop)
+      // .addSingleton(BoogerWhoop, HammerWho)
     })
 
     class NoNo { }
@@ -89,7 +100,13 @@ export class TestApplication<T> extends Application<T> {
 
     app.configure(app => {
       app.container.resolve(TestDoDo).setDodo('poopoo dodo')
+      app.container.resolve(TestDoDo).setDodo('poopoo dodo')
+      app.container.resolve(TestDoDo).setDodo('poopoo dodo')
       app.container.resolve(BoogerWhoop).setDodo('boo dodo')
+
+      // interfacesT
+      const base = app.container.resolve(nameof<IBaseClass>()).getDodo()
+      suite.expect(base.dodo === 'BoogerWhoop').to.be.equal
 
       // @ts-expect-error
       app.container.resolve(NoNo)

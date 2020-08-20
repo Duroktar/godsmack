@@ -1,6 +1,5 @@
 import { Injectable } from '../injector';
-import { Application } from './Application';
-import { Logger } from '../services';
+import { LogFactory } from '../services/Logger';
 import { SettingsService } from './Settings';
 import { IApplicationSettings } from '../interfaces';
 
@@ -11,16 +10,13 @@ interface ICommandLineApp {
 
 @Injectable()
 export class CliAppProvider implements ICommandLineApp {
-  public logger: Logger
   public settings: IApplicationSettings['commandline']
-  constructor(public app: Application<any>) {
-    this.settings = app.container
-      .resolve(SettingsService)
-      .get('commandline');
-
-    this.logger = app.container
-      .resolve(Logger)
-      .For(this)
+  constructor(
+    public logger: LogFactory,
+    config: SettingsService,
+  ) {
+    this.logger = logger.For(this)
+    this.settings = config.get('commandline');
   }
   public readonly engine: any
   public run() {

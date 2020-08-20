@@ -1,4 +1,4 @@
-import { Logger } from '../services';
+import { LogFactory } from '../services/Logger';
 import { IApplication } from '../interfaces';
 import { Singleton } from '../injector';
 import type { Instance } from 'ink';
@@ -15,7 +15,7 @@ interface ITerminalInk {
 @Singleton()
 export class TerminalInk implements ITerminalInk {
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
   ) {
     this.logger = logger.For(this)
   }

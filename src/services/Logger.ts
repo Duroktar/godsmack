@@ -14,7 +14,7 @@ export enum LogLevel {
   NONE // nothing
 }
 
-export class Logger implements ILogger {
+export class LogFactory implements ILogger {
   public level = LogLevel.INFO
   public owner: string = 'Logger'
   public log = (...args: any[]) => {
@@ -49,10 +49,10 @@ export class Logger implements ILogger {
    * @memberof Logger
    */
   public For = <T extends any>(klass: T, lvl?: LogLevel) => {
-    return Logger.For(klass, lvl ?? this.level)
+    return LogFactory.For(klass, lvl ?? this.level)
   }
   public Tag = (name: string, lvl?: LogLevel) => {
-    return Logger.Tag(name, lvl ?? this.level)
+    return LogFactory.Tag(name, lvl ?? this.level)
   }
   /**
    * Returns a logger instance for the provided type and
@@ -69,7 +69,7 @@ export class Logger implements ILogger {
           : k?.name ? k?.name
             : null
 
-    const logger = new Logger()
+    const logger = new LogFactory()
 
     if (cName) logger.owner = cName
     if (lvl) logger.level = lvl
@@ -81,7 +81,7 @@ export class Logger implements ILogger {
    * @memberof Logger
    */
   static Tag(label: string, lvl?: LogLevel) {
-    const logger = new Logger()
+    const logger = new LogFactory()
     logger.owner = label
     if (lvl)
       logger.level = lvl

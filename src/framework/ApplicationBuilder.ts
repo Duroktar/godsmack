@@ -4,7 +4,7 @@ import { Container } from './Container';
 import { DockerService } from './Docker';
 import { SettingsService } from './Settings';
 import { TerminalInk } from '../tui/TerminalInk';
-import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService } from '../interfaces';
+import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService, IContainer } from '../interfaces';
 
 /**
  * The default implementation of the IApplicationBuilder used
@@ -19,7 +19,7 @@ export class ApplicationBuilder implements IApplicationBuilder {
    * @static
    * @returns An Application instance
    */
-  static Create<T extends Container<any>>(
+  static Create<T extends IContainer<any>>(
     service: IApplicationCreationService<T>,
   ): IApplication<MergeDefaultProviders<T>> {
 

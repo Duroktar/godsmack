@@ -1,7 +1,7 @@
 import NodeMailer from 'nodemailer';
 import { Singleton } from '../injector';
 import { SettingsService } from '../framework';
-import { Logger } from './Logger';
+import { LogFactory } from './Logger';
 
 export interface ISendMailResult {
   messageId: string
@@ -11,7 +11,7 @@ export interface ISendMailResult {
 export class MailerService {
   private transport!: NodeMailer.Transporter
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
     private config: SettingsService,
   ) {
     this.logger = logger.For(this)

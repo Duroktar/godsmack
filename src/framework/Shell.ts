@@ -1,6 +1,6 @@
 import { Singleton } from '../injector';
 import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
-import { Logger, LogLevel } from '../services';
+import { LogFactory, LogLevel } from '../services/Logger';
 import { SettingsService } from './Settings';
 import { IApplicationSettings } from '../interfaces/IApplicationSettings';
 
@@ -12,7 +12,7 @@ type SpawnOptions =
 export class Shell {
   private settings: IApplicationSettings['shell']
   constructor(
-    private logger: Logger,
+    private logger: LogFactory,
     private configFactory: SettingsService,
   ) {
     this.logger = logger.For(this)

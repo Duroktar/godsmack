@@ -1,31 +1,25 @@
 import { AwaitableEventEmitter } from '@bitr/awaitable-event-emitter';
 import type { IApplicationSettings, IClient, IHttpServer, ITaskService, MergeDefaultProviders } from '../interfaces';
-import { ApplicationEvent, IApplication } from '../interfaces/IApplication';
-import { IApplicationCreationService } from "../interfaces/IApplicationCreation";
+import { ApplicationEvent } from '../interfaces/IApplication';
+import type { IApplication } from '../interfaces/IApplication';
+import type { IApplicationCreationService } from "../interfaces/IApplicationCreation";
 import type { IApplicationEventEmitter } from '../interfaces/IApplicationEventEmitter';
 import type { FactoryTypeRecord, IFactory } from '../interfaces/IFactory';
-import { Logger, MailerService } from '../services';
-import { ExpressServer } from "../services/ExpressServer";
-import { PostgresDB as SequelizePostgresDB } from '../services/sequelize/PostgresDB';
-import { PostgresDB as TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
-import { YargsCliApp } from "../services/YargsCliApp";
-import { TuiLoggerService } from '../tui';
-import { TerminalInk } from '../tui/TerminalInk';
+import type { ExpressServer } from "../services/ExpressServer";
+import { LogFactory } from '../services/Logger';
+import type { SequelizePostgresDB } from '../services/sequelize/PostgresDB';
+import type { TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
+import type { YargsCliApp } from "../services/YargsCliApp";
+import type { TerminalInk } from '../tui/TerminalInk';
 import type { DeepPartial, Type } from '../types';
+import { doTry } from '../utils/func';
 import { ApplicationConfigurationService } from './ApplicationConfigurationService';
 import { ApplicationCreationService } from './ApplicationCreationService';
-import { JavascriptClient } from './Client';
-import { CliAppProvider } from './CommandLine';
-import { DatabaseProvider } from './Database';
-import { DockerService } from './Docker';
+import type { CliAppProvider } from './CommandLine';
+import type { DatabaseProvider } from './Database';
 import { ObjectFactory } from './Factory';
 import { FactoryBuilder } from "./FactoryBuilder";
-import { HttpServerProvider } from './HttpServer';
 import { SettingsService } from './Settings';
-import { SwaggerService } from './Swagger';
-import { TaskService } from './Tasks';
-import { TypeGraphQlProvider } from './graphql/TypeGraphQlProvider';
-import { OpenApiToGraphQlProvider } from "./graphql/OpenApiToGraphQlProvider";
 
 /**
  * Default implementation of the IApplication interface
@@ -51,11 +45,11 @@ import { OpenApiToGraphQlProvider } from "./graphql/OpenApiToGraphQlProvider";
  * })
  */
 export class Application<AppContainer> implements IApplication<AppContainer> {
-  private logger: Logger
+  private logger: LogFactory
   public events: IApplicationEventEmitter
 
   constructor(public container: MergeDefaultProviders<AppContainer>) {
-    this.logger = Logger.For(this)
+    this.logger = LogFactory.For(this)
     this.events = new AwaitableEventEmitter()
   }
 
@@ -82,38 +76,47 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public stop = async () => { await this.destroyApplication() }
 
   public useFactory = (factory: IFactory) => {
-    if (factory)
-      this.container.addSingletonInstance<Type<IFactory>>(ObjectFactory, factory)
+    this.container.addSingletonInstance<Type<IFactory>>(ObjectFactory, factory)
     return this
   }
 
   public addServer = (server: IHttpServer) => {
-    if (server)
-      this.container.addSingletonInstance<Type<IHttpServer>>(HttpServerProvider, server)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./HttpServer')
+      this.container.addSingletonInstance<Type<IHttpServer>>(lib.HttpServerProvider, server)
+    })
     return this
   }
 
   public useClient(client: IClient) {
-    if (client)
-      this.container.addSingletonInstance<Type<IClient>>(JavascriptClient, client)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./Client')
+      this.container.addSingletonInstance<Type<IClient>>(lib.JavascriptClient, client)
+    })
     return this
   }
 
   public addDatabase = (database: DatabaseProvider) => {
-    if (database)
-      this.container.addSingletonInstance(DatabaseProvider, database)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./Database')
+      this.container.addSingletonInstance(lib.DatabaseProvider, database)
+    })
     return this
   }
 
   public addCliApp = (cliApp: CliAppProvider) => {
-    if (cliApp)
-      this.container.addSingletonInstance(CliAppProvider, cliApp)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./CommandLine')
+      this.container.addSingletonInstance(lib.CliAppProvider, cliApp)
+    })
     return this
   }
 
   public addTaskService = (service: ITaskService) => {
-    if (service)
-      this.container.addSingletonInstance<Type<ITaskService>>(TaskService, service)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./Tasks')
+      this.container.addSingletonInstance<Type<ITaskService>>(lib.TaskService, service)
+    })
     return this
   }
 
@@ -138,29 +141,40 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public serverStartListening() {
-    this.container.resolve(HttpServerProvider).listen();
+    return doTry(async () => {
+      const lib = await import('./HttpServer')
+      return await this.container
+        .resolve(lib.HttpServerProvider)
+        .listen();
+    }).unwrap()
   }
 
   public cliAppRun() {
-    this.container.resolve(CliAppProvider).run();
+    this.container.resolve<CliAppProvider>(
+      require("./CommandLine").CliAppProvider
+    ).run();
   }
 
   /* Convenience API */
 
   public addExpressServer(): ExpressServer {
-    return new ExpressServer(this)
+    const lib = require("../services/ExpressServer")
+    return new lib.ExpressServer(this)
   }
 
   public addPostgresDatabase(): SequelizePostgresDB {
-    return new SequelizePostgresDB(this);
+    const lib = require('../services/sequelize/PostgresDB')
+    return new lib.SequelizePostgresDB(this);
   }
 
   public addTypeORMPostgresDB(): TypeORMPostgresDB {
-    return new TypeORMPostgresDB(this);
+    const lib = require('../services/typeorm/PostgresDB')
+    return new lib.TypeORMPostgresDB(this);
   }
 
   public addYargsCliApp(): YargsCliApp {
-    return new YargsCliApp(this);
+    const lib = require('../services/YargsCliApp')
+    return new lib.YargsCliApp(this);
   }
 
   public addDefaultFactory<T extends FactoryTypeRecord>(
@@ -174,58 +188,65 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public addJavascriptClient(path?: string) {
-    const client: IClient = this.container
-      .addSingleton(JavascriptClient)
-      .resolve(JavascriptClient)
+    this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
+      const lib = await import('./Client')
+      const client: IClient = this.container
+        .addSingleton(lib.JavascriptClient)
+        .resolve(lib.JavascriptClient)
 
-    this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      client.applyMiddleware(this, path)
+      this.events.once(ApplicationEvent.BEFORE_START, async () => {
+        client.applyMiddleware(this, path)
+      })
     })
 
     return this
   }
 
   public addTerminalInk() {
-    this.container
-      .addSingleton(Logger, TuiLoggerService)
-      .addSingleton(TerminalInk)
-
     // NOTE: If using the TUI then set it up asap
-    this.events.on(ApplicationEvent["@INIT"], () => {
+    this.events.on(ApplicationEvent["@INIT"], async () => {
+      const lib = await import('../tui/TerminalInk')
       this.container
-        .resolve(TerminalInk)
+        .addSingleton(LogFactory, require('../tui').TuiLoggerService)
+        .addSingleton<TerminalInk>(lib.TerminalInk)
+      this.container
+        .resolve<TerminalInk>(lib.TerminalInk)
         .setApp(this)
         .start()
     })
-
     return this
   }
 
   public addCronTriggers = (path?: string): this => {
-    const service = new TaskService(this);
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
+      const lib = await import('./Tasks')
+      const service = new lib.TaskService(this);
       service
         .useCronTriggers(path)
         .initializeService()
+
+      this.addTaskService(service)
     })
-    return this.addTaskService(service)
+    return this
   }
 
   public useNodeMailer = (): this => {
-    this.container.addSingleton(MailerService)
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
+      const lib = await import('../services/Mailer')
+      this.container.addSingleton(lib.MailerService)
       this.container
-        .resolve(MailerService)
+        .resolve(lib.MailerService)
         .initializeService()
     })
     return this
   }
 
   public addSwaggerDocs() {
-    this.container.addSingleton(SwaggerService)
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
+      const lib = await import('./Swagger')
+      this.container.addSingleton(lib.SwaggerService)
       await this.container
-        .resolve(SwaggerService)
+        .resolve(lib.SwaggerService)
         .initializeService()
     })
     return this
@@ -233,8 +254,9 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addOpenApiGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
+      const lib = await import('./graphql')
       await this.container
-        .resolve(OpenApiToGraphQlProvider)
+        .resolve(lib.OpenApiToGraphQlProvider)
         .initializeService()
     })
     return this
@@ -242,8 +264,9 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addTypeGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
+      const lib = await import('./graphql')
       await this.container
-        .resolve(TypeGraphQlProvider)
+        .resolve(lib.TypeGraphQlProvider)
         .initializeService()
     })
     return this
@@ -262,8 +285,85 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   private __isDockerizingApp = false
   ////////////////////////////////////////////
 
+  private emitAwaitableEvent = (event: ApplicationEvent) => {
+    return this.events.emitSerial(event);
+  }
+
+  private async runDockerApplicationSetupIfApplicable() {
+
+    if (this.__isDockerizingApp || this.__isDockerizingDB) {
+      const lib = await import('./Docker')
+      const docker = this.container.resolve(lib.DockerService);
+
+      const createNetworkBridgeCallback = () => docker
+        .createNetworkBridge()
+        .catch(err => console.error(err));
+
+      const removeNetworkBridgeCallback = () => docker
+        .removeNetworkBridge()
+        .catch(err => console.error(err));
+
+      docker
+        .registerSetupAction({
+          label: 'Setting up a Docker Network Bridge.',
+          name: 'docker-network',
+          steps: [{
+            func: removeNetworkBridgeCallback,
+            args: [],
+            msg: 'Removing old bridge..',
+            when: DROP_AND_RECREATE_NETWORK_BRIDGE,
+          }, {
+            func: createNetworkBridgeCallback,
+            args: [],
+            msg: 'Creating new bridge..'
+          }],
+        });
+
+      if (this.__isDockerizingDB) {
+        const createDbCallback = () => docker
+          .createDockerDb()
+          .catch(err => console.error(err));
+
+        const removeDbCallback = () => docker
+          .removeDockerDb()
+          .catch(err => console.error(err));
+
+        docker
+          .registerSetupAction({
+            label: 'Adding Docker Database Support..',
+            name: 'docker-db',
+            steps: [{
+              func: removeDbCallback,
+              args: [],
+              when: DROP_AND_REBUILD_DOCKER_DB,
+            }, {
+              func: createDbCallback,
+              args: [],
+              msg: 'Creating Database Container..',
+            }],
+          });
+      }
+
+      if (this.__isDockerizingApp || this.__isDockerizingDB) {
+        await docker.executeSetupActions();
+      }
+
+      if (this.__isDockerizingApp) {
+        // If we're preparing to launch in docker then we don't need
+        // to do the rest of this stuff because the app is going to
+        // spawn itself back up with the DOCKER_CTX env var set anyways
+        // so we can just exit the whole app once done awaiting.
+        await docker
+          .installDockerSupport()
+          .startDockerApp();
+
+        process.exit(0);
+      }
+    }
+  }
+
   private async __initializeApplication(argv?: string[]) {
-    await this.events.emitSerial(ApplicationEvent["@INIT"])
+    await this.emitAwaitableEvent(ApplicationEvent["@INIT"])
 
     const creationService = this.container
       .resolve<IApplicationCreationService>(ApplicationCreationService)
@@ -294,96 +394,28 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     // This should be where the bulk of the application logic is
     // handled so we call it last to make sure all the previous
     // steps/configuration have taken effect.
+    await this.emitAwaitableEvent(ApplicationEvent.BEFORE_CONFIG)
     configurationService.configure(this)
+    await this.emitAwaitableEvent(ApplicationEvent.AFTER_CONFIG)
 
     // STEP 6 ---------------------------------------------
     // Setup/Fire the BEFORE_START event
-    await this.events.emitSerial(ApplicationEvent.BEFORE_START)
+    await this.emitAwaitableEvent(ApplicationEvent.BEFORE_START)
 
     // STEP 7 ---------------------------------------------
     // Profit..
-    await this.events.emitSerial(ApplicationEvent.ON_START)
+    await this.emitAwaitableEvent(ApplicationEvent.ON_START)
 
     // STEP 8 ---------------------------------------------
     // Cleanup/Fire the AFTER_START event
-    await this.events.emitSerial(ApplicationEvent.AFTER_START)
-  }
-
-  private async runDockerApplicationSetupIfApplicable() {
-    const docker = this.container.resolve(DockerService);
-
-    if (this.__isDockerizingApp || this.__isDockerizingDB) {
-      const createNetworkBridgeCallback = () => docker
-        .createNetworkBridge()
-        .catch(err => console.error(err));
-
-      const removeNetworkBridgeCallback = () => docker
-        .removeNetworkBridge()
-        .catch(err => console.error(err));
-
-      docker
-        .registerSetupAction({
-          label: 'Setting up a Docker Network Bridge.',
-          name: 'docker-network',
-          steps: [{
-            func: removeNetworkBridgeCallback,
-            args: [],
-            msg: 'Removing old bridge..',
-            when: DROP_AND_RECREATE_NETWORK_BRIDGE,
-          }, {
-            func: createNetworkBridgeCallback,
-            args: [],
-            msg: 'Creating new bridge..'
-          }],
-        });
-    }
-
-    if (this.__isDockerizingDB) {
-      const createDbCallback = () => docker
-        .createDockerDb()
-        .catch(err => console.error(err));
-
-      const removeDbCallback = () => docker
-        .removeDockerDb()
-        .catch(err => console.error(err));
-
-      docker
-        .registerSetupAction({
-          label: 'Adding Docker Database Support..',
-          name: 'docker-db',
-          steps: [{
-            func: removeDbCallback,
-            args: [],
-            when: DROP_AND_REBUILD_DOCKER_DB,
-          }, {
-            func: createDbCallback,
-            args: [],
-            msg: 'Creating Database Container..',
-          }],
-        });
-    }
-
-    if (this.__isDockerizingApp || this.__isDockerizingDB) {
-      await docker.executeSetupActions();
-    }
-
-    if (this.__isDockerizingApp) {
-      // If we're preparing to launch in docker then we don't need
-      // to do the rest of this stuff because the app is going to
-      // spawn itself back up with the DOCKER_CTX env var set anyways
-      // so we can just exit the whole app once done awaiting.
-      await docker
-        .installDockerSupport()
-        .startDockerApp();
-
-      process.exit(0);
-    }
+    await this.emitAwaitableEvent(ApplicationEvent.AFTER_START)
   }
 
   private async destroyApplication() {
+    const lib = await import('./Docker')
     if (this.__isDockerizingDB) {
       await this.container
-        .resolve(DockerService)
+        .resolve(lib.DockerService)
         .stopDockerDb()
     }
   }
