@@ -3,6 +3,7 @@ import type { ServeStaticFilesOptions, CorsOptions } from './IHttpServer';
 import type { SwaggerMiddlewareOptions, SwaggerGenOptions } from '.';
 import type { BuildSchemaOptions } from 'type-graphql';
 import jwt from 'express-jwt';
+import type helmet from 'helmet'
 
 export interface IApplicationSettings {
   /**
@@ -228,6 +229,7 @@ export interface IApplicationSettings {
      * @type {CorsOptions}
      */
     corsOptions?: CorsOptions;
+    helmetOptions?: Partial<Parameters<typeof helmet>[0]>;
     /**
      * TODO
      *

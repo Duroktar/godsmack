@@ -22,6 +22,7 @@ import type { IDatabaseProvider } from './IDatabase';
 import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
 import type { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
 import type { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
+import { Server } from 'http';
 
 export type IApplicationContainer<T> = Pick<IApplication<T>, 'container'>
 
@@ -53,7 +54,8 @@ export interface IApplication<AppContainer = any> {
   container: MergeDefaultProviders<AppContainer>;
 
   /**
-   *
+   * An EventHandler instance. The default implementation
+   * has application specific events builtin and enforced
    *
    * @type {IApplicationEventEmitter}
    * @memberof IApplication
@@ -61,7 +63,7 @@ export interface IApplication<AppContainer = any> {
   events: IApplicationEventEmitter
 
   /**
-   * Stops the application
+   * Stops the application.
    *
    * @memberof IApplication
    */
@@ -72,7 +74,7 @@ export interface IApplication<AppContainer = any> {
    *
    * @memberof IApplication
    */
-  main: (argv?: string[]) => Promise<any>;
+  main: (argv?: string[]) => Promise<void>;
   /**
    * Starts the Application in Test mode.
    *
@@ -237,7 +239,8 @@ export interface IApplication<AppContainer = any> {
   addSwaggerDocs(): this
 
   /**
-   *
+   * Adds OpenApiGraphQl to the project which can mostly
+   * auto-generate resolvers, etc.. from the model schema.
    *
    * @returns {this}
    * @memberof IApplication
@@ -245,7 +248,10 @@ export interface IApplication<AppContainer = any> {
   addOpenApiGraphQl(): this
 
   /**
-   *
+   * Adds TypeGraphQl functionality to the application
+   * and exports all the decorators to use for building
+   * a schema from the configured directory housing the
+   * resolvers, mutators, etc..
    *
    * @returns {this}
    * @memberof IApplication

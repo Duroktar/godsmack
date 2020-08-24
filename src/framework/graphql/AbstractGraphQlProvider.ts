@@ -31,9 +31,4 @@ export class AbstractGraphQlProvider implements IGraphQlProvider {
   public useMiddleware(schema: GraphQLSchema): void {
     throw new Error('Method not implemented.');
   }
-
-
-  public getSwaggerSpecPath = (): string => {
-    return this.swagger.getPathToSpecFile();
-  };
 }

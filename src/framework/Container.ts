@@ -1,21 +1,32 @@
-import { Injector, InjectorFactory } from '../injector/Injector';
+import { DefaultInjector, Injector } from '../injector/Injector';
 import type { EmptyType, Type, InferType, StaticTestProps } from '../types';
 import type { IContainer } from '../interfaces';
+import { useModTools } from '../utils/modTools';
 
 export type InferContainerT<T> = T extends Container<infer C> ? C : never
 
 export class Container<T = EmptyType> implements IContainer<T> {
-  constructor(private injector: InjectorFactory = Injector) { }
-
-  private __resolverCache = new Map()
+  constructor(private injector: Injector = DefaultInjector) {
+    useModTools(this as any)
+  }
 
   public resolve<Target extends T>(target: Type<Target>): Target {
     if (this.__resolverCache.has(target)) {
       return this.__resolverCache.get(target)
     }
+
     const resolved = this.injector.resolve(target);
-    this.__resolverCache.set(target, resolved)
-    return resolved as Target
+
+    const resolve = this.injector.resolve.bind(this.injector);
+    const handler = new Proxy(resolved as any, {
+      get(proxyTarget, prop, receiver) {
+        const reloaded = resolve(target);
+        return Reflect.get(reloaded as any, prop, receiver);
+      },
+    }) as any;
+
+    this.__resolverCache.set(target, handler)
+    return handler as Target
   }
 
   public addSingleton<Base extends any, Impl extends Type<Base> = any, Ret extends Type<Base> = any>(
@@ -35,19 +46,13 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return this as any;
   }
 
-  private __getResultType<I, Key extends string>(
-    type: Type<I>,
-    key: Key,
-    force = true,
-  ): Container<Exclude<I | T, EmptyType>> {
-    return this as any;
+  protected onExit() {
+    this.injector.destroyAll()
   }
 
   public getInjector = () => { return this.injector }
 
-  protected onExit() {
-    this.injector.destroyAll()
-  }
+  private __resolverCache = new Map()
 
   /* TESTING */
   static Test({ expect, describe, it }: StaticTestProps) {

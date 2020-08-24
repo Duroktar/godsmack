@@ -3,6 +3,7 @@ import type express from "express";
 import type { HttpServerProvider } from '../framework';
 import type { IHttpServerErrorHandler } from './IHttpServerErrorHandler';
 import { Type } from '../types';
+import { Server } from 'http';
 
 export type HttpServiceSetup = (server: HttpServerProvider) => void
 export type PathArgument = string | RegExp | (string | RegExp)[]
@@ -62,7 +63,7 @@ export interface IHttpServer {
    * @param {number} [port]
    * @memberof IHttpServer
    */
-  listen(port?: number): void;
+  listen(port?: number): Promise<Server>;
   /**
    * Used to setup middleware and handlers.
    *
@@ -120,6 +121,14 @@ export interface IHttpServer {
    * @memberof IHttpServer
    */
   serveStaticFiles(...any: any[]): this
+  /**
+   * TODO
+   *
+   * @param {...any[]} any
+   * @returns {this}
+   * @memberof IHttpServer
+   */
+  useHelmet(...any: any[]): this
   /**
    * Used to add and configure Health Check middleware
    * to the server.

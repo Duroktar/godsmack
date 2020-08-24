@@ -1,5 +1,5 @@
 import { strictEqual, notStrictEqual } from 'assert'
-import { Service, Singleton, Injector } from '../injector';
+import { Service, Singleton, DefaultInjector } from '../injector';
 
 describe('Injector Class', () => {
 
@@ -34,24 +34,24 @@ describe('Injector Class', () => {
   }
 
   it('it works with singletons.', () => {
-    const t1 = Injector.resolve<Test1>(Test1)
-    const t2 = Injector.resolve<Test2>(Test2)
+    const t1 = DefaultInjector.resolve<Test1>(Test1)
+    const t2 = DefaultInjector.resolve<Test2>(Test2)
     strictEqual(t1, t2.test1)
   });
 
   it('it works with instances.', () => {
-    const t5_1 = Injector.resolve<Test5>(Test5)
-    const t5_2 = Injector.resolve<Test5>(Test5)
+    const t5_1 = DefaultInjector.resolve<Test5>(Test5)
+    const t5_2 = DefaultInjector.resolve<Test5>(Test5)
     notStrictEqual(t5_1, t5_2)
   });
 
   it('it works with both together.', () => {
-    const t1 = () => Injector.resolve<Test1>(Test1)
-    const t2 = Injector.resolve<Test2>(Test2)
-    const t3 = () => Injector.resolve<Test3>(Test3)
-    const t4 = Injector.resolve<Test4>(Test4)
-    const t5 = () => Injector.resolve<Test5>(Test5)
-    const t6 = Injector.resolve<Test6>(Test6)
+    const t1 = () => DefaultInjector.resolve<Test1>(Test1)
+    const t2 = DefaultInjector.resolve<Test2>(Test2)
+    const t3 = () => DefaultInjector.resolve<Test3>(Test3)
+    const t4 = DefaultInjector.resolve<Test4>(Test4)
+    const t5 = () => DefaultInjector.resolve<Test5>(Test5)
+    const t6 = DefaultInjector.resolve<Test6>(Test6)
 
     strictEqual(t1(), t2.test1)
     strictEqual(t1(), t3().test1)

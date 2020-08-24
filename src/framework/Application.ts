@@ -56,7 +56,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   /* Public API */
 
   public async main(argv?: string[]) {
-    await this.__initializeApplication(argv)
+    return await this.__initializeApplication(argv)
   }
 
   public async test(argv?: string[]) {

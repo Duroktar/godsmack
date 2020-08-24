@@ -89,17 +89,17 @@ export class LogFactory implements ILogger {
   }
 
   isLogLevel = (...lvls: LogLevel[]) => {
-    const hasLvl = () => {
-      for (let lvl of lvls) {
-        if (this.level !== lvl)
-          continue
-        else
-          return true
-      }
-      return false
-    }
     const isAll = this.level === LogLevel.ALL
     const isNone = this.level === LogLevel.NONE
-    return !isNone && (isAll || hasLvl())
+    if (isAll || isNone)
+      return (isAll || isNone)
+
+    for (let lvl of lvls) {
+      if (this.level !== lvl)
+        continue
+      else
+        return true
+    }
+    return false
   }
 }

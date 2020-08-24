@@ -1,5 +1,5 @@
 import type { EmptyType, Type, InferType } from '../types';
-import type { InjectorFactory } from '../injector/Injector';
+import type { Injector } from '../injector/Injector';
 import { Container } from '../framework';
 
 /**
@@ -43,8 +43,8 @@ export interface IContainer<T = EmptyType> {
   /**
    * Returns the InjectorFactory instance used by the container.
    *
-   * @returns {InjectorFactory}
+   * @returns {Injector}
    * @memberof IContainer
    */
-  getInjector(): InjectorFactory
+  getInjector(): Injector
 }

@@ -109,8 +109,6 @@ function getBaseSettings(): IApplicationSettings {
     jwt: {
       algorithms: ['HS256'],
       credentialsRequired: false,
-      // audience: 'http://tourchase.com',
-      issuer: 'http://tourchase.com',
       secret: process.env.SECRET || "gcbfinYRQjbz4bla//EtDEBhZp0eKZ+o0Te8JRDOBEPuib9kBb9DYHu3PlRY+taBIhnn00TNKpC70+Lt3/+blYQ6/TqZ1kOBVgxdDSMFHsgh15D8N/fszRb/kh77eoF+qlgLldoEutXNT1HaEQup7ZQ1yFyTuTuX5OGh1O6T/pYCJybuMf0PFWZETonlxnjvcMfU1AYFfe046HaKy6TAZJYR8na3xLFQL0ubWDow6uT+QUhJ6+VdjewR/tHIHbNO7hDYkmTyxrGQ8yrcLCGjAqnAze5EpWwXL+dP9ZEeDtNRmzIqmA7USUDlWocKBIkYJLm2aPudBP1iLX64E+Hi2A==",
     },
 

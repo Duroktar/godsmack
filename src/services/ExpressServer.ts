@@ -8,6 +8,7 @@ import { IController } from '../interfaces/IController';
 import { IHttpServer } from '../interfaces/IHttpServer';
 import { Type } from '../types';
 import { isNullOrUndefined } from '../utils/assert';
+import { takeLeadingWord } from '../utils/string';
 import { AuthUtilsService } from './AuthService';
 
 @Singleton()
@@ -201,15 +202,4 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
     };
   }
   //#endregion
-}
-
-function takeLeadingWord(text: string) {
-  let res = "";
-  let cursor = 0;
-  let nextChar = text.charAt(cursor);
-  do {
-    res += nextChar;
-    nextChar = text.charAt(++cursor);
-  } while (cursor < text.length && nextChar.toUpperCase() !== nextChar);
-  return res;
 }

@@ -47,6 +47,7 @@ export interface IApplicationCreationService<T extends any = any> {
 
 export type IBuiltApplication<C> = Pick<
   IApplication<C>,
+  'container' |
   'main' |
   'test' |
   'addDockerSupport' |
@@ -89,5 +90,6 @@ export type IConfigurationApplication<C = any> = Pick<
   'addJavascriptClient' |
   'addCronTriggers' |
   'addSwaggerDocs' |
+  'useSettings' |
   'onAppStarted'
 >;

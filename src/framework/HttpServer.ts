@@ -1,18 +1,19 @@
 import { AwaitableEventEmitter } from '@bitr/awaitable-event-emitter';
-import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import cors from 'cors';
+import type bodyParser from "body-parser";
+import type cookieParser from "cookie-parser";
 import express, { Express, Request, RequestHandler, Response } from "express";
+import jwt from 'express-jwt';
 import { resolve } from 'path';
 import { Singleton } from '../injector';
-import type { IApplicationSettings, IController, IHttpServerErrorHandler, IHttpServerEventEmitter, PathArgument, IHttpServer } from "../interfaces";
+import type { IApplicationSettings, IController, IHttpServer, IHttpServerErrorHandler, IHttpServerEventEmitter, PathArgument } from "../interfaces";
 import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
 import { getTsConfigFile } from '../utils/getTsConfigFile';
 import { createUrlFrom } from '../utils/http';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
-import jwt from 'express-jwt';
+import { Server } from 'http';
+import { ASSERT } from '../utils/assert';
 
 @Singleton()
 export class HttpServerProvider<T extends Express = Express> implements IHttpServer {
@@ -20,6 +21,7 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
   private logger: LogFactory
   public controllers: Map<string, Type<any>> = new Map()
   public engine: T = mockServerInstance
+  public server?: Server;
   public events: IHttpServerEventEmitter
 
   constructor(public app: Application<any>) {
@@ -34,7 +36,6 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     this.events = new AwaitableEventEmitter();
 
     this.events.once(HttpServerEvent.ON_START_HTTP_SERVER, this.onServerStarted);
-    this.events.once(HttpServerEvent.ON_LOAD_SERVICES, this.onLoadServices);
   }
 
   //  -- 1. MIDDLEWARE
@@ -105,6 +106,9 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
   // --
 
   public async listen(port?: any) {
+    this.logger.debug('emitting:', HttpServerEvent.ON_BEFORE_LOAD_MIDDLEWARE)
+    await this.events.emitSerial(HttpServerEvent.ON_BEFORE_LOAD_MIDDLEWARE)
+
     this.logger.debug('emitting:', HttpServerEvent.ON_LOAD_MIDDLEWARE)
     await this.events.emitSerial(HttpServerEvent.ON_LOAD_MIDDLEWARE)
 
@@ -121,7 +125,7 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     await this.events.emitSerial(HttpServerEvent.ON_LOAD_404_NOT_FOUND_HANDLER)
 
 
-    this.engine.listen(port ?? this.settings.port, async () => {
+    return this.engine.listen(port ?? this.settings.port, async () => {
       await this.events.emitSerial(HttpServerEvent.ON_START_HTTP_SERVER)
       this.logger.info('Server listening at', this.formatServerUrl())
     })
@@ -186,11 +190,20 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
 
   // --
 
+  public useHelmet(): this {
+    this.events.on(HttpServerEvent.ON_BEFORE_LOAD_MIDDLEWARE, async () => {
+      const helmet = (await import('helmet')).default;
+      this.engine.use(helmet(this.settings.helmetOptions))
+    })
+    return this
+  }
+
   public serveStaticFiles(): this {
-    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, () => {
+    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, async () => {
       const settings = this.settings.serveStaticFileOptions;
       const { spaFallback, cors: corsOpts, ..._options } = settings;
       const path = this.settings.spaFallbackPath;
+      const cors = (await import('cors')).default;
       this.engine.use(cors(corsOpts), express.static(path, _options));
       this.logger.info(`Serving static files from dir: ${path}`);
       return this;
@@ -234,10 +247,12 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     })
     return this
   }
+
   public parseJsonBody(
     options?: bodyParser.OptionsJson,
   ): this {
-    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, () => {
+    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, async () => {
+      const bodyParser = (await import('body-parser')).default;
       this.engine.use(bodyParser.json(options));
       this.logger.info("JSON body parsing enabled");
     })
@@ -247,7 +262,8 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     secret?: string | string[],
     options?: cookieParser.CookieParseOptions,
   ): this {
-    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, () => {
+    this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, async () => {
+      const cookieParser = (await import('cookie-parser')).default;
       this.engine.use(cookieParser(secret, options));
       this.logger.debug("Cookie parsing enabled");
     })
@@ -258,6 +274,7 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
 const mockServerInstance: any = { get: () => { }, listen: () => { } }
 
 export enum HttpServerEvent {
+  ON_BEFORE_LOAD_MIDDLEWARE = 'ON_BEFORE_LOAD_MIDDLEWARE',
   /**
    * -- # 1
    */
