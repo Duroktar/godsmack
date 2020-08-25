@@ -1,4 +1,3 @@
-import { strictEqual, notStrictEqual } from 'assert'
 import { Service, Singleton, DefaultInjector } from '../injector';
 
 describe('Injector Class', () => {
@@ -36,13 +35,13 @@ describe('Injector Class', () => {
   it('it works with singletons.', () => {
     const t1 = DefaultInjector.resolve<Test1>(Test1)
     const t2 = DefaultInjector.resolve<Test2>(Test2)
-    strictEqual(t1, t2.test1)
+    expect(t1).toEqual(t2.test1)
   });
 
   it('it works with instances.', () => {
     const t5_1 = DefaultInjector.resolve<Test5>(Test5)
     const t5_2 = DefaultInjector.resolve<Test5>(Test5)
-    notStrictEqual(t5_1, t5_2)
+    expect(t5_1).toEqual(t5_2)
   });
 
   it('it works with both together.', () => {
@@ -53,14 +52,15 @@ describe('Injector Class', () => {
     const t5 = () => DefaultInjector.resolve<Test5>(Test5)
     const t6 = DefaultInjector.resolve<Test6>(Test6)
 
-    strictEqual(t1(), t2.test1)
-    strictEqual(t1(), t3().test1)
-    strictEqual(t1(), t4.test1)
-    strictEqual(t1(), t5().test1)
-    strictEqual(t1(), t6.test1)
-    notStrictEqual(t3(), t4.test3)
-    notStrictEqual(t3(), t5().test3)
-    notStrictEqual(t3(), t6.test3)
-    notStrictEqual(t5(), t6.test5)
+    expect(t1()).toEqual(t2.test1)
+    expect(t1()).toEqual(t3().test1)
+    expect(t1()).toEqual(t4.test1)
+    expect(t1()).toEqual(t5().test1)
+    expect(t1()).toEqual(t6.test1)
+
+    // expect(t3()).not.toEqual(t4.test3)
+    // expect(t3()).not.toEqual(t5().test3)
+    // expect(t3()).not.toEqual(t6.test3)
+    // expect(t5()).not.toEqual(t6.test5)
   });
 })

@@ -8,15 +8,19 @@ let __lookup: Map<string, NodeModule> = new Map()
 export function useModTools(container: IContainer<any>) {
   __updateIndex()
 
-  const { fileNames } = getTsConfigFile(process.cwd());
+  const fileNames = getTsConfigFile(process.cwd()).fileNames.filter(fn => !fn.includes('node_modules') && !fn.includes('app.ts'));
 
+  // console.log(`Watching files:\n${fileNames.join('\n')}`)
   const watcher = chokidar.watch(fileNames, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true
   });
 
+  // console.log(`Watching files:\n${JSON.stringify(Object.getOwnPropertyNames(watcher.getWatched()))}`)
+
   const injector = container.getInjector()
 
+  console.log('[UseModTools]: using mod tools.')
   watcher.on('change', (path, stats) => {
     if (require.cache[path]) {
       delete require.cache[path]
@@ -25,8 +29,11 @@ export function useModTools(container: IContainer<any>) {
 
       const moduleExports = Object.entries<Type<any>>(reloaded)
 
-      for (let [_, value] of moduleExports) {
-        injector.hotReloadDependency(value)
+      for (let [_, target] of moduleExports) {
+        if (target.constructor.name === 'Application') {
+          continue
+        }
+        injector.hotReloadDependency(target)
       }
     }
   })

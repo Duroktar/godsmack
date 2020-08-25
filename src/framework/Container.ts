@@ -1,4 +1,4 @@
-import { DefaultInjector, Injector } from '../injector/Injector';
+import { DefaultInjector } from '../injector/Injector';
 import type { EmptyType, Type, InferType, StaticTestProps } from '../types';
 import type { IContainer } from '../interfaces';
 import { useModTools } from '../utils/modTools';
@@ -6,10 +6,11 @@ import { useModTools } from '../utils/modTools';
 export type InferContainerT<T> = T extends Container<infer C> ? C : never
 
 export class Container<T = EmptyType> implements IContainer<T> {
-  constructor(private injector: Injector = DefaultInjector) {
-    useModTools(this as any)
+  constructor(private injector = DefaultInjector) {
+    // useModTools(this as any)
   }
 
+  public resolve<Target extends T>(target?: Type<Target>): Target;
   public resolve<Target extends T>(target: Type<Target>): Target {
     if (this.__resolverCache.has(target)) {
       return this.__resolverCache.get(target)
@@ -53,40 +54,4 @@ export class Container<T = EmptyType> implements IContainer<T> {
   public getInjector = () => { return this.injector }
 
   private __resolverCache = new Map()
-
-  /* TESTING */
-  static Test({ expect, describe, it }: StaticTestProps) {
-    const noise1 = 'brappp';
-    const noise2 = 'pfft';
-
-    interface BaseClass {
-      noise(): string
-    }
-    class Implementation1 {
-      noise() { return noise1 }
-    }
-    class Implementation2 {
-      noise() { return noise2 }
-    }
-
-    const container = new Container()
-      .addSingleton<BaseClass>(Implementation1, Implementation2)
-
-    describe('Container tests', () => {
-      // Singleton
-      const instance = container.resolve(Implementation1)
-
-      it('works', () => {
-        expect(instance).to.equal(container.resolve(Implementation1))
-        expect(instance.noise()).to.equal(noise2)
-      })
-      it('and here', () => {
-        expect(container.resolve(Implementation1)).to.equal(instance)
-        expect(container.resolve(Implementation1).noise()).to.equal(noise2)
-      })
-      it('here too', () => {
-        expect(container.resolve(Implementation1)).to.equal(container.resolve(Implementation1))
-      })
-    })
-  }
 }

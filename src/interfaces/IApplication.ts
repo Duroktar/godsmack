@@ -22,7 +22,6 @@ import type { IDatabaseProvider } from './IDatabase';
 import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
 import type { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
 import type { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
-import { Server } from 'http';
 
 export type IApplicationContainer<T> = Pick<IApplication<T>, 'container'>
 
@@ -89,6 +88,17 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   useFactory: (factory: IFactory) => this;
+
+  /**
+   * Pretty print all console errors. Internally it
+   * just calls `require('pretty-error').start();`
+   * which takes care of all the magic.
+   *
+   * @docs https://www.npmjs.com/package/pretty-error
+   * @returns {this}
+   * @memberof IApplication
+   */
+  usePrettyConsoleErrors: () => this;
   /**
    * Used to add and configure an HTTP Server Client
    * for the Application to serve on the network.

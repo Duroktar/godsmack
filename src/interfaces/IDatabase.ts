@@ -1,6 +1,6 @@
 import type { IApplicationSettings } from './IApplicationSettings';
 import type { LogFactory } from '../services/Logger';
-import type { IApplication } from './IApplication';
+import type { IApplicationContainer } from './IApplication';
 
 export interface IDatabaseProvider {
 
@@ -111,5 +111,5 @@ export interface IDatabaseProvider {
    */
   connection: any
 
-  app: IApplication
+  app: IApplicationContainer<any>
 }

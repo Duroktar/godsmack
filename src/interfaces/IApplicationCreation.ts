@@ -91,5 +91,6 @@ export type IConfigurationApplication<C = any> = Pick<
   'addCronTriggers' |
   'addSwaggerDocs' |
   'useSettings' |
+  'usePrettyConsoleErrors' |
   'onAppStarted'
 >;

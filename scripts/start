@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 echo $(date)
-node_modules/.bin/ts-node -P tsconfig.json src/main.ts
+node_modules/.bin/ts-node -C ttypescript -P tsconfig.json src/main.ts

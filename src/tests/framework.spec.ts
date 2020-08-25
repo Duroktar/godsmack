@@ -21,18 +21,18 @@ describe('Application Class', () => {
   const expect = staticTestProps.expect
 
   it('works godammit', () => {
-    expect(!!app.container.resolve(ExpressServer)).to.equal(true)
+    expect(!!app.container.resolve(ExpressServer)).toEqual(true)
   })
 
   it('creates godammit', () => {
     const service = app.container.resolve(ApplicationCreationService)
-    expect(!!service).to.equal(true)
-    expect(service.ConfigureServices).to.equal(ConfigureServices)
+    expect(!!service).toEqual(true)
+    expect(service.ConfigureServices).toEqual(ConfigureServices)
   })
 
   it('configures godammit', () => {
     const service = app.container.resolve(ApplicationConfigurationService)
-    expect(!!service).to.equal(true)
-    expect(service.configure).to.equal(configureFunction)
+    expect(!!service).toEqual(true)
+    expect(service.configure).toEqual(configureFunction)
   })
 })

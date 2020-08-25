@@ -1,9 +1,9 @@
 import type { Container } from './framework';
 
 export interface StaticTestProps {
-  describe: Mocha.SuiteFunction;
-  it: Mocha.TestFunction;
-  expect: Chai.ExpectStatic;
+  describe: typeof describe;
+  it: typeof test;
+  expect: typeof expect;
 }
 
 export interface IContainerApplication<T extends any> {
@@ -63,4 +63,14 @@ export declare type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends Array<infer U> ? Array<DeepPartial<U>> : T[P] extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : DeepPartial<T[P]>;
 };
 
-export declare function nameof<T>(func?: (obj: T) => any): Type<T>;
+/**
+ * Thf function actually returns a string, but we dupe the Type System
+ * for a better user experience.
+ *
+ * @example
+ *
+ * app.container.addSingleton(nameof<SomeInterface>(), SomeImplementation)
+ *
+ * const implementation = app.resolve<SomeInterface>(nameof<SomeInterface>())
+ */
+export declare function nameof<T>(func?: (obj: T) => any): Type<T>

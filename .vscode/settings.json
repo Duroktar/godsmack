@@ -1,6 +1,8 @@
 {
-  "editor.formatOnSave": true,
+  "jest.showCoverageOnLoad": false,
+  "editor.formatOnSave": false,
   "files.exclude": {
+    "**/dist/": true,
     "**/node_modules/": true
   }
 }

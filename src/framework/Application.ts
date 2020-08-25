@@ -80,6 +80,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
+  public usePrettyConsoleErrors = () => {
+    import('pretty-error').then(lib => lib.start())
+    return this
+  }
+
   public addServer = (server: IHttpServer) => {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
       const lib = await import('./HttpServer')

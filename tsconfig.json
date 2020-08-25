@@ -3,6 +3,10 @@
     "src/",
   ],
   "compilerOptions": {
+    "plugins": [
+      { "transform": "ts-nameof", "type": "raw" },
+      { "transform": "./src/transformers/inject/index.ts" },
+    ],
     "skipLibCheck": true,
     /* Basic Options */
     // "incremental": true, /* Enable incremental compilation */

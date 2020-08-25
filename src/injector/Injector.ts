@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Disposable } from '../framework/Disposable';
-import { LogFactory } from '../services/Logger';
+import { LogFactory, LogLevel } from '../services/Logger';
 import type { Type } from '../types';
 
 type ResolvedInjections<T> = {
@@ -64,11 +64,9 @@ export class Injector {
   }
 
   public hotReloadDependency = <T extends any>(target: Type<T>) => {
-    if (this.hasDependency(target)) {
-      this.overrideDependency(target, target);
-      this.replaceInstanceInCache(target);
-      this.logger.info(`Hot-Swapped "${this.getTypeName(target)}" dependency.`)
-    }
+    this.overrideDependency(target, target);
+    this.replaceInstanceInCache(target);
+    this.logger.info(`Hot-Swapped "${target.name}" dependency.`)
   }
 
   public hasDependency<T extends any>(
@@ -162,15 +160,15 @@ export class Injector {
 
     if (this.dependencies.has(targetName)) {
       if (!override) {
-        this.logger.debug(`Skipping existing dependencies => ${targetName}`)
         return this.dependencies
       }
 
-      this.logger.debug(`Overriding existing dependencies => ${targetName}`)
+      const typeName = this.getTypeName(resolvedType)
+      this.logger.debug(`Overriding => ${targetName} to => ${typeName}`)
     }
     else {
       const typeName = this.getTypeName(resolvedType)
-      this.logger.debug(`Setting dependencies => ${targetName} to => ${typeName}`)
+      this.logger.debug(`Setting => ${targetName} to => ${typeName}`)
     }
 
     this.dependencies.set(targetName, resolvedType)
