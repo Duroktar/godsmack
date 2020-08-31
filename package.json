@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "main": "build/index.js",
   "license": "MIT",
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "files": [
     "build",
     "scripts",
