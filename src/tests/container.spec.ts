@@ -1,6 +1,5 @@
-import { Container } from "../framework";
+import { Container, Singleton } from "../index";
 import { staticTestProps } from './staticTestProps';
-import { Singleton } from "../injector";
 import { nameof } from "../types";
 
 describe('Container Class', () => {

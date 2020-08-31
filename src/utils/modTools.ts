@@ -5,7 +5,7 @@ import { getTsConfigFile } from './getTsConfigFile'
 
 let __lookup: Map<string, NodeModule> = new Map()
 
-export function useModTools(container: IContainer<any>) {
+export function enableHotSwapping(container: IContainer<any>) {
   __updateIndex()
 
   const fileNames = getTsConfigFile(process.cwd()).fileNames.filter(fn => !fn.includes('node_modules') && !fn.includes('app.ts'));

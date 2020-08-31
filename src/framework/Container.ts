@@ -1,14 +1,19 @@
 import { DefaultInjector } from '../injector/Injector';
-import type { EmptyType, Type, InferType, StaticTestProps } from '../types';
+import type { EmptyType, Type, InferType } from '../types';
 import type { IContainer } from '../interfaces';
-import { useModTools } from '../utils/modTools';
+import { createProxiedService } from '../utils/proxy';
+
+type ContainerSettings = {
+  hotSwapping?: boolean;
+}
 
 export type InferContainerT<T> = T extends Container<infer C> ? C : never
 
 export class Container<T = EmptyType> implements IContainer<T> {
-  constructor(private injector = DefaultInjector) {
-    // useModTools(this as any)
-  }
+  constructor(
+    private injector = DefaultInjector,
+    private settings: ContainerSettings = { hotSwapping: true },
+  ) {}
 
   public resolve<Target extends T>(target?: Type<Target>): Target;
   public resolve<Target extends T>(target: Type<Target>): Target {
@@ -16,18 +21,12 @@ export class Container<T = EmptyType> implements IContainer<T> {
       return this.__resolverCache.get(target)
     }
 
-    const resolved = this.injector.resolve(target);
+    const resolved = this.settings.hotSwapping
+      ? createProxiedService<Type<Target>>(this.injector, target)
+      : this.injector.resolve(target);
 
-    const resolve = this.injector.resolve.bind(this.injector);
-    const handler = new Proxy(resolved as any, {
-      get(proxyTarget, prop, receiver) {
-        const reloaded = resolve(target);
-        return Reflect.get(reloaded as any, prop, receiver);
-      },
-    }) as any;
-
-    this.__resolverCache.set(target, handler)
-    return handler as Target
+    this.__resolverCache.set(target, resolved)
+    return resolved as Target
   }
 
   public addSingleton<Base extends any, Impl extends Type<Base> = any, Ret extends Type<Base> = any>(

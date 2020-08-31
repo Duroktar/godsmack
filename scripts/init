@@ -1,32 +1,83 @@
-#!/usr/bin/env bash
+#!/usr/bin/env node
+const {spawnSync} = require('child_process');
+const {prompt} = require('enquirer');
+const {readFileSync} = require('fs');
+const {join, basename, resolve} = require('path');
+const {Container} = require('../build/index.js')
+const {DirectoryBuilder} = require('../build/services/template/DirectoryBuilder.js')
+const {TemplateSystem} = require('../build/services/template/TemplateSystem.js')
+const ora = require('ora');
 
-test -d "node_modules" || exit 1
+main().finally()
 
-echo $(date)
+async function main() {
+  const model = await prompt([
+    {
+      type: 'input',
+      name: 'packageName',
+      message: 'Project Name',
+      default: basename(resolve(process.cwd())).toLowerCase(),
+    },
+    {
+      type: 'input',
+      name: 'packageVersion',
+      message: 'Project Version',
+      default: '0.0.1'
+    },
+    {
+      type: 'input',
+      name: 'packageLicense',
+      message: 'Project License',
+      default: 'MIT'
+    },
+    {
+      type: 'confirm',
+      name: 'addDockerSupport',
+      message: 'Add Docker Support?'
+    },
+    {
+      type: 'confirm',
+      name: 'addDockerDBSupport',
+      message: 'Add Docker Database Support?'
+    },
+    {
+      type: 'confirm',
+      name: 'usePostgresDb',
+      message: 'Add Postgres Database Support?'
+    },
+    {
+      type: 'input',
+      name: 'baseServerDir',
+      message: 'Base directory for server code?',
+      default: 'server'
+    },
+  ]);
 
-cp node_modules/@trabpukcip/godsmack/templates/.editorconfig.template .editorconfig
-cp node_modules/@trabpukcip/godsmack/templates/.gitignore.template .gitignore
-cp node_modules/@trabpukcip/godsmack/templates/tsconfig.json.template tsconfig.json
-cp node_modules/@trabpukcip/godsmack/templates/tsoa.json.template tsoa.json
+  const system = new Container()
+    .addSingleton(TemplateSystem)
+    .resolve(TemplateSystem)
 
-mkdir src
-cp node_modules/@trabpukcip/godsmack/templates/main.ts.template src/main.ts
-cp node_modules/@trabpukcip/godsmack/templates/app.ts.template src/app.ts
-cp node_modules/@trabpukcip/godsmack/templates/tsoa/ioc.ts.template src/ioc.ts
-mkdir src/controllers
-cp node_modules/@trabpukcip/godsmack/templates/controller.ts.template src/controllers/acontroller.ts
-mkdir src/interfaces
-mkdir src/models
-mkdir src/repo
-mkdir src/services
-cp node_modules/@trabpukcip/godsmack/templates/service.ts.template src/services/aservice.ts
-mkdir src/middleware
-cp node_modules/@trabpukcip/godsmack/templates/tsoa/auth.ts.template src/middleware/auth.ts
-mkdir src/generated
-cp node_modules/@trabpukcip/godsmack/templates/tsoa/routes.template.hbs.template src/templates/routes.template.hbs
-cp node_modules/@trabpukcip/godsmack/templates/tsoa/routes.ts.template src/generated/routes.ts
+  const spec = new DirectoryBuilder()
+    .mkDir(model.baseServerDir, dir => dir
+      .touch('app.ts',  loadTemplate('app.ts'))
+      .touch('main.ts', loadTemplate('main.ts'))
+    )
+    .touch('.editorconfig', loadTemplate('.editorconfig'))
+    .touch('.gitignore',    loadTemplate('.gitignore'))
+    .touch('tsconfig.json', loadTemplate('tsconfig.json'))
+    .touch('package.json',  loadTemplate('package.json'))
+    .buildSpec();
 
-mkdir www
-cp node_modules/@trabpukcip/godsmack/templates/index.html.template www/index.html
+  const spinner1 = ora('Generating Directories').start();
+  await system.generateDirectoriesFromSpec(spec, model)
+  spinner1.succeed()
 
-yarn add --dev tsoa typescript tslib ts-node ts-node-dev @openapitools/openapi-generator-cli graphql type-graphql mocha chai @types/node @types/mocha @types/chai
+  const spinner2 = ora('Installing Dependencies').start();
+  spawnSync('yarn')
+  spinner2.succeed()
+}
+
+function loadTemplate(filename) {
+  const templateDir = join(__dirname, '..', 'templates', filename + '.template')
+  return readFileSync(templateDir).toString('utf-8')
+}

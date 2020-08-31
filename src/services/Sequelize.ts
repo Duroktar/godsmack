@@ -65,16 +65,7 @@ export class SequelizeAdapter extends DatabaseProvider {
     return createDbConnectionString(options);
   }
 
-  private __connection: Sequelize | null = null
-
-  set connection(val: Sequelize) {
-    this.__connection = val
-  }
-  get connection(): Sequelize {
-    if (!this.__connection)
-      throw new Error('Not connected to database.')
-    return this.__connection
-  }
+  public connection!: Sequelize
 
   private getDbConnection(connectionString?: string, options?: Options) {
     const settings = this.mergeDefaultsWithOptions(options);

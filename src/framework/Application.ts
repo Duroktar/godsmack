@@ -10,7 +10,6 @@ import { LogFactory } from '../services/Logger';
 import type { SequelizePostgresDB } from '../services/sequelize/PostgresDB';
 import type { TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
 import type { YargsCliApp } from "../services/YargsCliApp";
-import type { TerminalInk } from '../tui/TerminalInk';
 import type { DeepPartial, Type } from '../types';
 import { doTry } from '../utils/func';
 import { ApplicationConfigurationService } from './ApplicationConfigurationService';
@@ -125,7 +124,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  private __isDockerizingDB = false // TODO move me to internals section
+  private __isDockerizingDB = false // TODO move me somewhere.
 
   public addDockerDBSupport = () => {
     if (!process.env.DOCKER_CTX) {
@@ -155,9 +154,8 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public cliAppRun() {
-    this.container.resolve<CliAppProvider>(
-      require("./CommandLine").CliAppProvider
-    ).run();
+    const cliApp = require("./CommandLine").CliAppProvider;
+    this.container.resolve<CliAppProvider>(cliApp).run();
   }
 
   /* Convenience API */
@@ -210,12 +208,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public addTerminalInk() {
     // NOTE: If using the TUI then set it up asap
     this.events.on(ApplicationEvent["@INIT"], async () => {
-      const lib = await import('../tui/TerminalInk')
+      const lib = await import('../services/tui')
       this.container
-        .addSingleton(LogFactory, require('../tui').TuiLoggerService)
-        .addSingleton<TerminalInk>(lib.TerminalInk)
-      this.container
-        .resolve<TerminalInk>(lib.TerminalInk)
+        .addSingleton(LogFactory, lib.TuiLoggerService)
+        .addSingleton(lib.TerminalInk)
+        .resolve(lib.TerminalInk)
         .setApp(this)
         .start()
     })
@@ -224,7 +221,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addCronTriggers = (path?: string): this => {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./Tasks')
+      const lib = await import('./Tasks');
       const service = new lib.TaskService(this);
       service
         .useCronTriggers(path)
@@ -238,10 +235,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public useNodeMailer = (): this => {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
       const lib = await import('../services/Mailer')
-      this.container.addSingleton(lib.MailerService)
-      this.container
-        .resolve(lib.MailerService)
-        .initializeService()
+      const service = this.container
+        .addSingleton(lib.MailerService)
+        .resolve(lib.MailerService);
+      await service.initializeService()
     })
     return this
   }
@@ -249,38 +246,47 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public addSwaggerDocs() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
       const lib = await import('./Swagger')
-      this.container.addSingleton(lib.SwaggerService)
-      await this.container
-        .resolve(lib.SwaggerService)
-        .initializeService()
+      const service = this.container
+        .addSingleton(lib.SwaggerService)
+        .resolve(lib.SwaggerService);
+      await service.initializeService()
     })
     return this
   }
 
   public addOpenApiGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./graphql')
-      await this.container
-        .resolve(lib.OpenApiToGraphQlProvider)
-        .initializeService()
+      const lib = await import('./graphql/OpenApiToGraphQlProvider')
+      const service = this.container
+        .addSingleton(lib.OpenApiToGraphQlProvider)
+        .resolve(lib.OpenApiToGraphQlProvider);
+      await service.initializeService()
     })
     return this
   }
 
   public addTypeGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./graphql')
-      await this.container
-        .resolve(lib.TypeGraphQlProvider)
-        .initializeService()
+      const lib = await import('./graphql/TypeGraphQlProvider')
+      const service = this.container
+        .addSingleton(lib.TypeGraphQlProvider)
+        .resolve(lib.TypeGraphQlProvider);
+      await service.initializeService()
     })
     return this
 
   }
 
-  public useSettings = (config: DeepPartial<IApplicationSettings>): this => {
-    const settings = this.container.resolve(SettingsService)
-    settings.update(config)
+  public addHotSwapping() {
+    import('../utils/modTools')
+      .then(mod => mod.enableHotSwapping(this.container))
+    return this
+  }
+
+  public useSettings = <Config extends DeepPartial<IApplicationSettings>>(
+    config: DeepPartial<IApplicationSettings> | ((base: IApplicationSettings) => Config)
+  ): this => {
+      this.container.resolve(SettingsService).update(config)
     return this
   }
 

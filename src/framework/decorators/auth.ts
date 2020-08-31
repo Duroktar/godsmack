@@ -1,4 +1,4 @@
-import { AUTH_ROUTE_DATA, AUTH_ROLES_CLAIM, AUTH_OWNER_CLAIM } from '../../constants';
+import { AUTH_ROUTE_DATA, AUTH_ROLES_CLAIM, AUTH_OWNER_CLAIM } from './constants';
 
 type PropertyKey = {
   methodName: any;

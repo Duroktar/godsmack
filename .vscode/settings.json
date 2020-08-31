@@ -1,8 +1,11 @@
 {
   "jest.showCoverageOnLoad": false,
+  "jest.autoEnable": false,
   "editor.formatOnSave": false,
   "files.exclude": {
-    "**/dist/": true,
+    "**/coverage/": true,
+    "**/build/": true,
+    "**/dist/": false,
     "**/node_modules/": true
   }
 }

@@ -1,4 +1,4 @@
-import { CONTROLLER_ARGS_DATA } from '../../constants';
+import { CONTROLLER_ARGS_DATA } from './constants';
 
 export type ParamMetadata<T> = {
   propertyKey: string | symbol

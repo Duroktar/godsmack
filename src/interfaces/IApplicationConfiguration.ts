@@ -1,12 +1,12 @@
 import type { IConfigurationApplication, IBuiltApplication } from './IApplicationCreation';
 
-export interface IApplicationConfigurationService<T> {
+export interface IApplicationConfigurationService<AppContainer> {
   /**
    * Class based interface for `IApplicationConfigurationService`
    *
    * @memberof IApplicationConfigurationService
    */
-  configure: (app: IConfigurationApplication<T>) => void;
+  configure: (app: IConfigurationApplication<AppContainer>) => void;
 };
 
 /**

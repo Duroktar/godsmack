@@ -16,7 +16,7 @@ import type { SequelizePostgresDB } from '../services/sequelize/PostgresDB';
 import type { TypeORMPostgresDB } from '../services/typeorm/PostgresDB';
 import type { IApplicationConfigurationHandler } from "./IApplicationConfiguration";
 import type { IApplicationSettings } from './IApplicationSettings';
-import type { TerminalInk } from '../tui/TerminalInk';
+import type { TerminalInk } from '../services/tui/TerminalInk';
 import type { SwaggerService } from '../framework/Swagger';
 import type { IDatabaseProvider } from './IDatabase';
 import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
@@ -129,7 +129,12 @@ export interface IApplication<AppContainer = any> {
    * @returns {this}
    * @memberof IApplication
    */
-  useSettings: (config: DeepPartial<IApplicationSettings>) => this;
+  useSettings: <Config extends DeepPartial<IApplicationSettings>>(
+    /**
+     * Takes an object or function called with the base settings.
+     */
+    config: Config | ((base: IApplicationSettings) => Config)
+  ) => this;
   /**
    * Used to add and configure a Database Provider
    * to the Application
@@ -268,8 +273,16 @@ export interface IApplication<AppContainer = any> {
    */
   addTypeGraphQl(): this
 
+  /**
+   * When enabled allows you to modify injected deps
+   * live on the file system.
+   *
+   * @returns {this}
+   * @memberof IApplication
+   */
+  addHotSwapping(): this
+
   // TODO / wishlist
-  // addLiveReloading(): this
   // addSinglePageApp(): this
   // addCreateReactApp(): this
 }

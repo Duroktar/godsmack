@@ -1,7 +1,7 @@
+import { ApplicationBuilder, Container, DatabaseProvider, HttpServerProvider } from '../framework'
+import { HttpServiceSetup, IApplicationContainer, MergeDefaultProviders } from '../interfaces'
 import { InMemoryDatabase } from "../services/MemoryDB"
-import { MergeDefaultProviders, IApplicationContainer, HttpServiceSetup } from '../interfaces'
-import { Container, HttpServerProvider, DatabaseProvider, ApplicationBuilder } from '../framework'
-import { nameof, InferApplicationTypes, InferContainerTypes } from '../types'
+import { InferContainerTypes, nameof } from '../types'
 
 describe('The Application should work', () => {
   interface IBaseClass {
@@ -74,10 +74,10 @@ describe('The Application should work', () => {
 
   const app = ApplicationBuilder.Create({
     ConfigureDatabase: app =>
-    new InMemoryDatabase(app)
-      .createDatabase('users')
-      .createDatabase('hats')
-      .createDatabase('userHats'),
+      new InMemoryDatabase(app)
+        .createDatabase('users')
+        .createDatabase('hats')
+        .createDatabase('userHats'),
     ConfigureServer: app => app
       .addExpressServer()
       .registerServices(...services(app)),

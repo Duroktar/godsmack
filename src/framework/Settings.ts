@@ -1,16 +1,14 @@
 import deepmerge from "deepmerge";
 import { Singleton } from "../injector";
 import type { IApplicationSettings } from "../interfaces";
-import { LogFactory, LogLevel } from "../services/Logger";
+import { LogLevel } from "../services/Logger";
 import type { DeepPartial } from "../types";
 
 type AllSettings<T> = IApplicationSettings & T
 
 @Singleton()
 export class SettingsService<AppConfig = {}> {
-  constructor(public logger: LogFactory) {
-    this.logger = logger.For(this);
-
+  constructor() {
     this.__initializeDockerVariables();
   }
 
@@ -30,11 +28,17 @@ export class SettingsService<AppConfig = {}> {
     return this.__settings[key]!;
   }
 
-  public update(settings: DeepPartial<AllSettings<AppConfig>>) {
-    this.__settings = deepmerge(
-      this.__settings,
-      settings as AppConfig,
-    ) as AllSettings<AppConfig>;
+  public update<Config extends DeepPartial<AllSettings<AppConfig>>>(
+    settings: Config | ((base: AllSettings<AppConfig>) => Config)
+  ) {
+    const config: AllSettings<AppConfig> = typeof settings === 'function'
+      ? settings(this.__settings)
+      : settings as any
+
+    this.__settings = deepmerge(this.__settings, config, {
+      arrayMerge: (original, incoming) => incoming,
+    }) as any;
+
     return this.__settings;
   }
 }
@@ -87,14 +91,14 @@ function getBaseSettings(): IApplicationSettings {
     factory: {},
 
     framework: {
-      rootDir: 'src'
+      rootDir: (process as any)?.mainModule?.path ?? 'src/', // ie: src/ (usually) or dist/ (for example) after compile
     },
 
     graphQl: {
       endpoint: '/graphql',
       graphiql: true,
       typeGraphQlOptions: {
-        resolvers: ['resolvers/**/*.ts'],
+        resolvers: ['/resolvers/**/!(*.d){js,ts}'],
       }
     },
 
@@ -159,11 +163,11 @@ function getBaseSettings(): IApplicationSettings {
         }
       },
       specGenOptions: {
-        tsoaPath: './tsoa.json',
+        tsoaPath: 'tsoa.json',
         lang: 'typescript-fetch',
-        outputPath: './client/generated/api',
+        outputPath: '../client/generated/api',
         codegenVersion: 'V3',
-        swaggerSpecPath: '/swagger.json',
+        swaggerSpecPath: 'swagger.json',
       }
     },
 

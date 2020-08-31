@@ -1,12 +1,12 @@
 import express, { NextFunction, Request, RequestHandler, Response } from "express";
-import { AUTH_OWNER_CLAIM, AUTH_ROLES_CLAIM, AUTH_ROUTE_DATA, CONTROLLER_ARGS_DATA, ROUTE_DATA } from '../constants';
 import { getDecoratorArgs, HttpParamType, JwtClaim, JwtClaimMetadata, OwnerClaimMetadata, PathMetadata, ReqData, RolesClaimMetadata } from '../framework/decorators';
+import { AUTH_OWNER_CLAIM, AUTH_ROLES_CLAIM, AUTH_ROUTE_DATA, CONTROLLER_ARGS_DATA, ROUTE_DATA } from '../framework/decorators/constants';
 import { ParamMetadata } from '../framework/decorators/utils';
 import { HttpServerProvider } from '../framework/HttpServer';
 import { Singleton } from '../injector/decorators';
 import { IController } from '../interfaces/IController';
-import { IHttpServer } from '../interfaces/IHttpServer';
-import { Type } from '../types';
+import type { IHttpServer } from '../interfaces/IHttpServer';
+import type { Type } from '../types';
 import { isNullOrUndefined } from '../utils/assert';
 import { takeLeadingWord } from '../utils/string';
 import { AuthUtilsService } from './AuthService';
@@ -17,13 +17,14 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
 
   public onLoadServices = () => {
     const authService = this.app.container.resolve(AuthUtilsService);
-    [...this.controllers.keys()].forEach((endpoint) => {
-      const klass = this.controllers.get(endpoint) as Type<IController<any>>;
+
+    for (let endpoint of this.controllers.keys()) {
+      const klass: Type<IController<any>> | undefined = this.controllers.get(endpoint);
 
       if (isNullOrUndefined(klass))
         return;
 
-      const instance: any = this.app.container.resolve<IController<any>>(klass);
+      const instance: IController<any> = this.app.container.resolve(klass);
 
       const grantedRoutes: Record<string, JwtClaim> = (
         (Reflect.getMetadata(AUTH_ROUTE_DATA, klass) as JwtClaimMetadata[]) ?? []
@@ -53,29 +54,30 @@ export class ExpressServer extends HttpServerProvider implements IHttpServer {
         );
       });
 
-      const extendedRoutes = Reflect.getMetadata(ROUTE_DATA, klass);
+      const extendedRoutes: PathMetadata[] | undefined = Reflect.getMetadata(ROUTE_DATA, klass);
 
-      if (extendedRoutes) {
-        for (let route of extendedRoutes as PathMetadata[]) {
-          const { path, methodName } = route;
-          const auth = grantedRoutes[methodName];
-          const roles = grantedRoles[methodName];
-          const owners = grantedOwners[methodName];
-          const reqType = takeLeadingWord(methodName);
-          const subPath = path.startsWith("/") ? path : "/" + path;
-          this.setupHandler(
-            instance,
-            reqType,
-            endpoint + subPath,
-            methodName,
-            auth,
-            roles,
-            owners,
-            authService,
-          );
-        }
+      if (isNullOrUndefined(extendedRoutes))
+        return;
+
+      for (let route of extendedRoutes) {
+        const { path, methodName } = route;
+        const auth = grantedRoutes[methodName];
+        const roles = grantedRoles[methodName];
+        const owners = grantedOwners[methodName];
+        const reqType = takeLeadingWord(methodName);
+        const subPath = path.startsWith("/") ? path : "/" + path;
+        this.setupHandler(
+          instance,
+          reqType,
+          endpoint + subPath,
+          methodName,
+          auth,
+          roles,
+          owners,
+          authService,
+        );
       }
-    });
+    };
   };
 
   //#region Internals

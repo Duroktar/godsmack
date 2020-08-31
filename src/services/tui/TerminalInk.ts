@@ -1,7 +1,7 @@
-import { LogFactory } from '../services/Logger';
-import { IApplication } from '../interfaces';
-import { Singleton } from '../injector';
 import type { Instance } from 'ink';
+import { Singleton } from '../../injector';
+import type { IApplication } from '../../interfaces';
+import { LogFactory } from '../Logger';
 
 const importJsx = require('import-jsx')
 

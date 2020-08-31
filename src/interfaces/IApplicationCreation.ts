@@ -84,13 +84,14 @@ export type IConfigureFactoryApplication<C = any> = Pick<
   'addDefaultFactory'
 >;
 
-export type IConfigurationApplication<C = any> = Pick<
-  IApplication<C>,
-  'container' |
-  'addJavascriptClient' |
-  'addCronTriggers' |
-  'addSwaggerDocs' |
-  'useSettings' |
-  'usePrettyConsoleErrors' |
-  'onAppStarted'
->;
+export type IConfigurationApplication<C = any> = IApplication<C>
+// export type IConfigurationApplication<C = any> = Pick<
+//   IApplication<C>,
+//   'container' |
+//   'addJavascriptClient' |
+//   'addCronTriggers' |
+//   'addSwaggerDocs' |
+//   'useSettings' |
+//   'usePrettyConsoleErrors' |
+//   'onAppStarted'
+// >;

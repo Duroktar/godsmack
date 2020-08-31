@@ -29,3 +29,6 @@ export function ASSERT<T>(val: T): Exclude<T, undefined> {
 //     throw new Error('REQUIRED Assertion error.')
 //   return obj as any
 // }
+
+// type NonData<D> = D extends {data:any} ? [D, 'should not extend { data: any }', never] : D;
+// declare function nonData<T>(param: NonData<T>):void;

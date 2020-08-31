@@ -1,5 +1,5 @@
-import { ILogger } from '../interfaces';
-import { Singleton } from '../injector';
+import type { ILogger } from '../../interfaces';
+import { Singleton } from '../../injector';
 
 enum LogLevel {
   LOG,

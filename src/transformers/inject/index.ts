@@ -1,15 +1,12 @@
 import ts from "typescript";
 import { transformerFactory } from './factory';
 export * from "./factory";
-export { VisitSourceFileContext } from "./VisitSourceFileContext";
 
 export default function(program: ts.Program, pluginOptions: {}) {
   const typeChecker = program.getTypeChecker()
+  const typeCheckedTransformer = transformerFactory(typeChecker);
   return (ctx: ts.TransformationContext) => {
-    const transformer = transformerFactory(ctx, typeChecker)
-      return (sourceFile: ts.SourceFile) => {
-        const result = transformer(sourceFile)
-        return result
-      };
+    const transformer = typeCheckedTransformer(ctx);
+    return (sourceFile: ts.SourceFile) => transformer(sourceFile);
   };
 }

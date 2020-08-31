@@ -1,26 +1,18 @@
 import { Singleton } from '../injector';
-import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
+import { spawn } from 'child_process';
 import { LogFactory, LogLevel } from '../services/Logger';
-import { SettingsService } from './Settings';
-import { IApplicationSettings } from '../interfaces/IApplicationSettings';
-
-type SpawnOptions =
-  & SpawnOptionsWithoutStdio
-  & { log?: boolean; }
+import { IShell, SpawnOptions } from '../interfaces/IShell';
 
 @Singleton()
-export class Shell {
-  private settings: IApplicationSettings['shell']
+export class Shell implements IShell {
   constructor(
     private logger: LogFactory,
-    private configFactory: SettingsService,
   ) {
     this.logger = logger.For(this)
-    this.settings = configFactory.get('shell')
   }
 
   public async spawn(cmd: string, args: string[], opts?: SpawnOptions) {
-    const defaults = { cwd: process.cwd(), log: this.settings.log };
+    const defaults = { cwd: process.cwd(), log: false };
     const options = { ...defaults, ...opts }
     return new Promise<{ stdout: string, code: number }>((resolve, reject) => {
       const logText = !!options?.log

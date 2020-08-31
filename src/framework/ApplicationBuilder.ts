@@ -1,10 +1,10 @@
+import type { IApplication, IApplicationBuilder, IApplicationCreationService, IContainer, MergeDefaultProviders } from '../interfaces';
+import { TerminalInk } from '../services/tui/TerminalInk';
 import { Application } from './Application';
 import { ApplicationCreationService } from './ApplicationCreationService';
 import { Container } from './Container';
 import { DockerService } from './Docker';
 import { SettingsService } from './Settings';
-import { TerminalInk } from '../tui/TerminalInk';
-import type { IApplication, MergeDefaultProviders, IApplicationBuilder, IApplicationCreationService, IContainer } from '../interfaces';
 
 /**
  * The default implementation of the IApplicationBuilder used

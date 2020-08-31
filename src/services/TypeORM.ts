@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 import { DatabaseProvider } from "../framework/Database";
 import { Singleton } from "../injector";
-import { join as pathJoin } from 'path'
+import { dirname, join as pathJoin } from 'path'
 import { SettingsService } from '../framework';
 
 @Singleton()
@@ -43,15 +43,7 @@ export class TypeORMAdapter extends DatabaseProvider {
     return this.connection.transaction(op);
   }
 
-  private __connection: Connection | null = null;
-
-  set connection(val: Connection) {
-    this.__connection = val;
-  }
-  get connection(): Connection {
-    if (!this.__connection) throw new Error("Not connected to database.");
-    return this.__connection;
-  }
+  public connection!: Connection;
 
   private mergeDatabaseOptions(options?: Partial<ConnectionOptions>) {
 

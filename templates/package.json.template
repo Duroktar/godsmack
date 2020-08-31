@@ -1,0 +1,33 @@
+{
+  "name": "{{ packageName }}",
+  "version": "{{ packageVersion }}",
+  "main": "build/main.js",
+  "license": "{{ packageLicense }}",
+  "scripts": {
+    "build": "yarn transpile",
+    "transpile": "ttsc -P tsconfig.json",
+    "build:watch": "yarn transpile --watch --preserveWatchOutput",
+    "start:ttypescript": "ts-node -P tsconfig.json -C ttypescript server/main.ts",
+    "dev": "npm-run-all --parallel build:watch start",
+    "start": "node build/main.js",
+    "start:prod": "NODE_ENV=production yarn start",
+    "dev:time": "yarn dev | gnomon -m 3 -h 6 --real-time=1000",
+    "dev:time-total": "yarn dev | gnomon --type=elapsed-total -m 3 -h 6 --real-time=1000",
+    "seed": "node --max-old-space-size=4096 -- node_modules/ts-node/dist/bin -P tsconfig.json -C ttypescript server/main.ts",
+    "debug": "node --inspect -- node_modules/ts-node/dist/bin -P tsconfig.json -C ttypescript server/main.ts",
+    "swagger:gen": "tsoa spec-and-routes -c ./tsoa.json",
+    "swagger:lint": "spectral lint server/swagger.json",
+    "swagger:docs": "docker run -p 8080:80 --name tourchase-swagger-api -e SPEC_URL=http://localhost:3000/swagger.json redocly/redoc",
+    "build:www": "webpack --watch --info-verbosity none --mode development",
+    "dev:www": "webpack --mode development && webpack-dev-server --mode development",
+    "gen:secret": "openssl rand -base64 256"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.2"
+  },
+  "dependencies": {
+    {{#if usePostgresDb}}
+    "pg": "^8.3.3"
+    {{/if}}
+  }
+}

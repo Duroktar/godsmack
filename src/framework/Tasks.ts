@@ -1,24 +1,22 @@
 import { CronJob } from 'cron';
 import { Singleton } from '../injector';
-import type { IApplicationSettings, ICronTrigger, ITaskService } from "../interfaces";
+import type { ICronTrigger, ITaskService } from "../interfaces";
 import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
-import { getTsConfigFile } from '../utils';
+import { doTry } from '../utils/func';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
-import { doTry } from '../utils/func';
 
 @Singleton()
 export class TaskService implements ITaskService {
   private logger: LogFactory
-  private settings: Required<IApplicationSettings['tasks']>
+  private settings: SettingsService
   private tasks: Map<string, Type<ICronTrigger>> = new Map()
   private jobs: Map<string, CronJob> = new Map()
 
   constructor(public app: Application<any>) {
     this.settings = app.container
-      .resolve(SettingsService)
-      .get('tasks');
+      .resolve(SettingsService);
 
     this.logger = app.container
       .resolve(LogFactory)
@@ -28,29 +26,28 @@ export class TaskService implements ITaskService {
   useCronTriggers = (dirname?: string): this => {
     const fg = require('fast-glob') as typeof import('fast-glob');
     const path = require('path') as typeof import('path');
-    const cwd = process.cwd();
-    const tsconfig = getTsConfigFile(cwd);
+    const config = this.settings.get('tasks')
 
-    const rootDir = tsconfig.options.rootDir || cwd;
-    const tasksDir = dirname || this.settings.dirname;
+    const rootDir = this.settings.get('framework').rootDir;
+    const tasksDir = dirname || config.dirname;
 
     this.logger.info('Using Cron Triggers from dir:', tasksDir);
 
     const relPath = path.join(rootDir, tasksDir);
 
-    fg.sync(relPath + '/**/*.ts').forEach(async (file: string) => {
+    fg.sync(relPath + '/**/!(*.d).{js,ts}').forEach(async (file: string) => {
       const dep = require(path.resolve(file));
 
       if (!dep) return
 
       const cName = Object.keys(dep)
-        .find(name => name.endsWith(this.settings.postfix));
+        .find(name => name.endsWith(config.postfix));
 
       if (!cName) return
 
       const klass: Type<ICronTrigger> = dep[cName]
       const taskCtorName = cName
-        .slice(0, cName.indexOf(this.settings.postfix))
+        .slice(0, cName.indexOf(config.postfix))
         .toLowerCase()
 
       if (!taskCtorName) return
@@ -102,7 +99,7 @@ export class TaskService implements ITaskService {
         this.jobs.set(task.name, this.__createCronTrigger(instance))
       }
 
-      if (this.settings.runAllOnStart) this.startAll()
+      if (this.settings.get('tasks').runAllOnStart) this.startAll()
     })
   }
 

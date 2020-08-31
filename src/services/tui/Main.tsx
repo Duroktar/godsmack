@@ -1,7 +1,7 @@
+import { Box, render, Text } from 'ink';
 import * as React from 'react';
-import { render, Text, Box, } from 'ink';
-import { IApplication } from '../interfaces';
-import { LogFactory } from '../services/Logger';
+import { IApplication } from '../../interfaces';
+import { LogFactory } from '../Logger';
 import { getLogRecords } from './LoggerService';
 import Newline from './Newline';
 

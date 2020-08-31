@@ -64,13 +64,13 @@ export declare type DeepPartial<T> = {
 };
 
 /**
- * Thf function actually returns a string, but we dupe the Type System
+ * This function actually returns a string, but we dupe the Type System
  * for a better user experience.
  *
  * @example
  *
  * app.container.addSingleton(nameof<SomeInterface>(), SomeImplementation)
  *
- * const implementation = app.resolve<SomeInterface>(nameof<SomeInterface>())
+ * const implementation = app.container.resolve<SomeInterface>()
  */
 export declare function nameof<T>(func?: (obj: T) => any): Type<T>

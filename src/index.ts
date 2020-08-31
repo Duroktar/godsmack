@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 require('dotenv').config()
 
 export * as http from './utils/http'
@@ -13,6 +14,9 @@ export * as typeormDecorators from './services/typeorm/decorators'
 export * as TypeGraphql from 'type-graphql'
 
 export { LogFactory, LogLevel } from './services/Logger'
+export { AuthUtilsService } from './services/AuthService'
+export { FetchService } from './services/Fetch'
+export { TypeORMAdapter } from './services/TypeORM'
 
 export {
   Application,

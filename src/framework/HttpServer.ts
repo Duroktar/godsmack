@@ -17,6 +17,7 @@ import { ASSERT } from '../utils/assert';
 
 @Singleton()
 export class HttpServerProvider<T extends Express = Express> implements IHttpServer {
+  private config: IApplicationSettings['framework']
   private settings: IApplicationSettings['httpServer']
   private logger: LogFactory
   public controllers: Map<string, Type<any>> = new Map()
@@ -32,6 +33,10 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     this.settings = app.container
       .resolve(SettingsService)
       .get('httpServer');
+
+    this.config = app.container
+      .resolve(SettingsService)
+      .get('framework');
 
     this.events = new AwaitableEventEmitter();
 
@@ -140,18 +145,14 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
     this.events.once(HttpServerEvent.ON_LOAD_SERVICES, () => {
       const glob = require('fast-glob') as typeof import('fast-glob');
       const path = require('path') as typeof import('path');
-      const cwd = process.cwd()
-      const tsconfig = getTsConfigFile(cwd)
 
       const settings = this.getControllerSettings()
 
-      const rootDir = tsconfig.options.rootDir || cwd;
-      const controllerDir = dirname || settings.dirname;
+      const controllerDir = path.join(this.config.rootDir, dirname ?? settings.dirname)
+
       this.logger.info("Using Controllers from dir:", controllerDir);
 
-      const relPath = path.join(rootDir, controllerDir)
-
-      glob.sync(relPath + '/**/*.ts').forEach((file: string) => {
+      glob.sync(controllerDir + '/**/!(*.d){js,ts}').forEach((file: string) => {
         const dep = require(path.resolve(file));
 
         if (!dep) return

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { ROUTE_DATA } from '../../constants';
+import { ROUTE_DATA } from './constants';
 import type { JwtAuthData, JwtPayload } from '../../services/AuthService';
 import { assertNever } from '../../utils/assert';
 import { paramDecoratorFactory, ParamMetadata } from './utils';
