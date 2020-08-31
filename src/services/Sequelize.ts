@@ -14,7 +14,7 @@ export class SequelizeAdapter extends DatabaseProvider {
   async query(...args: Parameters<Sequelize['query']>) {
     return this.connection.query(...args)
   }
-  async syncDatabaseTables(options?: SyncOptions) {
+  async syncTables(options?: SyncOptions) {
     return this.connection
       .sync(options)
       .catch((err: any) => {

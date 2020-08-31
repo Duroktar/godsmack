@@ -24,7 +24,7 @@ export class TypeORMAdapter extends DatabaseProvider {
   ) {
     return this.connection.query(query, parameters, queryRunner);
   }
-  async syncDatabaseTables(options?: { dropTables: boolean }) {
+  async syncTables(options?: { dropTables: boolean }) {
     return await this.connection
       .synchronize(options?.dropTables)
       .catch((err: any) => {

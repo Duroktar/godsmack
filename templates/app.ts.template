@@ -34,7 +34,7 @@ export default ApplicationBuilder.Create({
 
     // init models..
 
-    // await db.syncDatabaseTables()
+    // await db.syncTables()
 
     logger.info('Starting Server')
 

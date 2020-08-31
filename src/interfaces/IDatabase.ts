@@ -38,7 +38,7 @@ export interface IDatabaseProvider {
    * @returns {Promise<any>}
    * @memberof IDatabaseProvider
    */
-  syncDatabaseTables(...args: any): Promise<any>
+  syncTables(...args: any): Promise<any>
 
   /**
    * TODO
