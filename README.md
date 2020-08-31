@@ -1,4 +1,4 @@
-# Godsmack (AIC)
+# Godsmack
 
 Application framework for dummies
 
@@ -102,3 +102,7 @@ export default ApplicationBuilder.Create({
 )
 
 ```
+
+# License
+
+- MIT
