@@ -1,0 +1,41 @@
+import { http, Singleton, LogFactory, SettingsService } from '@trabpukcip/godsmack';
+import { Controller, Post, Route, SuccessResponse, Tags, Example } from 'tsoa';
+const { StatusCode } = http;
+
+interface Health {
+  ServerId: string
+  Status: string
+  ServerTime: Date
+}
+
+@Route('health')
+@Tags('Server Health')
+@Singleton()
+export class HealthController extends Controller {
+  constructor(
+    private logger: LogFactory,
+    private settings: SettingsService,
+  ) {
+    super()
+    this.logger = logger.For(this)
+  }
+
+  @SuccessResponse(StatusCode.OK, "Ok")
+  @Example({
+    "ServerId": "http://localhost:3000/251645",
+    "Status": "OK",
+    "ServerTime": "2020-09-02T05:58:12.805Z"
+  })
+  @Example({
+    "ServerId": "http://localhost:3000/253169",
+    "Status": "OK",
+    "ServerTime": "2020-09-02T06:05:49.416Z"
+  })
+  @Post('/')
+  public async health(): Promise<Health> {
+    const { host, port, https } = this.settings.get('httpServer');
+    const protocol = https ? 'https' : 'http';
+    const serverId = protocol + '://' + host + ':' + port + '/' + process.pid;
+    return { ServerId: serverId, Status: "OK", ServerTime: new Date() };
+  }
+}

@@ -1,43 +1,71 @@
-import { ApplicationBuilder, HttpServerProvider, ClientAdapter, DatabaseProvider, services } from "@trabpukcip/godsmack";
+import {
+  ApplicationBuilder,
+  {{#if addDatabaseSupport}}
+  DatabaseProvider,
+  {{/if}}
+  {{#if addHttpServerSupport}}
+  HttpServerProvider,
+  {{/if}}
+  LogFactory,
+} from "@trabpukcip/godsmack";
+{{#if addHttpServerSupport}}
+import { ErrorMiddleware } from "./middleware/error";
+{{/if}}
+import { defaultSettings } from './settings';
 
 export default ApplicationBuilder.Create({
+  {{#if addHttpServerSupport}}
   ConfigureServer: app => app
     .addExpressServer()
-    .useControllers()
     .useHealthCheck()
-    .serveStaticFiles('www')
+    .useErrorHandler(ErrorMiddleware)
   ,
-  // ConfigureDatabase: app => app
-  //   .addPostgresDatabase()
-  // ,
+  {{/if}}
+  {{#if addDatabaseSupport}}
+  ConfigureDatabase: app => app
+    {{#if (eq database "sequelize")}}
+    .addPostgresDatabase()
+    {{/if}}
+    {{#if (eq database "typeorm")}}
+    .addTypeORMPostgresDB()
+    {{/if}}
+  ,
+  {{/if}}
   ConfigureServices: ctx => ctx
-    .addSingleton(services.Logger)
-    .addSingleton(ClientAdapter, services.XMLHttpClient)
+    .addSingleton(LogFactory)
   ,
 }).configure(app => app
-  .addJavascriptClient()
+  .useSettings(defaultSettings)
+  {{#if addSwaggerSupport}}
   .addSwaggerDocs()
+  {{/if}}
+  {{#if addGraphQlSupport}}
+  {{#if (eq graphql "type-graphql")}}
+  .addTypeGraphQl()
+  {{/if}}
+  {{#if (eq graphql "openapi-to-graphql")}}
+  .addOpenApiGraphQl()
+  {{/if}}
+  {{/if}}
+  {{#if addHotSwapping}}
+  .addHotSwapping()
+  {{/if}}
   .onAppStarted(async () => {
 
     const logger = app.container
-      .resolve(services.Logger)
+      .resolve(LogFactory)
       .For(app)
+    {{#if addDatabaseSupport}}
+
+    const db = app.container
+      .resolve(DatabaseProvider)
+    {{/if}}
+    {{#if addHttpServerSupport}}
 
     const server = app.container
       .resolve(HttpServerProvider)
 
-    // const db = app.container
-    //   .resolve(DatabaseProvider)
-
-    // await db.connect()
-    // await db.testConnection()
-
-    // init models..
-
-    // await db.syncTables()
-
-    logger.info('Starting Server')
-
-    server.listen()
+    await server.listen()
+    {{/if}}
   })
 )

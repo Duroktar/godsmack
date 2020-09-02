@@ -240,9 +240,10 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
   ) {
     this.events.on(HttpServerEvent.ON_LOAD_MIDDLEWARE, () => {
       this.get(path, (req, res) => {
-        res.send({
-          ServerId: `${process.pid}::${this.settings.https ? 'https' : 'http'}://${this.settings.host}:${this.settings.port}/`, Status: "OK"
-        });
+        const { host, port, https } = this.settings;
+        const protocol = https ? 'https' : 'http';
+        const serverId = `${protocol}://${host}:${port}/${process.pid}`;
+        res.send({ ServerId: serverId, Status: "OK" });
       });
       this.logger.info("Health checks enabled @", path);
     })

@@ -62,8 +62,11 @@ export class SwaggerService implements ISwaggerService {
       return
     }
 
-    // -- CONTINUE FLAG or CONDITION
-    if (!settings.forceGenerateClient && this.specificationsMatch(existingSwaggerFile, newSwaggerFile)) {
+    // -- CONTINUE FLAG
+    if (
+      this.specificationsMatch(existingSwaggerFile, newSwaggerFile)
+      && !settings.forceGenerateClient
+    ) {
       this.logger.debug('Swaggerfile is unchanged. Aborting Client Generation..')
       this.logger.debug('Done generating Swagger Assets..')
       return

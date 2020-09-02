@@ -1,4 +1,3 @@
-export { TokenExpiredError } from 'jsonwebtoken';
 
 export class GodsmackError extends Error { }
 

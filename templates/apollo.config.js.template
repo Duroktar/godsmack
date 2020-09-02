@@ -1,0 +1,13 @@
+/** @type {import('apollo').ApolloConfig} */
+var options = {
+  client: {
+    includes: ['./{{ baseServerDir }}/**/*.ts', './client/**/*.{ts,tsx}'],
+    excludes: ['**/node_modules/**/*', '**/build/**/*', '**/www/**/*'],
+    service: {
+      name: '{{ packageName }}',
+      localSchemaFile: './build/generated/schema.graphql'
+    }
+  }
+};
+
+module.exports = options

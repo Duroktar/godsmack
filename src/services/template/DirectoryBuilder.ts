@@ -29,16 +29,44 @@ export class DirectoryBuilder implements IDirectoryBuilder {
   private __directory: DirSpec;
 
   public mkDir(dirname: string, subDirBuilder?: SubdirBuilder) {
+    if (this.__stopNext.pop())
+      return this
     const dirBuilder = new DirectoryBuilder(dirname);
     const specBuilder = (subDirBuilder ?? (id => id))(dirBuilder);
     this.__directory.folders.push(specBuilder.buildSpec());
+    this.__history.push({ target: 'folders' });
     return this;
   }
 
-  public touch(filename: string, template?: string, model?: object) {
-    const fileSpec = createFileSpec(filename, template);
+  public touch(filename: string, template?: string, raw?: boolean) {
+    if (this.__stopNext.pop())
+      return this
+    const fileSpec = createFileSpec(filename, template, raw);
     this.__directory.files.push(fileSpec);
+    this.__history.push({ target: 'files' });
     return this;
+  }
+
+  private __history: { target: 'folders' | 'files' }[] = []
+  private __stopNext: boolean[] = []
+
+  public if(predicate: unknown): this {
+    this.__stopNext.push(!predicate)
+    return this
+  }
+
+  public when(predicate: unknown): this {
+    if (!predicate) {
+      switch(this.__history.pop()?.target) {
+        case 'files':
+          this.__directory.files.pop();
+          break;
+        case 'folders':
+          this.__directory.folders.pop();
+          break;
+      }
+    }
+    return this
   }
 
   public buildSpec() {

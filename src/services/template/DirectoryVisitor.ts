@@ -11,11 +11,12 @@ export class DirectoryVisitor implements IDirectoryVisitor {
     ctx.steps.push(actions.cd('../'));
   }
   visitFile(spec: FileSpec, ctx: RunCtx): void {
-    ctx.steps.push(actions.touch(spec.name, spec.template));
+    const { name, template, raw } = spec;
+    ctx.steps.push(actions.touch(name, template, raw));
   }
 }
 
-const actions = {
+const actions: Record<Actions['type'], (...args: any) => Actions> = {
   mkdir: (dirname: string) => ({
     type: 'mkdir' as const,
     payload: { dirname }
@@ -24,15 +25,16 @@ const actions = {
     type: 'cd' as const,
     payload: { dirname }
   }) as CdAction,
-  touch: (filename: string, template?: string) => ({
+  touch: (filename: string, template?: string, raw?: boolean) => ({
     type: 'touch' as const,
-    payload: { filename, template },
+    payload: { filename, template, raw },
   }) as TouchAction,
 }
 
 type TouchAction = PayloadAction<"touch", {
   filename: string;
   template?: string;
+  raw?: boolean;
 }>;
 
 type MkdirAction = PayloadAction<'mkdir', {

@@ -1,7 +1,9 @@
 
 export interface IDirectoryBuilder<Ctx = any> {
   mkDir(dirname: string, subDirBuilder?: SubdirBuilder<Ctx>): this;
-  touch(filename: string, template?: string, model?: object): this;
+  touch(filename: string, template?: string, raw?: boolean): this;
+  if(predicate: unknown): this;
+  when(predicate: unknown): this;
 
   buildSpec(): DirSpec;
 }
@@ -15,7 +17,7 @@ export type DirSpec = {
 
 export type FileSpec = {
   template?: string;
-  // model?: object;
+  raw?: boolean;
 
   name: string;
 };

@@ -1,26 +1,26 @@
 {
-  "entryFile": "src/main.ts",
+  "entryFile": "{{ baseServerDir }}/main.ts",
   "controllerPathGlobs": [
-    "src/controllers/**/*.ts"
+    "{{ baseServerDir }}/controllers/**/*.ts"
   ],
   "noImplicitAdditionalProperties": "silently-remove-extras",
   "routes": {
     "basePath": "api/v1",
-    "authenticationModule": "src/middleware/auth.ts",
+    "authenticationModule": "{{ baseServerDir }}/middleware/auth.ts",
     "middleware": "express",
-    "middlewareTemplate": "src/templates/routes.template.hbs",
-    "routesDir": "src/generated",
-    "iocModule": "src/ioc",
+    "middlewareTemplate": "{{ baseServerDir }}/templates/routes.template.hbs",
+    "routesDir": "{{ baseServerDir }}/generated",
+    "iocModule": "{{ baseServerDir }}/ioc",
     "routesFileName": "routes.ts"
   },
   "spec": {
     "basePath": "api/v1",
     "contact": {},
-    "description": "Godsmack: Swagger Docs",
+    "description": "{{ packageName }}: Swagger Docs",
     "host": "localhost:3000",
     "schemes": ["http"],
     "license": "",
-    "name": "Godsmack API",
+    "name": "{{ packageName }} API",
     "version": "1.0",
     "securityDefinitions": {
       "api_key": {
@@ -35,7 +35,7 @@
       }
     },
     "tags": [],
-    "outputDirectory": "src",
+    "outputDirectory": "{{ baseServerDir }}",
     "specVersion": 3
   }
 }

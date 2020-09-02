@@ -9,6 +9,8 @@ import { AuthServiceError } from '../utils/error';
 import { hashPasswordSha512, isSha512PasswordCorrect } from '../utils/saltHashPassword';
 import { LogFactory } from './Logger';
 
+export { TokenExpiredError } from 'jsonwebtoken';
+
 export type JwtPayload<T = {}> = T & {
   iat: number;
   exp: number;

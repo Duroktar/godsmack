@@ -1,6 +1,6 @@
 {
   "name": "@trabpukcip/godsmack",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "build/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@bitr/awaitable-event-emitter": "^1.0.3",
-    "@divyenduz/ts-graphql-plugin": "^0.1.0",
     "@rauschma/stringio": "^1.4.0",
     "@ts-nameof/common": "4.2.0",
     "@types/bcrypt": "^3.0.0",

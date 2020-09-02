@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
 echo $(date)
-node_modules/.bin/ts-node -C ttypescript -P tsconfig.json src/main.ts
+PROJECT_DIR=$(cat tsconfig.json | grep \"rootDir\" | awk '{printf $2}' | cut -d '"' -f2)
+$PWD/node_modules/.bin/ts-node -C ttypescript -P tsconfig.json $PROJECT_DIR/main.ts

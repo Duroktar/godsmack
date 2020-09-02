@@ -1,0 +1,53 @@
+import { http } from '@trabpukcip/godsmack';
+import { Request, Response, NextFunction } from 'express';
+{{#if addSwaggerSupport}}
+import { ValidateError } from 'tsoa';
+{{/if}}
+import { MyModuleError } from '../errors'
+
+export async function ErrorMiddleware(
+  err: unknown,
+  req: Request,
+  res: Response,
+  next: NextFunction) {
+  if (err == null)
+    return next(err);
+
+  console.error(err)
+
+  const error = getHttpErrorResponse(err);
+
+  if (error.statusCode != null) {
+    res.statusCode = error.statusCode;
+  }
+
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.send(error);
+}
+
+function getHttpErrorResponse(err: any) {
+
+  {{#if addSwaggerSupport}}
+  if (err instanceof ValidateError) {
+    return new http.UnprocessableEntityError(err?.fields);
+  }
+  {{/if}}
+
+  // if (err instanceof SomeError) {
+  //   return new http.UnauthorizedError(err.message);
+  // }
+
+  // if (err instanceof SomeError) {
+  //   return new http.BadRequestError(err.message);
+  // }
+
+  // if (err instanceof SomeError) {
+  //   return new http.NotFoundError(err.message);
+  // }
+
+  if (err instanceof MyModuleError) {
+    return new http.InternalServerError(err.message);
+  }
+
+  return err;
+}

@@ -1,0 +1,50 @@
+import type { IApplicationSettings } from '@trabpukcip/godsmack';
+import type { DeepPartial } from './types';
+import { iocContainer } from './ioc';
+import { customAuthChecker } from './middleware/graphql';
+import { join } from 'path';
+
+type IModuleSettings = {
+  // Custom Settings Here..
+}
+
+type DefaultSettings =
+  & DeepPartial<IApplicationSettings>
+  & IModuleSettings
+
+export const defaultSettings = (base: IApplicationSettings): DefaultSettings => ({
+  database: {
+    logging: false,
+    cache: true,
+  },
+  jwt: {
+    algorithms: ['HS256'],
+    credentialsRequired: false,
+  },
+  graphQl: {
+    typeGraphQlOptions: {
+      emitSchemaFile: join(base.framework.rootDir, '/generated/schema.graphql'),
+      resolvers: [join(base.framework.rootDir, '/resolvers/**/!(*.d).{js,ts}')],
+      container: iocContainer,
+      authChecker: customAuthChecker,
+    }
+  },
+  swagger: {
+    generateClient: false,
+    generateSpec: true,
+    serveDocs: true,
+    baseDocUrl: '/docs',
+    forceGenerateClient: false,
+    specGenOptions: {
+      codegenVersion: "V3",
+    },
+    middlewareOptions: {
+      swaggerUiOptions: {
+        customSiteTitle: 'Swagger API Docs',
+        swaggerOptions: {
+          docExpansion: 'none',
+        },
+      }
+    },
+  },
+})

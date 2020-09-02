@@ -11,6 +11,7 @@ export function createDirSpec(
 export function createFileSpec(
   name: string,
   template?: string,
+  raw?: boolean,
 ): FileSpec {
-  return { template, name };
+  return { template, name, raw };
 }

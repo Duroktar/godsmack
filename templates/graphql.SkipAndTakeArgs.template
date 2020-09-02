@@ -1,0 +1,11 @@
+import { TypeGraphql } from "@trabpukcip/godsmack";
+const { ArgsType, Field, Int } = TypeGraphql;
+
+@ArgsType()
+export class SkipAndTakeArgs {
+  @Field(type => Int, { nullable: true })
+  skip?: number;
+
+  @Field(type => Int, { nullable: true })
+  take?: number;
+}

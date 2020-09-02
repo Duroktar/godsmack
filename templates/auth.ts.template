@@ -1,0 +1,47 @@
+import * as express from "express";
+import { ValidateError } from "tsoa";
+import { iocContainer } from "../ioc";
+
+enum RoleName {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
+type IAuthJWT = {
+  // User-Token Model Here..
+
+  roles: RoleName[];
+}
+
+export async function expressAuthentication(
+  request: express.Request,
+  securityName: string,
+  requiredRoles: string[] = [],
+) {
+  let userToken: IAuthJWT;
+
+  switch(securityName as 'jwt' | 'apiKey') {
+    case 'jwt':
+    case 'apiKey':
+      userToken = (request as any).user
+      break
+
+    default: throw new ValidateError({
+      token: { message: 'Invalid security type: ' + securityName }
+    }, 'Invalid security type was provided.. valid=(jwt|apiKey)');
+  }
+
+
+  if (checkUserPermissions(requiredRoles, userToken)) {
+    return userToken
+  }
+}
+
+function checkUserPermissions(requiredRoles: string[], userToken: IAuthJWT) {
+  if (requiredRoles.length === 0)
+    return true
+
+  const userHasPermission = /* check against the userToken (eg: 'userToken.roles') */ false;
+
+  return userHasPermission;
+}
