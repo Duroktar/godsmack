@@ -5,3 +5,5 @@ export const { AuthServiceError, GodsmackError } = errors;
 export class MyModuleError extends Error {}
 export class RepositoryError extends MyModuleError {}
 export class ServiceError extends MyModuleError {}
+
+export class ResourceNotFoundError extends MyModuleError {}

@@ -140,6 +140,9 @@ export async function bootstrap() {
   const system = container.resolve(TemplateSystem)
 
   const spec = new DirectoryBuilder()
+    .mkDir('.vscode', dir => dir
+      .touch('godsmack.code-snippets', loadTemplate('godsmack.code-snippets'), true)
+    )
     .mkDir(model.baseServerDir, dir => dir
       .mkDir('controllers', dir => dir
         .touch('health.ts', loadTemplate('health.controller'))
