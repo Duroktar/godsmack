@@ -55,7 +55,7 @@
       "  async $1(@Arg(\"id\") id: ${4|string,number|}): Promise<$2> {",
       "    const result = await this.database.$1s.findByPK(id);",
       "    if (result === undefined) {",
-      "      throw new ResourceNotFoundError(`Id: \\${id}`);",
+      "      throw new ResourceNotFoundError(\"Id: \" + id);",
       "    }",
       "    return result;",
       "  }",
