@@ -23,7 +23,8 @@
     "gen:secret": "openssl rand -base64 256"
   },
   "devDependencies": {
-    "@trabpukcip/godsmack": "^0.0.2",
+    "@bitr/awaitable-event-emitter": "^1.0.3",
+    "@trabpukcip/godsmack": "latest",
     {{#if addHttpServerSupport}}
     "@types/express": "^4.17.7",
     {{/if}}
