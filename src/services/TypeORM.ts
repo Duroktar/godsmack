@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 import { DatabaseProvider } from "../framework/Database";
 import { Singleton } from "../injector";
-import { dirname, join as pathJoin } from 'path'
+import { join as pathJoin } from 'path'
 import { SettingsService } from '../framework';
 
 @Singleton()
