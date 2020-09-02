@@ -2,6 +2,7 @@ import deepmerge from 'deepmerge';
 import { Request as ExRequest, Response as ExResponse } from "express";
 import { existsSync, readFileSync, rmdirSync } from "fs";
 import * as SwaggerUiExpress from "swagger-ui-express";
+import { generateRoutes, generateSpec } from "tsoa";
 import { HttpServerProvider } from '../framework/HttpServer';
 import { SettingsService } from '../framework/Settings';
 import { Shell } from '../framework/Shell';
@@ -35,64 +36,34 @@ export class SwaggerService implements ISwaggerService {
   }
 
   private async generateSwaggerAssets(options?: SwaggerGenOptions) {
-    const { lang, tsoaPath, outputPath, swaggerSpecPath } = this.getGenSettings(options)
+    const { lang, outputPath, swaggerSpecPath } = this.getGenSettings(options)
     const settings = this.settings.get('swagger')
 
     this.logger.info('Generating Swagger Assets..')
 
-    // -- CONTINUE FLAG
-    if (!settings.generateSpec)
-      return
+    if (settings.generateRoutes) {
+      this.logger.debug('Generating Tsoa Controller Routes..')
+      await generateRoutes(settings.routesConfig);
+    }
 
     const existingSwaggerFile = this.loadSwaggerSpec(swaggerSpecPath);
 
-    // -- STEP 1
-    await this.generateSpecification(tsoaPath);
-
-    // -- CONTINUE FLAG
-    if (!settings.generateClient)
-      return
+    if (settings.generateSpec) {
+      this.logger.debug('Generating OpenAPI Specification..')
+      await generateSpec(settings.specConfig);
+    }
 
     const newSwaggerFile = this.loadSwaggerSpec(swaggerSpecPath);
 
-    // -- WARNING CONDITION
-    if (newSwaggerFile == null) {
-      this.logger.debug('No Swaggerfile found. Aborting Client Generation..')
-      this.logger.debug('Done generating Swagger Assets..')
-      return
+    if (settings.generateClient) {
+      const specUnchanged = this.specificationsMatch(existingSwaggerFile, newSwaggerFile);
+  
+      if (newSwaggerFile == null || (specUnchanged && !settings.forceGenerateClient))
+        return
+  
+      this.logger.debug('Generating Typescript Client..')
+      await this.generateClient(outputPath, swaggerSpecPath, lang)
     }
-
-    // -- CONTINUE FLAG
-    if (
-      this.specificationsMatch(existingSwaggerFile, newSwaggerFile)
-      && !settings.forceGenerateClient
-    ) {
-      this.logger.debug('Swaggerfile is unchanged. Aborting Client Generation..')
-      this.logger.debug('Done generating Swagger Assets..')
-      return
-    }
-
-    // -- STEP 2
-    await this.generateClient(outputPath, swaggerSpecPath, lang)
-
-    this.logger.debug('Done generating Swagger Assets..')
-  }
-
-  private async generateSpecification(tsoaPath: string) {
-    this.logger.debug('Regenerating server and spec..')
-
-    const response = await this.shell.spawn('node_modules/.bin/tsoa', [
-      'spec-and-routes',
-      '-c', tsoaPath,
-    ], { log: true })
-
-    if (response.code !== 0) {
-      // child process exited with non-zero code
-      console.error('Error generating Swagger spec. Return code was:', response.code, ', stdOut:', response.stdout)
-      return
-    }
-
-    this.logger.debug('Finished generating swagger file..')
   }
 
   private async generateClient(outputPath: string, swaggerSpecPath: string, lang: string) {
@@ -116,8 +87,6 @@ export class SwaggerService implements ISwaggerService {
       console.error('Error generating client from provider. Return code was:', code, ', stdOut:', stdout)
       return
     }
-
-    this.logger.debug('Finished generating client..')
   }
 
   private registerSwaggerMiddleware = async () => {
@@ -136,14 +105,12 @@ export class SwaggerService implements ISwaggerService {
     const generatedRoutesFile = await import(resolvedImportPath);
     this.server.registerServices(generatedRoutesFile.RegisterRoutes);
   }
-
-  private configureSwaggerUIMiddleware = (
-    options?: SwaggerMiddlewareOptions,
-  ) => {
+  
+  private configureSwaggerUIMiddleware = (options?: SwaggerMiddlewareOptions) => {
     return async (_req: ExRequest, res: ExResponse) => {
-      const specOpts = this.settings.get('swagger').specGenOptions;
+      const { specGenOptions: { swaggerSpecPath } } = this.settings.get('swagger');
       return res.send(SwaggerUiExpress.generateHTML(
-        options?.swaggerDoc ?? await import(this.getRelativeProjectPath(specOpts.swaggerSpecPath)),
+        options?.swaggerDoc ?? await import(this.getRelativeProjectPath(swaggerSpecPath)),
         options?.swaggerUiOptions,
         options?.swaggerOptions,
         options?.customCss,
@@ -154,10 +121,9 @@ export class SwaggerService implements ISwaggerService {
     }
   }
 
-  private getGenSettings(
-    options?: Partial<SwaggerGenOptions>,
-  ): Required<SwaggerGenOptions> {
-    return deepmerge(this.settings.get('swagger').specGenOptions, options ?? {}) as any;
+  private getGenSettings(options?: Partial<SwaggerGenOptions>): Required<SwaggerGenOptions> {
+    const { specGenOptions } = this.settings.get('swagger');
+    return deepmerge(specGenOptions, options ?? {}) as any;
   }
 
   private getRelativeProjectPath(...target: string[]) {

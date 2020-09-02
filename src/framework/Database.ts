@@ -1,7 +1,7 @@
-import { SettingsService } from './Settings'
-import { LogFactory } from '../services/Logger'
-import type { IApplicationSettings, IApplication, IApplicationContainer } from "../interfaces"
+import type { IApplicationContainer, IApplicationSettings } from "../interfaces"
 import type { IDatabaseProvider } from '../interfaces/IDatabase'
+import { LogFactory } from '../services/Logger'
+import { SettingsService } from './Settings'
 
 export class DatabaseProvider implements IDatabaseProvider {
   public connection: any

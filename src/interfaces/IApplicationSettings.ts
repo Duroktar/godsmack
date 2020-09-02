@@ -1,9 +1,10 @@
-import type { LogLevel } from "../services/Logger";
-import type { ServeStaticFilesOptions, CorsOptions } from './IHttpServer';
-import type { SwaggerMiddlewareOptions, SwaggerGenOptions } from '.';
-import type { BuildSchemaOptions } from 'type-graphql';
 import jwt from 'express-jwt';
-import type helmet from 'helmet'
+import type helmet from 'helmet';
+import type { ExtendedRoutesConfig, ExtendedSpecConfig } from 'tsoa/dist/cli';
+import type { BuildSchemaOptions } from 'type-graphql';
+import type { SwaggerGenOptions, SwaggerMiddlewareOptions } from '.';
+import type { LogLevel } from "../services/Logger";
+import type { CorsOptions, ServeStaticFilesOptions } from './IHttpServer';
 
 export interface IApplicationSettings {
   /**
@@ -294,14 +295,48 @@ export interface IApplicationSettings {
    *
    */
   swagger: {
-    generateClient: boolean
-    generateSpec: boolean
-    forceGenerateClient?: boolean
     routesImportPath: string
     serveDocs: boolean
     baseDocUrl: string
+  
+    generateSpec: boolean
+    generateRoutes: boolean
+    generateClient: boolean
+
+    /**
+     * Always generate the client even when the source files match.
+     *
+     * @type {boolean}
+     */
+    forceGenerateClient?: boolean
+
+    /**
+     * Options for the Swagger UI Express Server Middleware
+     *
+     * @type {SwaggerMiddlewareOptions}
+     */
     middlewareOptions: SwaggerMiddlewareOptions
+
+    /**
+     * Options for the Typescript Client Generator
+     *
+     * @type {SwaggerGenOptions}
+     */
     specGenOptions: SwaggerGenOptions
+
+    /**
+     * Options for the swagger.json spec generator
+     *
+     * @type {ExtendedSpecConfig}
+     */
+    specConfig: ExtendedSpecConfig
+
+    /**
+     *Options for the controller routes generator
+     *
+     * @type {ExtendedRoutesConfig}
+     */
+    routesConfig: ExtendedRoutesConfig
   },
 
   /**

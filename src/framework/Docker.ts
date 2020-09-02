@@ -1,8 +1,9 @@
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join as joinPath } from 'path';
-import { writeFileSync, existsSync, readFileSync } from 'fs';
-import { getProjectRoot } from '../utils/getProjectRoot';
-import { LogFactory } from '../services/Logger';
 import { Injectable } from '../injector';
+import { LogFactory } from '../services/Logger';
+import { isNullOrUndefined } from '../utils/assert';
+import { getProjectRoot } from '../utils/getProjectRoot';
 import { Shell } from './Shell';
 
 @Injectable()
@@ -12,15 +13,6 @@ export class DockerService {
     private shell: Shell,
   ) {
     this.logger = logger.For(this)
-  }
-
-  private async HACK__copyGodsmackFiles() {
-    this.logger.info('HACK!! Copying Godsmack files.')
-    await this.shell.spawn('rm', ['-rf', '.godsmack'])
-    await this.shell.spawn('mkdir', ['.godsmack'])
-    return this.shell.spawn("cp", [
-      "-r", "../godsmack", ".godsmack",
-    ]);
   }
 
   //#region API
@@ -38,18 +30,14 @@ export class DockerService {
 
   //#region Application
   public validateInstallation() {
-    if (this.hasDockerfile() && this.hasDockerfileEjected()) {
-      return true
-    }
-    return (
-      this.hasDockerfile() &&
-      this.hasDockerignorefile() &&
-      this.compareDockerfileContents()
-    )
+    if (!this.hasDockerfile())
+      return false
+
+    return this.hasDockerfileEjected() ||
+      (this.hasDockerignorefile() && this.compareDockerfileContents())
   }
 
   public async startDockerApp() {
-    await this.HACK__copyGodsmackFiles()
     this.logger.info('Building docker image.. (this may take a few minutes)')
     await this.buildDockerApp();
     this.logger.info('Running dockerized app.')
@@ -67,18 +55,18 @@ export class DockerService {
   }
 
   public async runDockerApp() {
-    const args = [
+    return await this.runDockerCommand("run", [
       "--name", this.settings.image_tag_name,
       "--network", this.settings.network_name,
       "-p", "3000:3000",
       this.settings.image_tag_name,
-    ] // .concat(daemon ? '-d' : [])
-    return await this.runDockerCommand("run", args, { log: true });
+    ], { log: true });
   }
 
   public async attachDockerApp() {
     const appId = await this.getAppContainerId()
-    if (!appId) throw new Error(`Couldn't find Container ID.`)
+    if (isNullOrUndefined(appId))
+      throw new Error('Container ID not found')
     return await this.runDockerCommand("attach", [appId]);
   }
 
@@ -89,23 +77,24 @@ export class DockerService {
 
   //#region Network
   public async createNetworkBridge() {
-    return await this.runDockerCommand('network',
-      ['create',
-        '--driver', 'bridge',
-        this.settings.network_name])
+    return await this.runDockerCommand('network', [
+      'create',
+      '--driver', 'bridge',
+      this.settings.network_name,
+    ])
   }
 
   public async removeNetworkBridge() {
-    return await this.runDockerCommand('network',
-      ['rm', this.settings.network_name])
+    return await this.runDockerCommand('network', [
+      'rm', this.settings.network_name,
+    ])
   }
   //#endregion
 
   //#region Database
   public async createDockerDb() {
-    const hasExistingDockerDb = await this.findDockerDb();
-    if (!hasExistingDockerDb) {
-      this.logger.info('Creating PostgresDB Docker Container. (this may take a few minutes)')
+    if (!(await this.findDockerDb())) {
+      this.logger.info('Creating PostgresDB Docker Container (this may take a few minutes)')
       const { code } = await this.runDockerDbCommand('run',
         '--name', this.settings.db.container_name,
         '--network', this.settings.network_name,
@@ -131,26 +120,26 @@ export class DockerService {
 
   public async stopDockerDb(): Promise<void> {
     const containerId = this.settings.db.container_name
-    if (!containerId) return
+    if (isNullOrUndefined(containerId))
+      return
     this.logger.info('Stopping PostgresDB Docker Container.')
     await this.runDockerDbCommand('stop', containerId);
   }
 
   public async removeDockerDb(): Promise<void> {
     const containerId = this.settings.db.container_name
-    if (!containerId) return
+    if (isNullOrUndefined(containerId))
+      return
     this.logger.info('Removing PostgresDB Docker Container.')
     await this.runDockerDbCommand('rm', containerId);
   }
 
   public async findDockerDb(): Promise<boolean> {
     const result = await this.getDockerDbContainerId();
-    if (result) {
-      this.logger.info('Found existing PostgresDB Docker Container.')
+    if (isNullOrUndefined(result)) {
+      this.logger.info('No existing PostgresDB Docker Container found.')
     } else {
-      this.logger.info(
-        'No existing PostgresDB Docker Container was found.'
-      )
+      this.logger.info('Found existing PostgresDB Docker Container.')
     }
     return !!result
   }
@@ -173,9 +162,9 @@ export class DockerService {
   //#endregion
 
   //#region Events/Actions
-  private __setupActions: IDockerSetupAction[] = []
+  private __setupActions: DockerSetupAction[] = []
 
-  public registerSetupAction(action: IDockerSetupAction) {
+  public registerSetupAction(action: DockerSetupAction) {
     this.logger.debug('Registering Docker Setup Action:', action.name)
     this.__setupActions.push(action)
   }
@@ -203,7 +192,7 @@ export class DockerService {
       .slice(1)
       .find(line => line.includes(tag))
       ?.split(' ')
-      .pop()
+      ?.pop()
   }
 
   public async runDockerCommand(cmd: DockerCommand, args: string[] = [], opts: any = {}) {
@@ -260,15 +249,13 @@ export class DockerService {
   }
 
   private createDockerfile(options?: any) {
-    const dockerfilePath = this.getDockerfilePath()
     const contents = this.getDockerfileContents(options)
-    writeFileSync(dockerfilePath, contents)
+    writeFileSync(this.getDockerfilePath(), contents)
   }
 
   private createDockerignore() {
-    const dockerignorePath = this.getDockerignorePath()
     const contents = this.getDockerignoreContents()
-    writeFileSync(dockerignorePath, contents)
+    writeFileSync(this.getDockerignorePath(), contents)
   }
 
   private getDockerfilePath() {
@@ -298,9 +285,6 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Bundle godsmack dep (until up on npm)
-COPY .godsmack /usr/src
-
 RUN npm install
 
 # Bundle app sources
@@ -320,7 +304,6 @@ CMD [ "npm", "start" ]
     return `node_modules\nnpm-debug.log`
   }
   //#endregion
-
 }
 
 //#region Types
@@ -344,7 +327,7 @@ export type SetupStep<F extends (...args: any) => any> = {
   when?: boolean;
 }
 
-export type IDockerSetupAction = {
+export type DockerSetupAction = {
   name: string;
   label?: string
   steps: SetupStep<any>[]

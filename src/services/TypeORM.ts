@@ -17,6 +17,7 @@ export class TypeORMAdapter extends DatabaseProvider {
     await this.getDbConnection(undefined, options);
     return this;
   }
+
   async query(
     query: string,
     parameters?: any[] | undefined,
@@ -24,6 +25,7 @@ export class TypeORMAdapter extends DatabaseProvider {
   ) {
     return this.connection.query(query, parameters, queryRunner);
   }
+
   async syncTables(options?: { dropTables: boolean }) {
     return await this.connection
       .synchronize(options?.dropTables)
@@ -32,6 +34,7 @@ export class TypeORMAdapter extends DatabaseProvider {
         this.logger.debug(err);
       });
   }
+
   async test() {
     this.logger.debug("Testing database connection..");
     return this.connection.isConnected;

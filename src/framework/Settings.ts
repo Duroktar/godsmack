@@ -1,4 +1,5 @@
 import deepmerge from "deepmerge";
+import { join } from 'path';
 import { Singleton } from "../injector";
 import type { IApplicationSettings } from "../interfaces";
 import { LogLevel } from "../services/Logger";
@@ -10,16 +11,6 @@ type AllSettings<T> = IApplicationSettings & T
 export class SettingsService<AppConfig = {}> {
   constructor() {
     this.__initializeDockerVariables();
-  }
-
-  private __settings: AllSettings<AppConfig> = getBaseSettings() as any;
-
-  private __initializeDockerVariables() {
-    const settings = this.__settings;
-    if (process.env.DOCKER_CTX) {
-      const { container_name } = settings.docker.db;
-      settings.database.host = container_name;
-    }
   }
 
   public get<K extends keyof AllSettings<AppConfig>>(
@@ -41,9 +32,20 @@ export class SettingsService<AppConfig = {}> {
 
     return this.__settings;
   }
+
+  private __initializeDockerVariables() {
+    const settings = this.__settings;
+    if (process.env.DOCKER_CTX) {
+      const { container_name } = settings.docker.db;
+      settings.database.host = container_name;
+    }
+  }
+
+  private __settings: AllSettings<AppConfig> = getBaseSettings() as any;
 }
 
 function getBaseSettings(): IApplicationSettings {
+  const rootDir = (process as any)?.mainModule?.path ?? 'src/';
   return {
     auth: {
       expiresIn: 15,
@@ -91,14 +93,15 @@ function getBaseSettings(): IApplicationSettings {
     factory: {},
 
     framework: {
-      rootDir: (process as any)?.mainModule?.path ?? 'src/', // ie: src/ (usually) or dist/ (for example) after compile
+      rootDir, // ie: src/ (usually) or dist/ (for example) after compile
     },
 
     graphQl: {
       endpoint: '/graphql',
       graphiql: true,
       typeGraphQlOptions: {
-        resolvers: ['/resolvers/**/!(*.d){js,ts}'],
+        emitSchemaFile: join(rootDir, '/generated/schema.graphql'),
+        resolvers: [join(rootDir, '/resolvers/**/!(*.d).{js,ts}')],
       }
     },
 
@@ -147,9 +150,9 @@ function getBaseSettings(): IApplicationSettings {
     startup: {},
 
     swagger: {
-      forceGenerateClient: false,
-      generateSpec: false,
       generateClient: false,
+      generateSpec: true,
+      generateRoutes: true,
       serveDocs: true,
       baseDocUrl: '/docs',
       routesImportPath: './generated/routes',
@@ -168,7 +171,48 @@ function getBaseSettings(): IApplicationSettings {
         outputPath: '../client/generated/api',
         codegenVersion: 'V3',
         swaggerSpecPath: 'swagger.json',
-      }
+      },
+      specConfig: {
+        entryFile: join(rootDir, 'main.ts'),
+        noImplicitAdditionalProperties: 'silently-remove-extras',
+        outputDirectory: "server",
+        specVersion: 3,
+        controllerPathGlobs: [join(rootDir, "controllers/**/*.ts")],
+
+        // Move this section into a builder like NestJS does.
+        // see: https://stackoverflow.com/a/57909047
+        host: "localhost:3000",
+        name: "Godsmack: Open API",
+        description: "Auto Generated OpenAPI Docs.",
+        version: "1.0",
+        basePath: "api/v1",
+        securityDefinitions: {
+          "apiKey": {
+            "in": "query",
+            "name": "access_token",
+            "type": "apiKey"
+          },
+          "jwt": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+          } as any,
+        },
+        tags: [],
+        schemes: ["http"],
+      },
+      routesConfig: {
+        entryFile: join(rootDir, 'main.ts'),
+        noImplicitAdditionalProperties: 'silently-remove-extras',
+        routesDir: join(rootDir, "generated"),
+        basePath: "api/v1",
+        authenticationModule: join(rootDir, "middleware/auth.ts"),
+        middleware: "express",
+        middlewareTemplate: join(rootDir, "templates/routes.template.hbs"),
+        iocModule: join(rootDir, "ioc"),
+        routesFileName: "routes.ts",
+        controllerPathGlobs: [join(rootDir, "controllers/**/*.ts")],
+      },
     },
 
     tasks: {
