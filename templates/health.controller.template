@@ -1,5 +1,5 @@
 import { http, Singleton, LogFactory, SettingsService } from '@trabpukcip/godsmack';
-import { Controller, Post, Route, SuccessResponse, Tags, Example } from 'tsoa';
+import { Controller, Get, Route, SuccessResponse, Tags, Example } from 'tsoa';
 const { StatusCode } = http;
 
 interface Health {
@@ -31,7 +31,7 @@ export class HealthController extends Controller {
     "Status": "OK",
     "ServerTime": "2020-09-02T06:05:49.416Z"
   })
-  @Post('/')
+  @Get('/')
   public async health(): Promise<Health> {
     const { host, port, https } = this.settings.get('httpServer');
     const protocol = https ? 'https' : 'http';

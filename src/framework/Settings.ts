@@ -161,7 +161,7 @@ function getBaseSettings(): IApplicationSettings {
           customSiteTitle: 'Godsmack: Open API v3 Docs',
           swaggerOptions: {
             docExpansion: 'none',
-            plugins: [require("./SwaggerAuthPlugin").SwaggerAuthPlugin],
+            plugins: [],
           },
         }
       },

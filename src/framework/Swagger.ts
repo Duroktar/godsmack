@@ -8,7 +8,7 @@ import { SettingsService } from '../framework/Settings';
 import { Shell } from '../framework/Shell';
 import { Singleton } from "../injector";
 import type { ISwaggerService, SwaggerGenOptions, SwaggerMiddlewareOptions } from '../interfaces';
-import { LogFactory, LogLevel } from "../services/Logger";
+import { LogFactory } from "../services/Logger";
 import { doTry } from '../utils/func';
 
 @Singleton()
@@ -19,7 +19,7 @@ export class SwaggerService implements ISwaggerService {
     private server: HttpServerProvider,
     private settings: SettingsService,
   ) {
-    this.logger = logger.For(this, LogLevel.ALL)
+    this.logger = logger.For(this)
   }
 
   public getPathToSpecFile = (): string => {

@@ -17,6 +17,7 @@ export default ApplicationBuilder.Create({
   {{#if addHttpServerSupport}}
   ConfigureServer: app => app
     .addExpressServer()
+    .useHelmet()
     .useErrorHandler(ErrorMiddleware)
   ,
   {{/if}}
