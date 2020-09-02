@@ -1,5 +1,5 @@
-import { TypeGraphql } from "@trabpukcip/godsmack";
-const { ArgsType, Field, Int } = TypeGraphql;
+import { TypeGraphQL } from "@trabpukcip/godsmack/dist/framework/graphql/TypeGraphQlProvider";
+const { ArgsType, Field, Int } = TypeGraphQL;
 
 @ArgsType()
 export class SkipAndTakeArgs {

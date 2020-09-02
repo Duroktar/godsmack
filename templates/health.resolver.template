@@ -1,5 +1,6 @@
-import { TypeGraphql, LogFactory, SettingsService } from "@trabpukcip/godsmack";
-const { Field, Query, Resolver, ObjectType } = TypeGraphql;
+import { LogFactory, SettingsService } from "@trabpukcip/godsmack";
+import { TypeGraphQL } from "@trabpukcip/godsmack/dist/framework/graphql/TypeGraphQlProvider";
+const { Field, Query, Resolver, ObjectType } = TypeGraphQL;
 
 @ObjectType()
 class Health {
@@ -20,7 +21,7 @@ export class HealthResolver {
     this.logger = logger.For(this)
   }
 
-  @Query(returns => Health)
+  @Query(type => Health)
   async serverHealth(): Promise<Health> {
     const { host, port, https } = this.settings.get('httpServer');
     const protocol = https ? 'https' : 'http';
