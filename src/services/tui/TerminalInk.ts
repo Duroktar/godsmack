@@ -3,8 +3,6 @@ import { Singleton } from '../../injector';
 import type { IApplication } from '../../interfaces';
 import { LogFactory } from '../Logger';
 
-const importJsx = require('import-jsx')
-
 interface ITerminalInk {
   start(): void;
   stop(): void;
@@ -21,7 +19,7 @@ export class TerminalInk implements ITerminalInk {
   }
 
   public start() {
-    this.instance = importJsx('./Main.tsx').main(this.getApp())
+    this.instance = require('import-jsx')('./Main.tsx').main(this.getApp())
   }
 
   public stop() {
