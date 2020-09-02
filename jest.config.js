@@ -4,7 +4,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   collectCoverage: false,
-  testPathIgnorePatterns: ['build/*.*'],
+  testPathIgnorePatterns: ['dist/*.*'],
   globals: {
     'ts-jest': {
       compiler: 'ttypescript',

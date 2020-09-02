@@ -1,7 +1,7 @@
 {
   "name": "@trabpukcip/godsmack",
-  "version": "0.0.6-alpha.2",
-  "main": "build/index.js",
+  "version": "0.0.6-alpha.3",
+  "main": "dist/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
   "description": "Application framework for dummies",
@@ -14,7 +14,7 @@
     "url": "https://github.com/duroktar/godsmack/issues"
   },
   "files": [
-    "build",
+    "dist",
     "scripts",
     "templates"
   ],

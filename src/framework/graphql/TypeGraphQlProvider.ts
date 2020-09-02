@@ -6,6 +6,8 @@ import { Singleton } from '../../injector';
 import { prop } from '../../utils/object';
 import { AbstractGraphQlProvider } from './AbstractGraphQlProvider';
 
+export { TypeGraphQL }
+
 @Singleton()
 export class TypeGraphQlProvider extends AbstractGraphQlProvider {
   public createGraphQlSchema = async (): Promise<GraphQLSchema> => {

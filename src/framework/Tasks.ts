@@ -1,4 +1,4 @@
-import { CronJob } from 'cron';
+import type { CronJob } from 'cron';
 import { Singleton } from '../injector';
 import type { ICronTrigger, ITaskService } from "../interfaces";
 import { LogFactory } from '../services/Logger';
@@ -104,6 +104,7 @@ export class TaskService implements ITaskService {
   }
 
   private __createCronTrigger = (props: ICronTrigger) => {
+    const { CronJob } = require('cron') as typeof import('cron');
     return new CronJob(
       props.cronTime, props.onTick, props.onComplete,
       props.start, props.timezone, props.context,

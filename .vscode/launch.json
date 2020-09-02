@@ -20,7 +20,7 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/build/test.js",
+      "program": "${workspaceFolder}/dist/test.js",
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]
@@ -32,7 +32,7 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/build/lisp/__test__/container.js",
+      "program": "${workspaceFolder}/dist/lisp/__test__/container.js",
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]

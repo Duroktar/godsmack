@@ -35,7 +35,7 @@ typings/
 
 .DS_Store
 
-build/
+dist/
 
 # local environment variables
 .env

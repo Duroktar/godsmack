@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-require('../build/services/template/TemplateSystem.gs-init')
+require('../dist/services/template/TemplateSystem.gs-init')
   .bootstrap()
   .catch(console.error)
