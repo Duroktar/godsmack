@@ -175,7 +175,6 @@ export async function bootstrap() {
     .touch('.editorconfig', loadTemplate('.editorconfig'))
     .touch('.gitignore', loadTemplate('.gitignore'))
     .touch('package.json', loadTemplate('package.json'))
-    .touch('tsoa.json', loadTemplate('tsoa.json')).when(model.addSwaggerSupport)
     .touch('tsconfig.json', loadTemplate('tsconfig.json'))
     .buildSpec();
 
