@@ -1,72 +1,90 @@
 {
   "name": "{{ packageName }}",
   "version": "{{ packageVersion }}",
-  "main": "dist/main.js",
+  "main": "build/main.js",
   "license": "{{ packageLicense }}",
   "scripts": {
     "build": "ttsc -P tsconfig.json",
     "build:watch": "yarn build --watch --preserveWatchOutput",
-    "dev": "npm-run-all --parallel build:watch start",
-    "start": "node dist/main.js",
-    "start:prod": "NODE_ENV=production yarn start",
-    "swagger:gen": "tsoa spec-and-routes -c ./tsoa.json",
+    "dev": "npm-run-all --parallel build:watch build:www start",
+    "postinstall": "yarn build",
+    "start": "gs-start",
+    "start:prod": "NODE_ENV=production node build/main.js",
+    {{#if addSpaFrontEnd}}
     "build:www": "webpack --watch --info-verbosity none --mode development",
     "dev:www": "webpack --mode development && webpack-dev-server --mode development",
+    {{/if}}
     "gen:secret": "openssl rand -base64 256"
   },
   "devDependencies": {
     "@bitr/awaitable-event-emitter": "^1.0.3",
     "@trabpukcip/godsmack": "latest",
+    "@types/node": "^14.6.1",
+    "dotenv": "^8.2.0",
+    "npm-run-all": "^4.1.5",
+    "reflect-metadata": "^0.1.13",
+    "ts-node": "^9.0.0",
+    "tslib": "^2.0.1",
+    "ttypescript": "^1.5.11",
     {{#if addHttpServerSupport}}
     "@types/express": "^4.17.7",
     "@types/express-jwt": "^0.0.42",
     "@types/jsonwebtoken": "^8.5.0",
-    {{/if}}
-    "@types/node": "^14.6.1",
-    {{#if addGraphQlSupport}}
-    "apollo-server-express": "^2.17.0",
-    {{/if}}
-    {{#if addHotSwapping}}
-    "chokidar": "^3.4.2",
-    {{/if}}
-    "dotenv": "^8.2.0",
-    {{#if addHttpServerSupport}}
     "express": "^4.17.1",
-    {{/if}}
-    {{#if addGraphQlSupport}}
-    "express-graphql": "^0.11.0",
-    {{/if}}
-    {{#if addHttpServerSupport}}
     "express-jwt": "^6.0.0",
-    {{/if}}
-    {{#if addGraphQlSupport}}
-    "graphql": "^15.3.0",
-    {{/if}}
-    {{#if addHttpServerSupport}}
     "helmet": "^4.1.0",
     {{/if}}
-    "npm-run-all": "^4.1.5",
-    {{#if (eq graphql "openapi-to-graphql")}}
-    "openapi-to-graphql": "^2.2.4",
+    {{#if addSpaFrontEnd}}
+    "@types/react-dom": "^16.9.8",
+    "@types/react-router-dom": "^5.1.5",
+    "@types/webpack": "^4.41.21",
+    "@types/webpack-env": "^1.15.2",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^4.2.2",
+    "fork-ts-checker-webpack-plugin": "^5.1.0",
+    "html-webpack-plugin": "^4.3.0",
+    "portable-fetch": "^3.0.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-router-dom": "^5.2.0",
+    "ts-loader": "^8.0.3",
+    "webpack": "4.44.1",
+    "webpack-cli": "3.3.12",
+    "webpack-dev-server": "3.11.0",
+      {{#if addGraphQlSupport}}
+    "@apollo/client": "^3.1.4",
+    "graphql-tag": "^2.11.0",
+      {{/if}}
+      {{#if addReduxSupportToFrontEnd}}
+    "@reduxjs/toolkit": "^1.4.0",
+    "@types/react-redux": "^7.1.9",
+    "react-redux": "^7.2.1",
+      {{/if}}
     {{/if}}
-    "reflect-metadata": "^0.1.13",
-    {{#if useSequelizeDb}}
-    "sequelize": "^6.3.4",
+    {{#if addGraphQlSupport}}
+    "apollo-server-express": "^2.17.0",
+    "express-graphql": "^0.11.0",
+    "graphql": "^15.3.0",
     {{/if}}
     {{#if addSwaggerSupport}}
+    "@types/swagger-ui-express": "^4.1.2",
     "swagger-ui-express": "^4.1.4",
-    {{/if}}
-    "ts-node": "^9.0.0",
-    "tslib": "^2.0.1",
-    {{#if addSwaggerSupport}}
     "tsoa": "^3.2.1",
     {{/if}}
-    "ttypescript": "^1.5.11",
     {{#if (eq graphql "type-graphql")}}
     "type-graphql": "^1.0.0",
     {{/if}}
+    {{#if (eq graphql "openapi-to-graphql")}}
+    "openapi-to-graphql": "^2.2.4",
+    {{/if}}
+    {{#if useSequelizeDb}}
+    "sequelize": "^6.3.4",
+    {{/if}}
     {{#if useTypeOrmDb}}
     "typeorm": "^0.2.25",
+    {{/if}}
+    {{#if addHotSwapping}}
+    "chokidar": "^3.4.2",
     {{/if}}
     "typescript": "^4.0.2"
   },

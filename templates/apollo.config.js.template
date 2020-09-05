@@ -5,7 +5,7 @@ var options = {
     excludes: ['**/node_modules/**/*', '**/build/**/*', '**/www/**/*'],
     service: {
       name: '{{ packageName }}',
-      localSchemaFile: './build/generated/schema.graphql'
+      localSchemaFile: './server/generated/schema.graphql'
     }
   }
 };

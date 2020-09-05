@@ -16,6 +16,8 @@ type TemplateModel = {
   addHttpServerSupport: boolean
   addSwaggerSupport: boolean
   addDatabaseSupport: boolean
+  addSpaFrontEnd: boolean
+  addReduxSupportToFrontEnd: boolean
   database?: DbProviderName
   graphql?: GQlProviderName
   addDockerDBSupport: boolean
@@ -117,6 +119,24 @@ export async function bootstrap() {
       },
     ]))
 
+  // -- Single Page App Frontend
+  Object.assign(model, await enquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'addSpaFrontEnd',
+      message: 'Add Web Frontend (SPA) Support?',
+    },
+  ]))
+
+  if (model.addSpaFrontEnd)
+    Object.assign(model, await enquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'addReduxSupportToFrontEnd',
+        message: 'Add a Redux Store to the FrontEnd?',
+      },
+    ]))
+
   // -- MISC
   Object.assign(model, await enquirer.prompt([
     {
@@ -140,6 +160,26 @@ export async function bootstrap() {
   const system = container.resolve(TemplateSystem)
 
   const spec = new DirectoryBuilder()
+    .mkDir('client', dir => dir
+      .mkDir('assets', dir => dir
+        .touch('index.html', loadTemplate('client.assets.index.html')) )
+      .mkDir('components')
+      .mkDir('generated', dir => dir
+        .mkDir('api') )
+      .mkDir('pages')
+      .mkDir('store', dir => dir
+        .touch('rootReducer.ts', loadTemplate('client.store.rootReducer.ts'))
+        .touch('selectors.ts', loadTemplate('client.store.selectors.ts'))
+        .touch('titleSlice.ts', loadTemplate('client.store.titleSlice.ts'))
+        .touch('index.ts', loadTemplate('client.store.index.ts'))
+        .touch('types.ts', loadTemplate('client.store.types.ts'))
+      ).when(model.addReduxSupportToFrontEnd)
+      .mkDir('styles')
+      .touch('App.tsx', loadTemplate('client.App.tsx'))
+      .touch('constants.ts', loadTemplate('client.constants.ts'))
+      .touch('index.tsx', loadTemplate('client.index.tsx'))
+      .touch('tsconfig.json', loadTemplate('client.tsconfig.json'))
+    ).when(model.addSpaFrontEnd)
     .mkDir(model.baseServerDir, dir => dir
       .mkDir('controllers', dir => dir
         .touch('health.ts', loadTemplate('health.controller'))
@@ -156,8 +196,7 @@ export async function bootstrap() {
       .mkDir('repositories')
       .mkDir('resolvers', dir => dir
         .mkDir('args', dir => dir
-          .touch('SkipAndTakeArgs.ts', loadTemplate('graphql.SkipAndTakeArgs'))
-        )
+          .touch('SkipAndTakeArgs.ts', loadTemplate('graphql.SkipAndTakeArgs')) )
         .touch('HealthResolver.ts', loadTemplate('health.resolver'))
       ).when(model.addGraphQlSupport)
       .mkDir('services')
@@ -174,8 +213,10 @@ export async function bootstrap() {
     )
     .touch('.editorconfig', loadTemplate('.editorconfig'))
     .touch('.gitignore', loadTemplate('.gitignore'))
+    .touch('apollo.config.js', loadTemplate('apollo.config.js')).when(model.addSpaFrontEnd)
     .touch('package.json', loadTemplate('package.json'))
     .touch('tsconfig.json', loadTemplate('tsconfig.json'))
+    .touch('webpack.config.js', loadTemplate('webpack.config.js')).when(model.addSpaFrontEnd)
     .buildSpec();
 
   // -- Program

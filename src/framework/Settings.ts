@@ -177,8 +177,7 @@ function getBaseSettings(): IApplicationSettings {
         noImplicitAdditionalProperties: 'silently-remove-extras',
         outputDirectory: "server",
         specVersion: 3,
-        controllerPathGlobs: [join(rootDir, "controllers/**/*.ts")],
-
+        controllerPathGlobs: [join(rootDir, "controllers/**/!(*.d).{js,ts}")],
         // Move this section into a builder like NestJS does.
         // see: https://stackoverflow.com/a/57909047
         host: "localhost:3000",
@@ -211,7 +210,7 @@ function getBaseSettings(): IApplicationSettings {
         middlewareTemplate: join(rootDir, "templates/routes.template.hbs"),
         iocModule: join(rootDir, "ioc"),
         routesFileName: "routes.ts",
-        controllerPathGlobs: [join(rootDir, "controllers/**/*.ts")],
+        controllerPathGlobs: [join(rootDir, "controllers/**/!(*.d).{js,ts}")],
       },
     },
 

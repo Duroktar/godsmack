@@ -1,0 +1,67 @@
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require("path");
+const webpack = require("webpack");
+
+/** @type {import("ts-loader").Options} */
+const tsLoaderOptions = {
+  configFile: "client/tsconfig.json",
+  transpileOnly: true,
+};
+
+/** @type {import("webpack").Configuration} */
+module.exports = {
+  entry: ['whatwg-fetch', "./client/index.tsx"],
+  plugins: [
+    new webpack.ProgressPlugin(),
+    new CleanWebpackPlugin({
+      cleanStaleWebpackAssets: false,
+    }),
+    new HtmlWebpackPlugin({
+      title: '{{ packageName }}',
+      template: 'client/assets/index.html',
+      cache: false,
+    }),
+    new ForkTsCheckerWebpackPlugin(),
+  ],
+  output: {
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, "www"),
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: "/node_modules/",
+        use: [
+          {
+            loader: "ts-loader",
+            options: tsLoaderOptions
+          }
+        ]
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+      },
+    ]
+  },
+  devtool: 'inline-source-map',
+  devServer: {
+    contentBase: path.resolve(__dirname, "./www"),
+    publicPath: "/",
+    historyApiFallback: true,
+    host: "127.0.0.1",
+    port: 8080,
+    open: false
+  },
+  resolve: {
+    extensions: [".tsx", ".ts", ".js"],
+  }
+};

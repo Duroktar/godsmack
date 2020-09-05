@@ -1,0 +1,7 @@
+
+export const ROOT_NODE = '#root'
+
+export const directory = {
+  INDEX: '/',
+
+}

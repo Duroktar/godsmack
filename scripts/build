@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 echo $(date)
-node_modules/.bin/ttsc -P tsconfig.json
+$PWD/node_modules/.bin/ttsc -P tsconfig.json

@@ -1,0 +1,7 @@
+import { combineReducers } from '@reduxjs/toolkit';
+import titleSlice from './titleSlice'
+
+const rootReducer = combineReducers({ titleSlice })
+
+export type RootState = ReturnType<typeof rootReducer>
+export default rootReducer
