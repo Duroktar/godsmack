@@ -227,6 +227,12 @@ export async function bootstrap() {
   const spinner2 = ora('Installing Dependencies').start();
   spawnSync('yarn')
   spinner2.succeed()
+
+  const spinner3 = ora('Setting up git repository').start();
+  spawnSync('git init .')
+  spawnSync('git add -A')
+  spawnSync('git commit -m "first commit"')
+  spinner3.succeed()
 }
 
 function loadTemplate(filename: string) {
