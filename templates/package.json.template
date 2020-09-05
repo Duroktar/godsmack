@@ -77,10 +77,10 @@
     {{#if (eq graphql "openapi-to-graphql")}}
     "openapi-to-graphql": "^2.2.4",
     {{/if}}
-    {{#if useSequelizeDb}}
+    {{#if (eq database "sequelize")}}
     "sequelize": "^6.3.4",
     {{/if}}
-    {{#if useTypeOrmDb}}
+    {{#if (eq database "typeorm")}}
     "typeorm": "^0.2.25",
     {{/if}}
     {{#if addHotSwapping}}
@@ -89,7 +89,7 @@
     "typescript": "^4.0.2"
   },
   "dependencies": {
-    {{#if (or (eq useSequelizeDb true) (eq useTypeOrmDb true))}}
+    {{#if addDatabaseSupport}}
     "pg": "^8.3.3"
     {{/if}}
   }
