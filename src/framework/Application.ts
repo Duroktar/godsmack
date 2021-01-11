@@ -88,10 +88,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     }
   }
 
-  public dispose = () => {
+  private disposeAll = async () => {
     let current = this.disposables.shift()
     while (current) {
-      current.dispose()
+      await current.dispose()
       current = this.disposables.shift()
     }
   }
@@ -457,7 +457,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
         .resolve(lib.DockerService)
         .stopDockerDb()
     }
-    this.dispose()
+    await this.disposeAll()
   }
 }
 
