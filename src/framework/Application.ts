@@ -1,10 +1,12 @@
 import { AwaitableEventEmitter } from '@bitr/awaitable-event-emitter';
+import nodeCleanup from 'node-cleanup';
 import type { IApplicationSettings, IClient, IHttpServer, ITaskService, MergeDefaultProviders } from '../interfaces';
 import { ApplicationEvent } from '../interfaces/IApplication';
 import type { IApplication } from '../interfaces/IApplication';
 import type { IApplicationCreationService } from "../interfaces/IApplicationCreation";
 import type { IApplicationEventEmitter } from '../interfaces/IApplicationEventEmitter';
 import type { FactoryTypeRecord, IFactory } from '../interfaces/IFactory';
+import type { IDisposable } from '../interfaces/IDisposable';
 import type { ExpressServer } from "../services/ExpressServer";
 import { LogFactory } from '../services/Logger';
 import type { SequelizePostgresDB } from '../services/sequelize/PostgresDB';
@@ -50,6 +52,16 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   constructor(public container: MergeDefaultProviders<AppContainer>) {
     this.logger = LogFactory.For(this)
     this.events = new AwaitableEventEmitter()
+
+    nodeCleanup((exitCode, signal) => {
+      if (signal) {
+        this.destroyApplication()
+          .then(() => setTimeout(() => process.kill(process.pid, signal), 150))
+
+        nodeCleanup.uninstall(); // don't call cleanup handler again
+        return false;
+      }
+    })
   }
 
   /* Public API */
@@ -66,6 +78,22 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     this.container
       .addSingletonInstance(ApplicationConfigurationService, { configure: cb })
     return this
+  }
+
+  private disposables: IDisposable[] = []
+
+  public registerDisposable = (...disposables: IDisposable[]) => {
+    for (const disposable of disposables) {
+      this.disposables.push(disposable)
+    }
+  }
+
+  public dispose = () => {
+    let current = this.disposables.shift()
+    while (current) {
+      current.dispose()
+      current = this.disposables.shift()
+    }
   }
 
   public onAppStarted = (cb: () => Promise<any> | void) => {
@@ -429,6 +457,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
         .resolve(lib.DockerService)
         .stopDockerDb()
     }
+    this.dispose()
   }
 }
 

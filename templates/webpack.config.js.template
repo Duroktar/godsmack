@@ -1,4 +1,3 @@
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require("path");
@@ -15,9 +14,6 @@ module.exports = {
   entry: ['whatwg-fetch', "./client/index.tsx"],
   plugins: [
     new webpack.ProgressPlugin(),
-    new CleanWebpackPlugin({
-      cleanStaleWebpackAssets: false,
-    }),
     new HtmlWebpackPlugin({
       title: '{{ packageName }}',
       template: 'client/assets/index.html',

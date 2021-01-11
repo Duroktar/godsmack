@@ -1,6 +1,6 @@
 {
   "name": "@trabpukcip/godsmack",
-  "version": "0.0.6-alpha.11",
+  "version": "0.0.6-alpha.12",
   "main": "dist/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
@@ -33,7 +33,6 @@
     "class-validator": "^0.12.2",
     "jsonwebtoken": "^8.5.1",
     "sequelize": "^6.3.4",
-    "tsoa": "^3.2.1",
     "typeorm": "^0.2.25"
   },
   "devDependencies": {
@@ -51,6 +50,7 @@
     "@types/jest": "^26.0.10",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/node": "^14.6.1",
+    "@types/node-cleanup": "^2.1.1",
     "@types/nodemailer": "^6.4.0",
     "@types/react": "^16.9.48",
     "@types/readline-sync": "^1.4.3",
@@ -82,6 +82,7 @@
     "jest": "^26.4.2",
     "ky": "^0.23.0",
     "ky-universal": "^0.8.1",
+    "node-cleanup": "^2.1.2",
     "nodemailer": "^6.4.11",
     "nyc": "^15.1.0",
     "openapi-to-graphql": "^2.2.4",
@@ -96,9 +97,12 @@
     "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0-pre.61",
     "tslib": "^2.0.1",
+    "tsoa": "^3.4.0",
     "ttypescript": "^1.5.11",
     "type-graphql": "^1.0.0",
     "typescript": "^4.0.2",
+    "webpack-dev-middleware": "^3.7.2",
+    "webpack-hot-middleware": "^2.25.0",
     "yargs": "^15.4.1"
   }
 }

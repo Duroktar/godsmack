@@ -1,6 +1,7 @@
 import type { FactoryTypeRecord, IFactory } from './IFactory';
 import type { EmptyType, DeepPartial } from '../types';
 import type { IClient } from './IClient';
+import type { IDisposable } from './IDisposable';
 
 import type {
   Container, InferContainerT, ApplicationConfigurationService,
@@ -60,6 +61,14 @@ export interface IApplication<AppContainer = any> {
    * @memberof IApplication
    */
   events: IApplicationEventEmitter
+
+  /**
+   * Registers a disposable instance to be released on
+   * app exit (see: node-cleanup).
+   *
+   * @memberof IApplication
+   */
+  registerDisposable: (...d: IDisposable[]) => void
 
   /**
    * Stops the application.

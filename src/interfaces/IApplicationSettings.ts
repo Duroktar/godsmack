@@ -1,6 +1,6 @@
 import jwt from 'express-jwt';
 import type helmet from 'helmet';
-import type { ExtendedRoutesConfig, ExtendedSpecConfig } from 'tsoa/dist/cli';
+import type { ExtendedRoutesConfig, ExtendedSpecConfig } from 'tsoa';
 import type { BuildSchemaOptions } from 'type-graphql';
 import type { SwaggerGenOptions, SwaggerMiddlewareOptions } from '.';
 import type { LogLevel } from "../services/Logger";
@@ -298,7 +298,7 @@ export interface IApplicationSettings {
     routesImportPath: string
     serveDocs: boolean
     baseDocUrl: string
-  
+
     generateSpec: boolean
     generateRoutes: boolean
     generateClient: boolean

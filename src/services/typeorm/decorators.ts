@@ -22,6 +22,7 @@ class FindOperatorWithExtras<T> extends FindOperator<T> {
       return `${aliasPath} ILIKE ${parameters[0]}`;
     }
 
+    // @ts-ignore
     return super.toSql(connection, aliasPath, parameters);
   }
 }
