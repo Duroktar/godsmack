@@ -93,7 +93,7 @@ export class Injector {
   }
 
   public async destroyAll() {
-    const deps = [...this.__dependencyCache.values()];
+    const deps = [...this.__instanceCache.values()];
     await Promise.allSettled(
       deps.map(async each => await this.disposeObject(each)));
     this.__dependencyCache.clear()

@@ -1,6 +1,6 @@
 {
   "name": "@trabpukcip/godsmack",
-  "version": "0.0.6-alpha.15",
+  "version": "0.0.6-alpha.17",
   "main": "dist/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
@@ -27,6 +27,7 @@
     "build": "ttsc -P tsconfig.json",
     "build:watch": "ttsc --watch -P tsconfig.json",
     "test": "jest",
+    "prepublish": "yarn build",
     "test:watch": "yarn test --watch --watch-files src/tests/"
   },
   "peerDependencies": {
