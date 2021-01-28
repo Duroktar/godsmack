@@ -89,11 +89,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   private disposeAll = async () => {
-    let current = this.disposables.shift()
-    while (current) {
-      await current.dispose()
-      current = this.disposables.shift()
-    }
+    await this.container.onExit()
+    await Promise.allSettled(
+      this.disposables.map(async i => await i.dispose()))
+    this.disposables = []
   }
 
   public onAppStarted = (cb: () => Promise<any> | void) => {
@@ -450,7 +449,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     await this.emitAwaitableEvent(ApplicationEvent.AFTER_START)
   }
 
-  private async destroyApplication() {
+  private destroyApplication = async () => {
     const lib = await import('./Docker')
     if (this.__isDockerizingDB) {
       await this.container

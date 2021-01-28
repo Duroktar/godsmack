@@ -1,6 +1,6 @@
 {
   "name": "@trabpukcip/godsmack",
-  "version": "0.0.6-alpha.13",
+  "version": "0.0.6-alpha.15",
   "main": "dist/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
@@ -32,8 +32,7 @@
   "peerDependencies": {
     "class-validator": "^0.12.2",
     "jsonwebtoken": "^8.5.1",
-    "sequelize": "^6.3.4",
-    "typeorm": "^0.2.25"
+    "sequelize": "^6.3.4"
   },
   "devDependencies": {
     "@bitr/awaitable-event-emitter": "^1.0.3",
@@ -54,6 +53,7 @@
     "@types/nodemailer": "^6.4.0",
     "@types/react": "^16.9.48",
     "@types/readline-sync": "^1.4.3",
+    "@types/sequelize": "^4.28.9",
     "@types/swagger-ui-express": "^4.1.2",
     "@types/ts-nameof": "^4.2.1",
     "@types/unzipper": "^0.10.3",
@@ -100,6 +100,7 @@
     "tsoa": "^3.4.0",
     "ttypescript": "^1.5.11",
     "type-graphql": "^1.0.0",
+    "typeorm": "^0.2.25",
     "typescript": "^4.0.2",
     "webpack-dev-middleware": "^3.7.2",
     "webpack-hot-middleware": "^2.25.0",

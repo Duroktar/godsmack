@@ -2,13 +2,13 @@
 export const SYMBOL_DISPOSABLE = Symbol.for('DISPOSE')
 
 interface DisposableResource {
-  dispose: () => void;
+  dispose: () => (void | Promise<void>);
 }
 
 export const Disposable = new class {
-  Dispose(target: any) {
+  async Dispose(target: any) {
     if (Disposable.Is(target)) {
-      target.dispose()
+      await target.dispose()
     }
   }
   Is(target: any): target is DisposableResource {

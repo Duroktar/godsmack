@@ -92,11 +92,10 @@ export class Injector {
     return target as Type<T>
   }
 
-  public destroyAll() {
-    const dependencies = this.__dependencyCache.values();
-    for (let each of dependencies) {
-      this.disposeObject(each)
-    }
+  public async destroyAll() {
+    const deps = [...this.__dependencyCache.values()];
+    await Promise.allSettled(
+      deps.map(async each => await this.disposeObject(each)));
     this.__dependencyCache.clear()
   }
 
@@ -193,8 +192,8 @@ export class Injector {
     return new target(...injections);
   }
 
-  private disposeObject<T extends typeof Disposable>(target: Type<T>): void {
-    return Disposable.Dispose(target)
+  private async disposeObject<T extends typeof Disposable>(target: Type<T>): Promise<void> {
+    return await Disposable.Dispose(target)
   }
 
   public getTypeName = <T extends Type<any>>(t: T | string) => {

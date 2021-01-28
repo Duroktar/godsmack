@@ -46,8 +46,8 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return this as any;
   }
 
-  protected onExit() {
-    this.injector.destroyAll()
+  public async onExit() {
+    await this.injector.destroyAll()
   }
 
   public getInjector = () => { return this.injector }
