@@ -13,20 +13,19 @@ type ResolvedInjections<T> = {
 };
 
 export class Injector {
-  constructor(private settings: InjectorSettings = { hotSwapping: true }) {
-    // This Boilerplate is to make sure the
-    // correct name of the Injector class for
-    // the 'this' argument.
-    this.logger = LogFactory.For(this)
+  constructor(
+    private settings: InjectorSettings = { hotSwapping: true },
+    logFactory = LogFactory,
+  ) {
+    this.logger = logFactory.For(this)
   }
 
   //#region api
   public resolve<T extends any>(target: Type<T> | string): T {
     const typeName = this.getTypeName(target);
 
-    if (this.__instanceCache.has(typeName)) {
+    if (this.__instanceCache.has(typeName))
       return this.__instanceCache.get(typeName)
-    }
 
     const resolved: Type<T> = this.upsertDependency(target);
 
@@ -140,7 +139,7 @@ export class Injector {
 
     const injections = this.settings?.hotSwapping
       ? tokens.map(token => createProxiedService<T>(this, token))
-      : tokens
+      : tokens.map(token => this.resolve(token));
 
     return { resolved, injections };
   }
@@ -192,14 +191,14 @@ export class Injector {
     return new target(...injections);
   }
 
-  private async disposeObject<T extends typeof Disposable>(target: Type<T>): Promise<void> {
+  private async disposeObject<T extends Disposable>(target: Type<T>): Promise<void> {
     return await Disposable.Dispose(target)
   }
 
   public getTypeName = <T extends Type<any>>(t: T | string) => {
     const rv = (typeof t === 'string') ? t : t?.name || t?.constructor.name
     if (!rv) {
-      throw new Error(`somthing fucky passed to getTypeName => ${t}`)
+      throw new Error(`somthing fucky got passed to getTypeName => ${t}`)
     }
     return rv
   }

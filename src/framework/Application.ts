@@ -55,7 +55,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
     nodeCleanup((exitCode, signal) => {
       if (signal) {
-        this.destroyApplication()
+        this.__destroyApplication()
           .then(() => setTimeout(() => process.kill(process.pid, signal), 150))
 
         nodeCleanup.uninstall(); // don't call cleanup handler again
@@ -74,32 +74,30 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     throw new Error('Method not implemented')
   }
 
+  public stop = async () => await this.__destroyApplication()
+
   public configure(cb: (app: this) => void) {
     this.container
       .addSingletonInstance(ApplicationConfigurationService, { configure: cb })
     return this
   }
 
-  private disposables: IDisposable[] = []
-
   public registerDisposable = (...disposables: IDisposable[]) => {
     for (const disposable of disposables) {
-      this.disposables.push(disposable)
+      this.__disposables.push(disposable)
     }
   }
 
   private disposeAll = async () => {
     await this.container.onExit()
     await Promise.allSettled(
-      this.disposables.map(async i => await i.dispose()))
-    this.disposables = []
+      this.__disposables.map(async i => await i.dispose()))
+    this.__disposables = []
   }
 
   public onAppStarted = (cb: () => Promise<any> | void) => {
     return this.events.on(ApplicationEvent.ON_START, cb)
   }
-
-  public stop = async () => { await this.destroyApplication() }
 
   public useFactory = (factory: IFactory) => {
     this.container.addSingletonInstance<Type<IFactory>>(ObjectFactory, factory)
@@ -121,7 +119,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public useClient(client: IClient) {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./Client')
+      const lib = await import('./JavascriptClient')
       this.container.addSingletonInstance<Type<IClient>>(lib.JavascriptClient, client)
     })
     return this
@@ -151,8 +149,6 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     return this
   }
 
-  private __isDockerizingDB = false // TODO move me somewhere.
-
   public addDockerDBSupport = () => {
     if (!process.env.DOCKER_CTX) {
       this.logger.info('Enabling Docker DB Support');
@@ -164,7 +160,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addDockerSupport = () => {
     if (!process.env.DOCKER_CTX) {
-      this.logger.info('Enabling Docker Support');
+      this.logger.info('Enabling Docker App Support');
 
       this.__isDockerizingApp = true
     }
@@ -219,7 +215,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addJavascriptClient(path?: string) {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./Client')
+      const lib = await import('./JavascriptClient')
       const client: IClient = this.container
         .addSingleton(lib.JavascriptClient)
         .resolve(lib.JavascriptClient)
@@ -305,29 +301,33 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   public addHotSwapping() {
-    import('../utils/modTools')
-      .then(mod => mod.enableHotSwapping(this.container))
+    import('../utils/modTools').then(mod =>
+      mod.enableHotSwapping(this.container)
+    )
     return this
   }
 
   public useSettings = <Config extends DeepPartial<IApplicationSettings>>(
-    config: DeepPartial<IApplicationSettings> | ((base: IApplicationSettings) => Config)
+      config: DeepPartial<IApplicationSettings>
+    | ((base: IApplicationSettings) => Config)
   ): this => {
-      this.container.resolve(SettingsService).update(config)
+    this.container
+      .resolve(SettingsService)
+      .update(config)
     return this
   }
 
   /* Private API */
 
+  // -- MEMBERS
+  private __disposables: IDisposable[] = []
+
   // -- FLAGS
   private __isDockerizingApp = false
-  ////////////////////////////////////////////
+  private __isDockerizingDB = false
 
-  private emitAwaitableEvent = (event: ApplicationEvent) => {
-    return this.events.emitSerial(event);
-  }
-
-  private async runDockerApplicationSetupIfApplicable() {
+  // -- FUNCS
+  private __runDockerAppSetupIfNecessary = async () => {
 
     if (this.__isDockerizingApp || this.__isDockerizingDB) {
       const lib = await import('./Docker')
@@ -400,8 +400,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     }
   }
 
-  private async __initializeApplication(argv?: string[]) {
-    await this.emitAwaitableEvent(ApplicationEvent["@INIT"])
+  private __initializeApplication = async (argv?: string[]) => {
+    const emitAwaitableEvent = (event: ApplicationEvent) => {
+      return this.events.emitSerial(event);
+    }
+
+    await emitAwaitableEvent(ApplicationEvent["@INIT"])
 
     const creationService = this.container
       .resolve<IApplicationCreationService>(ApplicationCreationService)
@@ -415,11 +419,12 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     if (factory) this.useFactory(factory)
 
     // STEP 2 ---------------------------------------------
-    await this.runDockerApplicationSetupIfApplicable();
+    await this.__runDockerAppSetupIfNecessary();
 
     // STEP 3 ---------------------------------------------
     // Setup any other (optional) dependencies.
-    this.addDatabase(creationService.ConfigureDatabase?.(this)!) // DB first since controllers usually depend on a repo with a db sometwhere..
+    this.addDatabase(creationService.ConfigureDatabase?.(this)!)
+    // ^^^ DB first since controllers usually depend on a db
     this.addCliApp(creationService.ConfigureCliApp?.(this)!)
     this.addServer(creationService.ConfigureServer?.(this)!)
 
@@ -432,24 +437,24 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     // This should be where the bulk of the application logic is
     // handled so we call it last to make sure all the previous
     // steps/configuration have taken effect.
-    await this.emitAwaitableEvent(ApplicationEvent.BEFORE_CONFIG)
+    await emitAwaitableEvent(ApplicationEvent.BEFORE_CONFIG)
     configurationService.configure(this)
-    await this.emitAwaitableEvent(ApplicationEvent.AFTER_CONFIG)
+    await emitAwaitableEvent(ApplicationEvent.AFTER_CONFIG)
 
     // STEP 6 ---------------------------------------------
     // Setup/Fire the BEFORE_START event
-    await this.emitAwaitableEvent(ApplicationEvent.BEFORE_START)
+    await emitAwaitableEvent(ApplicationEvent.BEFORE_START)
 
     // STEP 7 ---------------------------------------------
     // Profit..
-    await this.emitAwaitableEvent(ApplicationEvent.ON_START)
+    await emitAwaitableEvent(ApplicationEvent.ON_START)
 
     // STEP 8 ---------------------------------------------
     // Cleanup/Fire the AFTER_START event
-    await this.emitAwaitableEvent(ApplicationEvent.AFTER_START)
+    await emitAwaitableEvent(ApplicationEvent.AFTER_START)
   }
 
-  private destroyApplication = async () => {
+  private __destroyApplication = async () => {
     const lib = await import('./Docker')
     if (this.__isDockerizingDB) {
       await this.container

@@ -1,4 +1,5 @@
-import { LogLevel } from '../services/Logger';
+import type { LogLevel } from '../services/Logger';
+
 export interface ILogger {
     level: number;
     owner: string;

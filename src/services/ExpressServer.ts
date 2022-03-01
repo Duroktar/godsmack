@@ -4,7 +4,7 @@ import { AUTH_OWNER_CLAIM, AUTH_ROLES_CLAIM, AUTH_ROUTE_DATA, CONTROLLER_ARGS_DA
 import { ParamMetadata } from '../framework/decorators/utils';
 import { HttpServerProvider } from '../framework/HttpServer';
 import { Singleton } from '../injector/decorators';
-import { IController } from '../interfaces/IController';
+import type { IController } from '../interfaces/IController';
 import type { IHttpServer } from '../interfaces/IHttpServer';
 import type { Type } from '../types';
 import { isNullOrUndefined } from '../utils/assert';

@@ -1,4 +1,4 @@
-import { ApplicationEvent } from './IApplication';
+import type { ApplicationEvent } from './IApplication';
 
 export interface IApplicationEventEmitter {
   on(event: ApplicationEvent, ...args: any[]): void;

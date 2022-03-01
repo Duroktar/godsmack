@@ -51,5 +51,5 @@ export function tryCatch<S, E extends Error>(
 }
 
 export function doTry<S, E extends Error>(func: () => S): Result<S, E> {
-  try { return Result.Value(func()) } catch (e) { return Result.Error(e) }
+  try { return Result.Value(func()) } catch (e) { return Result.Error(e as E) }
 }

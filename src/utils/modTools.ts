@@ -8,7 +8,9 @@ let __lookup: Map<string, NodeModule> = new Map()
 export function enableHotSwapping(container: IContainer<any>) {
   __updateIndex()
 
-  const fileNames = getTsConfigFile(process.cwd()).fileNames.filter(fn => !fn.includes('node_modules') && !fn.includes('app.ts'));
+  const fileNames = getTsConfigFile(process.cwd())
+    .fileNames
+    .filter(fn => !fn.includes('node_modules') && !fn.includes('app.ts'));
 
   // console.log(`Watching files:\n${fileNames.join('\n')}`)
   const watcher = chokidar.watch(fileNames, {

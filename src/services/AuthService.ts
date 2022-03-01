@@ -1,6 +1,5 @@
 import type { Request } from 'express';
 import * as JWT from 'jsonwebtoken';
-import { isString } from 'util';
 import { SettingsService } from '../framework/Settings';
 import { Singleton } from '../injector';
 import { IApplicationSettings } from '../interfaces';
@@ -19,6 +18,8 @@ export type JwtPayload<T = {}> = T & {
 };
 
 export type JwtAuthData = { userId: string; roles: string[]; };
+
+const isString = (o: any): o is string => typeof o === 'string'
 
 @Singleton()
 export class AuthUtilsService implements IAuthService {

@@ -30,7 +30,7 @@ export function prop<T = any>(obj: any, key: string): T {
  * console.log(is_newable(Function))
  * console.log(is_newable(new Function))
  *
- * // // false
+ * // false
  * console.log(is_newable(hello))
  * console.log(is_newable())
  * console.log(is_newable(undefined))

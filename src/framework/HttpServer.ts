@@ -8,12 +8,10 @@ import { Singleton } from '../injector';
 import type { IApplicationSettings, IController, IHttpServer, IHttpServerErrorHandler, IHttpServerEventEmitter, PathArgument } from "../interfaces";
 import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
-import { getTsConfigFile } from '../utils/getTsConfigFile';
 import { createUrlFrom } from '../utils/http';
 import { Application } from './Application';
 import { SettingsService } from './Settings';
 import { Server } from 'http';
-import { ASSERT } from '../utils/assert';
 
 @Singleton()
 export class HttpServerProvider<T extends Express = Express> implements IHttpServer {

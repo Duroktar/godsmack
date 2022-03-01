@@ -2,8 +2,8 @@ import type cors from 'cors';
 import type express from "express";
 import type { HttpServerProvider } from '../framework';
 import type { IHttpServerErrorHandler } from './IHttpServerErrorHandler';
-import { Type } from '../types';
-import { Server } from 'http';
+import type { Type } from '../types';
+import type { Server } from 'http';
 
 export type HttpServiceSetup = (server: HttpServerProvider) => void
 export type PathArgument = string | RegExp | (string | RegExp)[]

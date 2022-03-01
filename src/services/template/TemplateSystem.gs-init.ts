@@ -154,10 +154,9 @@ export async function bootstrap() {
   ]))
 
   // -- Setup
-  const container = new Container()
-    .addSingleton(TemplateSystem);
-
-  const system = container.resolve(TemplateSystem)
+  const system = new Container()
+    .addSingleton(TemplateSystem)
+    .resolve(TemplateSystem);
 
   const spec = new DirectoryBuilder()
     .mkDir('client', dir => dir

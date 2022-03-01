@@ -1,4 +1,4 @@
-import { SpawnOptionsWithoutStdio } from 'child_process';
+import type { SpawnOptionsWithoutStdio } from 'child_process';
 
 export interface IShell {
   spawn(cmd: string, args: string[], opts?: SpawnOptions): Promise<{

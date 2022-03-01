@@ -5,6 +5,9 @@ interface DisposableResource {
   dispose: () => (void | Promise<void>);
 }
 
+export type Disposable = typeof Disposable
+
+// This is stupid
 export const Disposable = new class {
   async Dispose(target: any) {
     if (Disposable.Is(target)) {

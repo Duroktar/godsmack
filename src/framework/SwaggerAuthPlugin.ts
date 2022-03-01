@@ -11,6 +11,7 @@ type SetSpecResponsePayload = {
   };
 };
 
+// TODO: where is this used?
 export function SwaggerAuthPlugin() {
   return {
     statePlugins: {

@@ -137,7 +137,7 @@ export class InMemoryDatabase extends DatabaseProvider {
       readFile(this.__db_file, (...args) => {
         this.onReadFileComplete(...args)
         if (args[0]) reject(args[0])
-        else resolve()
+        else resolve(void 0)
       })
     })
   }

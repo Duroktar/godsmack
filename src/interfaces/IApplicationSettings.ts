@@ -1,4 +1,4 @@
-import jwt from 'express-jwt';
+import type jwt from 'express-jwt';
 import type helmet from 'helmet';
 import type { ExtendedRoutesConfig, ExtendedSpecConfig } from 'tsoa';
 import type { BuildSchemaOptions } from 'type-graphql';

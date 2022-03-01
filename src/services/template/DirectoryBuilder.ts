@@ -20,6 +20,7 @@ import { createDirSpec, createFileSpec } from "./factories";
  *    .touch('package.json')
  *    .touch('tsconfig.json')
  *    .touch('webpack.config.js')
+ *    .buildSpec()
  */
 export class DirectoryBuilder implements IDirectoryBuilder {
   constructor(name = process.cwd()) {

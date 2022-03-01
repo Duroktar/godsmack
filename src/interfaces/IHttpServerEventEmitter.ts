@@ -1,4 +1,4 @@
-import { HttpServerEvent } from '../framework/HttpServer';
+import type { HttpServerEvent } from '../framework/HttpServer';
 
 export interface IHttpServerEventEmitter {
   on(event: HttpServerEvent, ...args: any[]): void;

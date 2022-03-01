@@ -45,7 +45,6 @@ export class TaskService implements ITaskService {
 
       if (!cName) return
 
-      const klass: Type<ICronTrigger> = dep[cName]
       const taskCtorName = cName
         .slice(0, cName.indexOf(config.postfix))
         .toLowerCase()
@@ -54,6 +53,7 @@ export class TaskService implements ITaskService {
 
       this.logger.debug(`Setting up Cron Trigger (${taskCtorName}) cName=${cName}`);
 
+      const klass: Type<ICronTrigger> = dep[cName];
       this.tasks.set(taskCtorName, klass);
     });
 
