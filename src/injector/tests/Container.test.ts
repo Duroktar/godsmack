@@ -1,6 +1,7 @@
-import { Container, Singleton } from "../index";
-import { staticTestProps } from './staticTestProps';
-import { nameof } from "../types";
+import { staticTestProps } from '../../tests/staticTestProps';
+import { nameof } from "../../types";
+import { Container } from '../Container';
+import { Singleton } from '../decorators';
 
 describe('Container Class', () => {
   const expect = staticTestProps.expect
@@ -107,15 +108,15 @@ describe('Container Class', () => {
     interface BaseClass {
       noise(): string
     }
-    class Implementation1 {
+    class Implementation1 implements BaseClass {
       noise() { return noise1 }
     }
-    class Implementation2 {
+    class Implementation2 implements BaseClass {
       noise() { return noise2 }
     }
 
     const container = new Container()
-      .addSingleton<BaseClass>(Implementation1, Implementation2)
+      .addSingleton(Implementation1, Implementation2)
 
     // Singleton
     const instance = container.resolve(Implementation1)
@@ -126,5 +127,14 @@ describe('Container Class', () => {
     expect(container.resolve(Implementation1)).toEqual(instance)
     expect(container.resolve(Implementation1).noise()).toEqual(noise2)
     expect(container.resolve(Implementation1)).toEqual(container.resolve(Implementation1))
+
+    // Runtime Generics
+    expect(container.resolve<Implementation1>()).toEqual(instance)
+    expect(container.resolve<Implementation1>()).toEqual(container.resolve<Implementation1>())
+
+    class NoNo { }
+
+    // @ts-expect-error
+    container.resolve(NoNo)
   })
 });

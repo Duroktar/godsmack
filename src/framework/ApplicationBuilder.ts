@@ -1,8 +1,9 @@
-import type { IApplication, IApplicationBuilder, IApplicationCreationService, IContainer, MergeDefaultProviders } from '../interfaces';
+import type { IApplication, IApplicationBuilder, IApplicationCreationService, MergeDefaultProviders } from '../interfaces';
+import { IContainer } from '../injector/interface/IContainer';
 import { TerminalInk } from '../services/tui/TerminalInk';
 import { Application } from './Application';
 import { ApplicationCreationService } from './ApplicationCreationService';
-import { Container } from './Container';
+import { Container } from '../injector/Container';
 import { DockerService } from './Docker';
 import { SettingsService } from './Settings';
 

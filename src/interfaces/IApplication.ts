@@ -4,7 +4,7 @@ import type { IClient } from './IClient';
 import type { IDisposable } from './IDisposable';
 
 import type {
-  Container, InferContainerT, ApplicationConfigurationService,
+  ApplicationConfigurationService,
   CliAppProvider, ObjectFactory, StartupProvider, HttpServerProvider,
   ApplicationCreationService, DatabaseProvider, TaskService, SettingsService,
 } from '../framework';
@@ -23,6 +23,7 @@ import type { IDatabaseProvider } from './IDatabase';
 import type { IApplicationEventEmitter } from './IApplicationEventEmitter';
 import type { TypeGraphQlProvider } from '../framework/graphql/TypeGraphQlProvider';
 import type { OpenApiToGraphQlProvider } from "../framework/graphql/OpenApiToGraphQlProvider";
+import { Container, InferContainerT } from '../injector';
 
 export type IApplicationContainer<T> = Pick<IApplication<T>, 'container'>
 

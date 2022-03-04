@@ -1,7 +1,8 @@
 import { Disposable } from '../framework/Disposable';
 import { LogFactory } from '../services/Logger';
 import type { Type } from '../types';
-import { createProxiedService } from '../utils/proxy';
+import { proxify } from './proxify';
+import { IInjector } from './interface/IInjector';
 
 type InjectorSettings = {
   hotSwapping?: boolean;
@@ -12,7 +13,7 @@ type ResolvedInjections<T> = {
   injections: Type<any>[];
 };
 
-export class Injector {
+export class Injector implements IInjector {
   constructor(
     private settings: InjectorSettings = { hotSwapping: true },
     logFactory = LogFactory,
@@ -21,22 +22,23 @@ export class Injector {
   }
 
   //#region api
-  public resolve<T extends any>(target: Type<T> | string): T {
+  public resolve<T, K extends Type<T> = Type<T>>(
+    target: K | string,
+  ): T {
     const typeName = this.getTypeName(target);
 
     if (this.__instanceCache.has(typeName))
       return this.__instanceCache.get(typeName)
 
-    const resolved: Type<T> = this.upsertDependency(target);
+    const instance = this.create(target, typeName);
 
-    const { injections } = this.resolveTokens(resolved);
-    this.logger.debug('Resolving dependency =>', typeName);
+    if (this.singletons.has(typeName))
+      return this.registerInstance<T>(typeName, instance);
 
-    const instance = this.createObject(resolved, injections);
-    return this.registerInstance<T>(typeName, instance);
+    return instance
   }
 
-  public registerType = <T extends any>(
+  public registerType = <T>(
     type: Type<T> | string,
     impl?: Type<T>,
     force = false,
@@ -54,25 +56,19 @@ export class Injector {
     return instance
   }
 
-  public hotReloadDependency = <T extends any>(target: Type<T>) => {
-    this.overrideDependency(target, target);
-    this.replaceInstanceInCache(target);
-    this.logger.info(`Hot-Swapped "${target.name}" dependency.`)
-  }
-
-  public hasDependency<T extends any>(
+  public hasDependency<T>(
     target: string | Type<T>
   ) {
     const typename = this.getTypeName(target);
     return this.__dependencyCache.has(typename);
   }
 
-  public getDependency<T extends any>(target: Type<T> | string): Type<T> | undefined {
+  public getDependency<T>(target: Type<T> | string): Type<T> | undefined {
     return this.__dependencyCache.get(this.getTypeName(target)) as Type<T>
   }
 
-  public insertDependency<T extends any>(target: Type<T> | string, resolved: Type<T>) {
-    this.addDependency(target, resolved, false);
+  public insertDependency<T>(target: Type<T> | string, resolved: Type<T>, override?: boolean) {
+    this.addDependency(target, resolved, override);
     return (typeof target !== 'string') ? target : resolved;
   }
 
@@ -91,17 +87,32 @@ export class Injector {
     return target as Type<T>
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public create<T>(target: Type<T> | string, typeName: string): T {
+    // this.logger.debug('Resolving dependency =>', typeName);
+
+    const resolved = this.upsertDependency(target);
+    const { injections } = this.resolveTokens(resolved);
+
+    const instance = this.createObject(resolved, injections);
+
+    // this.logger.debug('created', instance);
+
+    return instance;
+  }
+
   public async destroyAll() {
-    const deps = [...this.__instanceCache.values()];
-    await Promise.allSettled(
-      deps.map(async each => await this.disposeObject(each)));
+    const deps = [...this.__instanceCache.values()]
+    const gc = deps.map(each => this.disposeObject(each))
+    await Promise.allSettled(gc)
     this.__dependencyCache.clear()
+    this.__instanceCache.clear()
   }
 
   public listDependencies({ sort = false, log = false } = {}): string[] {
-    let result = [...this.__dependencyCache.keys()];
+    let result = [...this.__dependencyCache.keys()]
     if (sort)
-      result = result.sort();
+      result = result.sort()
     if (log)
       this.logger.info(result)
     return result
@@ -113,6 +124,9 @@ export class Injector {
       return { ...acc, [n]: instance?.constructor?.name }
     }, {});
   }
+
+  public singletons = new Set<string>()
+
   //#endregion
 
   //#region internals
@@ -127,19 +141,19 @@ export class Injector {
     // tokens are required dependencies, while injections are resolved tokens from the Injector
     const tokens: Type<any>[] = reflected?.filter((o: any) => o != null) ?? [];
 
-    Promise.resolve(() => {
-      if (tokens.find(o => o.name === 'Object')) {
-        const error = `Unable to resolve dependencies for => ${resolved.name}, deps => ${tokens.map(o => o.name)}`;
-        const help = `Possible misuse of @Injectable() decorator on class ${resolved.name}`;
-        throw new Error(`${error}\n${help}`);
-      }
-    })
+    if (tokens.find(o => o.name === 'Object')) {
+      const error = `Unable to resolve dependencies for => ${resolved.name}, deps => ${tokens.map(o => o.name)}`;
+      const help = `Possible misuse of @Injectable() decorator on class ${resolved.name}`;
+      throw new Error(`${error}\n${help}`);
+    }
 
-    tokens.forEach((cls: Type<any>) => this.addDependency(cls, cls));
+    tokens.forEach((cls: Type<any>) =>
+      this.addDependency(cls, cls));
 
-    const injections = this.settings?.hotSwapping
-      ? tokens.map(token => createProxiedService<T>(this, token))
-      : tokens.map(token => this.resolve(token));
+    const injections: Type<any>[] =
+      this.settings?.hotSwapping
+        ? tokens.map(token => proxify<T>(this, token))
+        : tokens.map(token => this.resolve(token));
 
     return { resolved, injections };
   }
@@ -169,6 +183,7 @@ export class Injector {
     }
 
     this.__dependencyCache.set(targetName, resolvedType)
+    this.purgeInstanceFromCache(targetName)
   }
 
   private overrideDependency<T extends any>(target: Type<T> | string, resolved: Type<T>) {
@@ -185,6 +200,14 @@ export class Injector {
   private replaceInstanceInCache<T extends any>(target: string | Type<T>) {
     this.purgeInstanceFromCache(target)
     this.resolve(target)
+  }
+
+  public hotReloadDependency = <T extends any>(target: Type<T>) => {
+    const typeName = this.getTypeName(target)
+    target = this.getDependency(typeName)!
+    this.overrideDependency(target, target);
+    this.replaceInstanceInCache(target);
+    this.logger.info(`Hot-Swapped "${target.name}" dependency.`)
   }
 
   private createObject<T extends any>(target: Type<T>, injections: Type<any>[]): T {

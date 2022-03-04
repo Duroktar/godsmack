@@ -1,4 +1,4 @@
-import type { Container } from './framework';
+import type { Container } from './injector';
 
 export interface StaticTestProps {
   describe: typeof describe;
@@ -18,6 +18,8 @@ export type InferContainerTypes<T> = T extends Container<infer C> ? C : never
 export type ValueOf<T> = T[keyof T];
 
 export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+
+export type CtorParams<T> = T extends new(...args: infer U) => any ? U : never;
 
 export type Type<T> = {
   new(...args: any): T;

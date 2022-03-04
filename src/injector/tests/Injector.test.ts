@@ -1,5 +1,5 @@
-import { Singleton } from '../index';
-import { Service, DefaultInjector } from '../injector';
+import { Service, DefaultInjector } from '..';
+import { Singleton } from '../decorators';
 
 describe('Injector Class', () => {
 

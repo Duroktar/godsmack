@@ -5,6 +5,7 @@ module.exports = {
   testEnvironment: 'node',
   collectCoverage: false,
   testPathIgnorePatterns: ['dist/*.*'],
+  setupFiles: ["./jest-setup-file.ts"],
   globals: {
     'ts-jest': {
       compiler: 'ttypescript',

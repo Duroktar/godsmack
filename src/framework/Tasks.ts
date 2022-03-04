@@ -10,7 +10,7 @@ import { SettingsService } from './Settings';
 @Singleton()
 export class TaskService implements ITaskService {
   private logger: LogFactory
-  private settings: SettingsService
+  private settings: SettingsService<any>
   private tasks: Map<string, Type<ICronTrigger>> = new Map()
   private jobs: Map<string, CronJob> = new Map()
 

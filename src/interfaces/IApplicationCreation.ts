@@ -1,6 +1,6 @@
 import type { IFactory } from './IFactory';
 import type { IHttpServer } from './IHttpServer';
-import type { IContainer } from './IContainer';
+import type { IContainer } from '../injector/interface/IContainer';
 import type { CliAppProvider } from '../framework';
 import type { IDatabaseProvider } from './IDatabase';
 import type { IApplication } from './IApplication';

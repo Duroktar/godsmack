@@ -1,4 +1,5 @@
-import { ApplicationBuilder, Container, DatabaseProvider, HttpServerProvider } from '../framework'
+import { ApplicationBuilder, DatabaseProvider, HttpServerProvider } from '../framework'
+import { Container } from '../injector'
 import { HttpServiceSetup, IApplicationContainer, MergeDefaultProviders } from '../interfaces'
 import { InMemoryDatabase } from "../services/MemoryDB"
 import { InferContainerTypes, nameof } from '../types'

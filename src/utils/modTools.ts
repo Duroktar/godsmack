@@ -1,5 +1,5 @@
 import chokidar from 'chokidar'
-import type { IContainer } from '../interfaces'
+import type { IContainer } from '../injector'
 import type { Type } from '../types'
 import { getTsConfigFile } from './getTsConfigFile'
 

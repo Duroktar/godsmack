@@ -11,7 +11,7 @@ export const transformerFactory =
 export function visitSourceFile(sourceFile: ts.SourceFile, context: ts.TransformationContext, typeChecker: ts.TypeChecker) {
     try {
         return visitNodeAndChildrenRec(sourceFile, typeChecker);
-    } catch (err) {
+    } catch (err: any) {
         return throwErrorForSourceFile(err.message, sourceFile.fileName);
     }
 

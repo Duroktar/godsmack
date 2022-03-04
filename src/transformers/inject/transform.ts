@@ -11,6 +11,7 @@ export function parseAndTransform(parsingNode: ts.Node, sourceFile: ts.SourceFil
     return parseClassDeclarationNode(parsingNode, sourceFile, typeChecker)
   }
 
+  // Runtime Generics for `resolve` calls
   if (isContainerResolveMethodCall(parsingNode)) {
     return parseCallExpressionNode(parsingNode)
   }
@@ -54,7 +55,7 @@ function parseClassDeclarationNode(node: ts.ClassDeclaration, sourceFile: ts.Sou
   })
 
   // @ts-ignore
-  ctor.parameters = ts.createNodeArray(nextParams)
+  ctor.parameters = ts.factory.createNodeArray(nextParams)
 
   return node
 }
@@ -80,11 +81,16 @@ function getResolverDecorator(expression: ts.LeftHandSideExpression) {
 }
 
 function parseCallExpressionNode(node: ts.CallExpression) {
+  // This is where we add runtime generics to `resolve` calls
+  // with 0 parameters and a generic type argument.
+
+  // This is all rather simple and doesn't need much explanation.
   const typeRef: ts.TypeReferenceNode = node.typeArguments?.[0] as any;
   const text = typeRef.typeName.getText();
 
-  // @ts-ignore
-  node.arguments = ts.createNodeArray([ts.createStringLiteral(text)])
+  // @ts-ignore -- `node.arguments` is supposed to be "readonly"
+  // but we _need_ to override it so we just silence the error.
+  node.arguments = ts.factory.createNodeArray([ts.factory.createStringLiteral(text)])
   return node
 }
 
@@ -94,10 +100,10 @@ function shouldAddForwardDeclaration(tsType: ts.Type, typeName: string, paramNam
 
 function createForwardDeclaration(sourceFile: ts.SourceFile, typeName: string) {
   // @ts-ignore
-  sourceFile.statements = ts.createNodeArray([ts.createClassDeclaration(
+  sourceFile.statements = ts.factory.createNodeArray([ts.factory.createClassDeclaration(
     undefined,
     undefined,
-    ts.createIdentifier(typeName),
+    ts.factory.createIdentifier(typeName),
     undefined,
     undefined,
     []
@@ -111,14 +117,14 @@ function createParameter(cTorParam: ts.ParameterDeclaration, paramName: string, 
   if (cTorParam.questionToken != null) {
     throw new Error('No optional arguments in injected params.')
   }
-  return ts.createParameter(
+  return ts.factory.createParameterDeclaration(
     cTorParam.decorators,
     cTorParam.modifiers,
     undefined,
-    ts.createIdentifier(paramName),
+    ts.factory.createIdentifier(paramName),
     undefined,
-    ts.createTypeReferenceNode(
-      ts.createIdentifier(typeName),
+    ts.factory.createTypeReferenceNode(
+      ts.factory.createIdentifier(typeName),
       undefined
     ),
     undefined

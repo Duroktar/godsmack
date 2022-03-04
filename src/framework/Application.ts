@@ -45,7 +45,7 @@ import { SettingsService } from './Settings';
  *     .addSingleton(BoogerWhoop, HammerWho),
  * })
  */
-export class Application<AppContainer> implements IApplication<AppContainer> {
+export class Application<AppContainer = any> implements IApplication<AppContainer> {
   private logger: LogFactory
   public events: IApplicationEventEmitter
 
@@ -90,8 +90,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   private disposeAll = async () => {
     await this.container.onExit()
-    await Promise.allSettled(
-      this.__disposables.map(async i => await i.dispose()))
+    await Promise.allSettled(this.__disposables.map(i => i.dispose()))
     this.__disposables = []
   }
 
@@ -111,40 +110,40 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addServer = (server: IHttpServer) => {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./HttpServer')
-      this.container.addSingletonInstance<Type<IHttpServer>>(lib.HttpServerProvider, server)
+      const { HttpServerProvider } = await import('./HttpServer')
+      this.container.addSingletonInstance<Type<IHttpServer>>(HttpServerProvider, server)
     })
     return this
   }
 
   public useClient(client: IClient) {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./JavascriptClient')
-      this.container.addSingletonInstance<Type<IClient>>(lib.JavascriptClient, client)
+      const { JavascriptClient } = await import('./JavascriptClient')
+      this.container.addSingletonInstance<Type<IClient>>(JavascriptClient, client)
     })
     return this
   }
 
   public addDatabase = (database: DatabaseProvider) => {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./Database')
-      this.container.addSingletonInstance(lib.DatabaseProvider, database)
+      const { DatabaseProvider } = await import('./Database')
+      this.container.addSingletonInstance(DatabaseProvider, database)
     })
     return this
   }
 
   public addCliApp = (cliApp: CliAppProvider) => {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./CommandLine')
-      this.container.addSingletonInstance(lib.CliAppProvider, cliApp)
+      const { CliAppProvider } = await import('./CommandLine')
+      this.container.addSingletonInstance(CliAppProvider, cliApp)
     })
     return this
   }
 
   public addTaskService = (service: ITaskService) => {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./Tasks')
-      this.container.addSingletonInstance<Type<ITaskService>>(lib.TaskService, service)
+      const { TaskService } = await import('./Tasks')
+      this.container.addSingletonInstance<Type<ITaskService>>(TaskService, service)
     })
     return this
   }
@@ -169,9 +168,9 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public serverStartListening() {
     return doTry(async () => {
-      const lib = await import('./HttpServer')
+      const { HttpServerProvider } = await import('./HttpServer')
       return await this.container
-        .resolve(lib.HttpServerProvider)
+        .resolve(HttpServerProvider)
         .listen();
     }).unwrap()
   }
@@ -184,23 +183,23 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   /* Convenience API */
 
   public addExpressServer(): ExpressServer {
-    const lib = require("../services/ExpressServer")
-    return new lib.ExpressServer(this)
+    const { ExpressServer } = require("../services/ExpressServer")
+    return new ExpressServer(this)
   }
 
   public addPostgresDatabase(): SequelizePostgresDB {
-    const lib = require('../services/sequelize/PostgresDB')
-    return new lib.SequelizePostgresDB(this);
+    const { SequelizePostgresDB } = require('../services/sequelize/PostgresDB')
+    return new SequelizePostgresDB(this);
   }
 
   public addTypeORMPostgresDB(): TypeORMPostgresDB {
-    const lib = require('../services/typeorm/PostgresDB')
-    return new lib.TypeORMPostgresDB(this);
+    const { TypeORMPostgresDB } = require('../services/typeorm/PostgresDB')
+    return new TypeORMPostgresDB(this);
   }
 
   public addYargsCliApp(): YargsCliApp {
-    const lib = require('../services/YargsCliApp')
-    return new lib.YargsCliApp(this);
+    const { YargsCliApp } = require('../services/YargsCliApp')
+    return new YargsCliApp(this);
   }
 
   public addDefaultFactory<T extends FactoryTypeRecord>(
@@ -215,10 +214,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addJavascriptClient(path?: string) {
     this.events.once(ApplicationEvent.BEFORE_CONFIG, async () => {
-      const lib = await import('./JavascriptClient')
+      const { JavascriptClient } = await import('./JavascriptClient')
       const client: IClient = this.container
-        .addSingleton(lib.JavascriptClient)
-        .resolve(lib.JavascriptClient)
+        .addSingleton(JavascriptClient)
+        .resolve(JavascriptClient)
 
       this.events.once(ApplicationEvent.BEFORE_START, async () => {
         client.applyMiddleware(this, path)
@@ -231,11 +230,11 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   public addTerminalInk() {
     // NOTE: If using the TUI then set it up asap
     this.events.on(ApplicationEvent["@INIT"], async () => {
-      const lib = await import('../services/tui')
+      const { TuiLoggerService, TerminalInk } = await import('../services/tui')
       this.container
-        .addSingleton(LogFactory, lib.TuiLoggerService)
-        .addSingleton(lib.TerminalInk)
-        .resolve(lib.TerminalInk)
+        .addSingleton(LogFactory, TuiLoggerService)
+        .addSingleton(TerminalInk)
+        .resolve(TerminalInk)
         .setApp(this)
         .start()
     })
@@ -244,8 +243,8 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addCronTriggers = (path?: string): this => {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./Tasks');
-      const service = new lib.TaskService(this);
+      const { TaskService } = await import('./Tasks');
+      const service = new TaskService(this);
       service
         .useCronTriggers(path)
         .initializeService()
@@ -257,10 +256,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public useNodeMailer = (): this => {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('../services/Mailer')
+      const { MailerService } = await import('../services/Mailer')
       const service = this.container
-        .addSingleton(lib.MailerService)
-        .resolve(lib.MailerService);
+        .addSingleton(MailerService)
+        .resolve(MailerService);
       await service.initializeService()
     })
     return this
@@ -268,10 +267,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addSwaggerDocs() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./Swagger')
+      const { SwaggerService } = await import('./Swagger')
       const service = this.container
-        .addSingleton(lib.SwaggerService)
-        .resolve(lib.SwaggerService);
+        .addSingleton(SwaggerService)
+        .resolve(SwaggerService);
       await service.initializeService()
     })
     return this
@@ -279,10 +278,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addOpenApiGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./graphql/OpenApiToGraphQlProvider')
+      const { OpenApiToGraphQlProvider } = await import('./graphql/OpenApiToGraphQlProvider')
       const service = this.container
-        .addSingleton(lib.OpenApiToGraphQlProvider)
-        .resolve(lib.OpenApiToGraphQlProvider);
+        .addSingleton(OpenApiToGraphQlProvider)
+        .resolve(OpenApiToGraphQlProvider);
       await service.initializeService()
     })
     return this
@@ -290,10 +289,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
 
   public addTypeGraphQl() {
     this.events.once(ApplicationEvent.BEFORE_START, async () => {
-      const lib = await import('./graphql/TypeGraphQlProvider')
+      const { TypeGraphQlProvider } = await import('./graphql/TypeGraphQlProvider')
       const service = this.container
-        .addSingleton(lib.TypeGraphQlProvider)
-        .resolve(lib.TypeGraphQlProvider);
+        .addSingleton(TypeGraphQlProvider)
+        .resolve(TypeGraphQlProvider);
       await service.initializeService()
     })
     return this
@@ -312,7 +311,7 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
     | ((base: IApplicationSettings) => Config)
   ): this => {
     this.container
-      .resolve(SettingsService)
+      .resolve<SettingsService>()
       .update(config)
     return this
   }
@@ -330,8 +329,8 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   private __runDockerAppSetupIfNecessary = async () => {
 
     if (this.__isDockerizingApp || this.__isDockerizingDB) {
-      const lib = await import('./Docker')
-      const docker = this.container.resolve(lib.DockerService);
+      const { DockerService } = await import('./Docker')
+      const docker = this.container.resolve(DockerService);
 
       const createNetworkBridgeCallback = () => docker
         .createNetworkBridge()
@@ -455,10 +454,10 @@ export class Application<AppContainer> implements IApplication<AppContainer> {
   }
 
   private __destroyApplication = async () => {
-    const lib = await import('./Docker')
+    const { DockerService } = await import('./Docker')
     if (this.__isDockerizingDB) {
       await this.container
-        .resolve(lib.DockerService)
+        .resolve(DockerService)
         .stopDockerDb()
     }
     await this.disposeAll()

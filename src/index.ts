@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 require('dotenv').config()
 
 export * as http from './utils/http'
@@ -14,7 +13,6 @@ export {
   ApplicationBuilder,
   ApplicationConfigurationService,
   ApplicationCreationService,
-  Container,
   DatabaseProvider,
   Disposable,
   FactoryBuilder,
@@ -25,4 +23,4 @@ export {
   StartupProvider,
 } from './framework'
 
-export { Injectable, Singleton } from './injector'
+export { Injectable, Singleton, Container } from './injector'

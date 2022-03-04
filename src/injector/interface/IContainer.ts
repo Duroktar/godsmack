@@ -1,6 +1,6 @@
-import type { EmptyType, Type, InferType } from '../types';
-import type { Injector } from '../injector/Injector';
-import { Container } from '../framework';
+import type { EmptyType, Type, InferType } from '../../types';
+import type { IInjector } from './IInjector';
+import { Container } from '../Container';
 
 /**
  * Interface for an Application DI container.
@@ -21,7 +21,7 @@ export interface IContainer<T = EmptyType> {
    * @returns {Target} A fully instantiated object of the specified type.
    * @memberof IContainer
    */
-  resolve<Target extends T>(target: Type<Target>): Target;
+  resolve<Target extends T>(target?: Type<Target> | string): Target;
   /**
    * Registers a class as a singleton to the DI container
    *
@@ -30,7 +30,7 @@ export interface IContainer<T = EmptyType> {
    * @returns The container instance for chaining.
    * @memberof IContainer
    */
-  addSingleton<S extends any>(ifce: Type<S>, impl?: Type<S>): Container<Exclude<Type<S> | S, EmptyType>>;
+  addSingleton<S>(ifce: Type<S>, impl?: Type<S>): Container<Exclude<Type<S> | S, EmptyType>>;
   /**
    * Registers an instance of a class as a singleton to the DI container
    *
@@ -46,5 +46,7 @@ export interface IContainer<T = EmptyType> {
    * @returns {Injector}
    * @memberof IContainer
    */
-  getInjector(): Injector
+  getInjector(): IInjector
+
+  addInterface<Base, Ret extends Type<Base> = any>(): Container<Ret | InferType<Ret> | T>
 }

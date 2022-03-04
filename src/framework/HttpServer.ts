@@ -23,7 +23,7 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
   public server?: Server;
   public events: IHttpServerEventEmitter
 
-  constructor(public app: Application<any>) {
+  constructor(public app: Application) {
     this.logger = app.container
       .resolve(LogFactory)
       .For(this);

@@ -1,2 +1,6 @@
-export * from './Injector'
 export * from './decorators'
+export * from './interface/IContainer'
+export * from './interface/IInjector'
+export * from './Container'
+export * from './Injector'
+export * from './types'
