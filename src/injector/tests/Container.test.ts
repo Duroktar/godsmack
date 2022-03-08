@@ -1,140 +1,56 @@
 import { staticTestProps } from '../../tests/staticTestProps';
-import { nameof } from "../../types";
 import { Container } from '../Container';
-import { Singleton } from '../decorators';
 
 describe('Container Class', () => {
   const expect = staticTestProps.expect
 
-  it('works godammit', () => {
-    interface CatType {
-      meow(): string;
-    };
+  it('runtime type dependency resolution', () => {
 
-    interface DogType {
-      bark(): string;
-    };
+    const noise1 = 'noise1';
+    const noise2 = 'noise2';
 
-    interface WolfType {
-      howl(): string;
-    };
-
-    class Cat implements CatType {
-      meow(): string {
-        return 'meow'
-      }
-    }
-
-    class FeralCat implements CatType {
-      meow(): string {
-        return 'FUCKING MEOW'
-      }
-    }
-
-    class Dog implements DogType {
-      bark(): string {
-        return 'ruff'
-      }
-    }
-
-    class FeralDog implements DogType {
-      bark(): string {
-        return 'FUCKING RUFF'
-      }
-    }
-
-    class Wolf implements WolfType {
-      howl(): string {
-        return 'raorgh'
-      }
-    }
-
-    class FeralWolf implements WolfType {
-      howl(): string {
-        return 'FUCKING RAORGH'
-      }
-    }
-
-    interface IMutantAnimal {
-      howl(): string
-      bark(): string
-      meow(): string
-    }
-
-    @Singleton()
-    class MutantAnimal implements IMutantAnimal {
-      constructor(
-        private wolf: WolfType,
-        private dog: DogType,
-        private cat: CatType,
-      ) { }
-
-      public howl = (): string => {
-        return this.wolf.howl()
-      }
-      public bark = (): string => {
-        return this.dog.bark()
-      }
-      public meow = (): string => {
-        return this.cat.meow()
-      }
-    }
-
-    const container = new Container()
-      .addSingleton(nameof<Cat>(), FeralCat)
-      .addSingleton(nameof<Dog>(), FeralDog)
-      .addSingleton(nameof<Wolf>(), FeralWolf)
-      .addSingleton(nameof<CatType>(), Cat)
-      .addSingleton(nameof<DogType>(), Dog)
-      .addSingleton(nameof<WolfType>(), Wolf)
-      .addSingleton(nameof<IMutantAnimal>(), MutantAnimal)
-
-    expect(container.resolve(Cat).meow()).toEqual('FUCKING MEOW')
-    expect(container.resolve(Dog).bark()).toEqual('FUCKING RUFF')
-    expect(container.resolve(Wolf).howl()).toEqual('FUCKING RAORGH')
-
-    const mutant = container.resolve<IMutantAnimal>()
-
-    expect(mutant.meow()).toEqual('meow')
-    expect(mutant.bark()).toEqual('ruff')
-    expect(mutant.howl()).toEqual('raorgh')
-  });
-
-  it('passes internal tests', () => {
-
-    const noise1 = 'brappp';
-    const noise2 = 'pfft';
-
-    interface BaseClass {
+    interface Interface1 {
       noise(): string
     }
-    class Implementation1 implements BaseClass {
+    interface Interface2 {
+      noise(): string
+    }
+
+    class Implementation1 implements Interface1 {
       noise() { return noise1 }
     }
-    class Implementation2 implements BaseClass {
+    class Implementation2 implements Interface2 {
       noise() { return noise2 }
     }
 
     const container = new Container()
-      .addSingleton(Implementation1, Implementation2)
+      .addService<Interface2>(Implementation2)
+      .addSingleton<Interface1>(Implementation1)
 
-    // Singleton
-    const instance = container.resolve(Implementation1)
+    // Generics
+    const ifce1 = container.resolve<Interface1>()
 
-    expect(instance).toEqual(container.resolve(Implementation1))
-    expect(instance.noise()).toEqual(noise2)
+    // isSingleton
+    expect(container.resolve<Interface1>())
+      .toBe(ifce1)
 
-    expect(container.resolve(Implementation1)).toEqual(instance)
-    expect(container.resolve(Implementation1).noise()).toEqual(noise2)
-    expect(container.resolve(Implementation1)).toEqual(container.resolve(Implementation1))
+    // usage
+    expect(ifce1.noise())
+      .toEqual(noise1)
 
-    // Runtime Generics
-    expect(container.resolve<Implementation1>()).toEqual(instance)
-    expect(container.resolve<Implementation1>()).toEqual(container.resolve<Implementation1>())
+    // Transient (Service)
+    const ifce2 = container.resolve<Interface2>()
 
-    class NoNo { }
+    // isTransient
+    expect(container.resolve<Interface2>())
+      .not.toBe(ifce2)
 
-    // @ts-expect-error
-    container.resolve(NoNo)
+    // usage
+    expect(ifce2.noise())
+      .toEqual(noise2)
+
+    // compare usage
+    expect(ifce2.noise())
+      .not.toEqual(ifce1.noise())
   })
 });

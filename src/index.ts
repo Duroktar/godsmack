@@ -23,4 +23,4 @@ export {
   StartupProvider,
 } from './framework'
 
-export { Injectable, Singleton, Container } from './injector'
+export { Singleton, Container } from './injector'

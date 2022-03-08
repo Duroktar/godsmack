@@ -2,7 +2,7 @@ import { ApplicationBuilder, DatabaseProvider, HttpServerProvider } from '../fra
 import { Container } from '../injector'
 import { HttpServiceSetup, IApplicationContainer, MergeDefaultProviders } from '../interfaces'
 import { InMemoryDatabase } from "../services/MemoryDB"
-import { InferContainerTypes, nameof } from '../types'
+import { InferContainerTypes } from '../types'
 
 describe('The Application should work', () => {
   interface IBaseClass {
@@ -84,7 +84,7 @@ describe('The Application should work', () => {
       .registerServices(...services(app)),
     ConfigureServices: container => container
       .addSingleton(TestDoDo, TestDoDo)
-      .addSingleton(nameof<IBaseClass>(), BoogerWhoop)
+      .addSingleton<IBaseClass>(BoogerWhoop)
       .addSingleton(BoogerWhoop, HammerWho)
   })
 
@@ -98,11 +98,6 @@ describe('The Application should work', () => {
     app.container.resolve(TestDoDo).setDodo('poopoo dodo')
     app.container.resolve(BoogerWhoop).setDodo('boo dodo')
 
-    // interfacesT
-    const base = app.container.resolve(nameof<IBaseClass>()).getDodo()
-
-    expect(base.dodo).toEqual('BoogerWhoop')
-
     // @ts-expect-error
     app.container.resolve(NoNo)
 
@@ -115,7 +110,17 @@ describe('The Application should work', () => {
     db.insert('userHats', { id: 1, userId: 1, hatId: 1 })
   })
 
-  it('seems to work', () => {
-    app.main(process.argv).catch(console.error)
+  it('seems to work', (done) => {
+    app.main(process.argv).then(() => {
+      const dep = app.container
+        .resolve<IBaseClass>()
+
+      const base = dep.getDodo()
+
+      expect(base.dodo)
+        .toEqual('BoogerWhoop')
+
+      done()
+    })
   })
 })

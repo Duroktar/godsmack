@@ -1,4 +1,4 @@
-import { Container } from "./Container";
-import { EmptyType } from "../types";
+import type { Container } from "./Container";
+import type { EmptyType } from "../types";
 
-export type InferContainerType<T> = T extends Container<infer C> ? Exclude<C, EmptyType> : never;
+export type InferContainerT<T> = T extends Container<infer C> ? Exclude<C, EmptyType> : never;

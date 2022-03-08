@@ -20,19 +20,22 @@ app.configure(configureFunction)
 describe('Application Class', () => {
   const expect = staticTestProps.expect
 
-  it('works godammit', () => {
-    expect(!!app.container.resolve(ExpressServer)).toEqual(true)
+  it('express server resolves', () => {
+    expect(app.container.resolve(ExpressServer))
+      .toBeDefined()
   })
 
-  it('creates godammit', () => {
+  it('creation system works', () => {
     const service = app.container.resolve(ApplicationCreationService)
-    expect(!!service).toEqual(true)
-    expect(service.ConfigureServices).toEqual(ConfigureServices)
+
+    expect(service).toBeDefined()
+    expect(service.ConfigureServices).toBe(ConfigureServices)
   })
 
-  it('configures godammit', () => {
+  it('configuration system works', () => {
     const service = app.container.resolve(ApplicationConfigurationService)
-    expect(!!service).toEqual(true)
-    expect(service.configure).toEqual(configureFunction)
+
+    expect(service).toBeDefined()
+    expect(service.configure).toBe(configureFunction)
   })
 })

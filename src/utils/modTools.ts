@@ -35,7 +35,7 @@ export function enableHotSwapping(container: IContainer<any>) {
         if (target.constructor.name === 'Application') {
           continue
         }
-        injector.hotReloadDependency(target)
+        injector.reloadDependency(target)
       }
     }
   })

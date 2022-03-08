@@ -22,7 +22,7 @@ describe('Types', () => {
     const r2 = resolve<TestClass2>();
 
     // @ts-expect-error
-    const r3 = resolve<TestClass3>();
+    const err1 = resolve<TestClass3>();
 
     typeAssert<typeof r1, TestClass1>(true);
     typeAssert<typeof r2, TestClass2>(true);

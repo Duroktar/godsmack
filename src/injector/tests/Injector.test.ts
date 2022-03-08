@@ -1,5 +1,5 @@
-import { Service, DefaultInjector } from '..';
-import { Singleton } from '../decorators';
+import { Injector } from "../Injector"
+import { Service, Singleton } from '../decorators';
 
 describe('Injector Class', () => {
 
@@ -15,53 +15,104 @@ describe('Injector Class', () => {
 
   @Service()
   class Test3 {
-    constructor(public test2: Test2, public test1: Test1) { }
+    constructor() { }
   }
 
-  @Singleton()
+  @Service()
   class Test4 {
-    constructor(public test3: Test3, public test2: Test2, public test1: Test1) { }
+    constructor(public test3: Test3) { }
   }
 
-  @Service()
-  class Test5 {
-    constructor(public test4: Test4, public test3: Test3, public test2: Test2, public test1: Test1) { }
-  }
+  describe('using Singleton services', () => {
 
-  @Service()
-  class Test6 {
-    constructor(public test5: Test5, public test4: Test4, public test3: Test3, public test2: Test2, public test1: Test1) { }
-  }
+    it('it resolves', () => {
+      const injector = new Injector()
 
-  it('it works with singletons.', () => {
-    const t1 = DefaultInjector.resolve<Test1>(Test1)
-    const t2 = DefaultInjector.resolve<Test2>(Test2)
-    expect(t1).toEqual(t2.test1)
-  });
+      const t1 = injector.resolve<Test1>(Test1)
+      expect(t1).toBeInstanceOf(Test1)
+    });
 
-  it('it works with instances.', () => {
-    const t5_1 = DefaultInjector.resolve<Test5>(Test5)
-    const t5_2 = DefaultInjector.resolve<Test5>(Test5)
-    expect(t5_1).toEqual(t5_2)
-  });
+    it('it resolves properties', () => {
+      const injector = new Injector()
 
-  it('it works with both together.', () => {
-    const t1 = () => DefaultInjector.resolve<Test1>(Test1)
-    const t2 = DefaultInjector.resolve<Test2>(Test2)
-    const t3 = () => DefaultInjector.resolve<Test3>(Test3)
-    const t4 = DefaultInjector.resolve<Test4>(Test4)
-    const t5 = () => DefaultInjector.resolve<Test5>(Test5)
-    const t6 = DefaultInjector.resolve<Test6>(Test6)
+      const t1 = injector.resolve<Test1>(Test1)
+      const t2 = injector.resolve<Test2>(Test2)
+      expect(t2.test1).toBeInstanceOf(Test1)
+      expect(t2.test1).toBe(t1)
+    });
 
-    expect(t1()).toEqual(t2.test1)
-    expect(t1()).toEqual(t3().test1)
-    expect(t1()).toEqual(t4.test1)
-    expect(t1()).toEqual(t5().test1)
-    expect(t1()).toEqual(t6.test1)
+    it('it creates', () => {
+      const injector = new Injector()
 
-    // expect(t3()).not.toEqual(t4.test3)
-    // expect(t3()).not.toEqual(t5().test3)
-    // expect(t3()).not.toEqual(t6.test3)
-    // expect(t5()).not.toEqual(t6.test5)
-  });
+      const t1 = injector.create<Test1>(Test1)
+      expect(t1).toBeInstanceOf(Test1)
+    });
+
+    it('it reloads', () => {
+      const injector = new Injector()
+
+      const t1 = injector.resolve<Test1>(Test1)
+      const t2 = injector.resolve<Test1>(Test1)
+      expect(t1).toBe(t2)
+
+      injector.reloadDependency(Test1)
+
+      expect(t1).toBe(t2)
+
+      const t3 = injector.resolve<Test1>(Test1)
+      const t4 = injector.resolve<Test1>(Test1)
+      expect(t3).toBe(t4)
+      expect(t4).toBe(t4)
+
+      expect(t1).not.toBe(t3)
+      expect(t1).not.toBe(t4)
+      expect(t2).not.toBe(t3)
+      expect(t2).not.toBe(t4)
+    });
+  })
+
+  describe('using Transient services', () => {
+
+    it('it resolves', () => {
+      const injector = new Injector()
+
+      const t3 = injector.resolve<Test3>(Test3)
+      expect(t3).toBeInstanceOf(Test3)
+    });
+
+    it('it resolves properties', () => {
+      const injector = new Injector()
+
+      const t3 = injector.resolve<Test3>(Test3)
+      const t4 = injector.resolve<Test4>(Test4)
+      expect(t4.test3).toBeInstanceOf(Test3)
+      expect(t4.test3).not.toBe(t3)
+    });
+
+    it('it creates', () => {
+      const injector = new Injector()
+
+      const t3 = injector.create<Test3>(Test3)
+      expect(t3).toBeInstanceOf(Test3)
+    });
+
+    it('it reloads', () => {
+      const injector = new Injector()
+
+      const t1 = injector.resolve<Test3>(Test3)
+      const t2 = injector.resolve<Test3>(Test3)
+      expect(t1).not.toBe(t2)
+
+      injector.reloadDependency(Test3)
+
+      const t3 = injector.resolve<Test3>(Test3)
+      const t4 = injector.resolve<Test3>(Test3)
+      expect(t3).not.toBe(t4)
+
+      expect(t1).not.toBe(t3)
+      expect(t2).not.toBe(t3)
+      expect(t1).not.toBe(t4)
+      expect(t2).not.toBe(t4)
+    });
+  })
 })

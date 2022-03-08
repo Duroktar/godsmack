@@ -1,8 +1,9 @@
-import { DefaultInjector } from '../Injector';
 import type { Type } from '../../types';
+import { reflectTargetType } from '../constants';
 
-type GenericClassDecorator<T> = (target: T) => void;
-
-export const InjectableDecoratorFactory = ({ singleton = false, Injector = DefaultInjector, registerDependencies = true } = {}): GenericClassDecorator<Type<object>> => {
-  return (target: Type<object>) => { };
+export const InjectableDecoratorFactory = ({ singleton = false } = {}) => {
+  return (target: Type<object>) => {
+    const targetType = singleton ? 'singleton' : 'transient';
+    Reflect.defineMetadata(reflectTargetType, targetType, target);
+  };
 };

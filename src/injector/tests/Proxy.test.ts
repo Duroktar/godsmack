@@ -1,70 +1,74 @@
 import { staticTestProps } from '../../tests/staticTestProps';
-import { nameof } from "../../types";
 import { Container } from '../Container';
 import { Singleton } from '../decorators';
+import { compare } from '../proxify';
 
 describe('Proxy', () => {
   const expect = staticTestProps.expect
 
-  const noise1 = 'brappp';
-  const noise2 = 'pfft';
-  const noise3 = 'gaaoorg';
+  it('passes runtime generic tests', () => {
+    const noise1 = 'noise1';
+    const noise2 = 'noise2';
+    const noise3 = 'noise3';
+    const noise4 = 'noise4';
 
-  interface BaseClass {
-    noise(): string
-  }
-  class Implementation1 implements BaseClass {
-    noise = () => { return noise1 }
-  }
-  class Implementation2 implements BaseClass {
-    noise = () => { return noise2 }
-  }
+    interface BaseProxyClass {
+      noise(): string
+    }
+    class ProxyImplementation1 implements BaseProxyClass {
+      noise = () => { return noise1 }
+    }
+    class ProxyImplementation2 implements BaseProxyClass {
+      noise = () => { return noise2 }
+    }
 
-  interface ExtendedClass extends BaseClass {
-    multiNoise(): string
-  }
-  @Singleton()
-  class TestParentClass1 implements ExtendedClass {
-    constructor(public impl1: BaseClass) {}
+    interface ExtendedProxyClass extends BaseProxyClass {
+      extendedNoise(): string
+    }
 
-    multiNoise = () => { return this.impl1.noise() + ' ' + this.noise() }
-    noise = () => { return noise3 }
-  }
+    @Singleton()
+    class TestExtendedProxyClass1 implements ExtendedProxyClass {
+      constructor(public dep: BaseProxyClass) {}
 
-  it('passes internal tests', () => {
+      extendedNoise = () => { return this.dep.noise() + ' ' + this.noise() }
+      noise = () => { return noise3 }
+    }
 
-    // TODO: wrt the todo just below this one, make sure the generic
-    // name is added to the container as this currently does not work
-    // const container = new Container({ hotSwapping: true })
-    //   .addSingleton<BaseClass>(Implementation1)
+    interface MasterProxyClass {
+      masterNoise(): string
+    }
+    @Singleton()
+    class TestMasterProxyClass1 implements MasterProxyClass {
+      constructor(public dep: ExtendedProxyClass) {}
 
-    // TODO: Implement this in the inject transformer (it needs "BaseClass"s name)
-    // const instance = container.resolve<BaseClass>()
-    // const instance = container.resolve(nameof<BaseClass>())
+      masterNoise = () => { return noise4 + ' ' + this.dep.extendedNoise() }
+    }
 
     const container = new Container({ hotSwapping: true })
-      .addSingleton(nameof<BaseClass>(), Implementation1)
-      .addSingleton(nameof<ExtendedClass>(), TestParentClass1)
+      .addSingleton<BaseProxyClass>(ProxyImplementation1)
+      .addSingleton<ExtendedProxyClass>(TestExtendedProxyClass1)
+      .addSingleton<MasterProxyClass>(TestMasterProxyClass1)
 
-    const instance = container.resolve(nameof<BaseClass>())
+    const base = container.resolve<BaseProxyClass>()
+    const extended = container.resolve<ExtendedProxyClass>()
+    const master = container.resolve<MasterProxyClass>()
 
-    expect(instance.toString()).toEqual(container.resolve(Implementation1).toString())
-    expect(container.resolve(Implementation1).toString()).toEqual(instance.toString())
-    expect(instance.noise()).toEqual(noise1)
+    expect(compare(base, container.resolve<BaseProxyClass>())).toBe(true)
 
-    const extended = container.resolve(nameof<ExtendedClass>())
-
-    expect(extended.noise()).toEqual(noise3)
-    expect(extended.multiNoise()).toEqual(noise1 + ' ' + noise3)
-
-    container.replace(nameof<BaseClass>(), Implementation2)
-
-    expect(instance.toString()).toEqual(container.resolve(Implementation2).toString())
-    expect(container.resolve(Implementation2).toString()).toEqual(instance.toString())
-
-    expect(instance.noise()).toEqual(noise2)
+    expect(base.noise()).toEqual(noise1)
 
     expect(extended.noise()).toEqual(noise3)
-    expect(extended.multiNoise()).toEqual(noise2 + ' ' + noise3)
+    expect(extended.extendedNoise()).toEqual(noise1 + ' ' + noise3)
+    expect(master.masterNoise()).toEqual(noise4 + ' ' + noise1 + ' ' + noise3)
+
+    container.replace<BaseProxyClass>(ProxyImplementation2)
+
+    expect(compare(base, container.resolve<BaseProxyClass>())).toBe(true)
+
+    expect(base.noise()).toEqual(noise2)
+
+    expect(extended.noise()).toEqual(noise3)
+    expect(extended.extendedNoise()).toEqual(noise2 + ' ' + noise3)
+    expect(master.masterNoise()).toEqual(noise4 + ' ' + noise2 + ' ' + noise3)
   })
 });

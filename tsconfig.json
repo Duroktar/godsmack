@@ -1,7 +1,6 @@
 {
   "include": [
     "src",
-    "transformers",
   ],
   "exclude": [
     "dist",
@@ -31,7 +30,7 @@
     "outDir": "dist", /* Redirect output structure to the directory. */
     "rootDir": "src", /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     // "composite": true,                     /* Enable project compilation */
-    "incremental": true,
+    // "incremental": true,
     "skipDefaultLibCheck": true,
     // "tsBuildInfoFile": "./dist/tsBuild.info", /* Specify file to store incremental compilation information */
     // "removeComments": true,                /* Do not emit comments to output. */
