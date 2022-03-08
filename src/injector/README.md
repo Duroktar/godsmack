@@ -3,6 +3,10 @@
 ## Usage
 
 ``` ts
+
+// -- Definition
+
+
 interface CatType {
   meow(): string;
 };
@@ -14,6 +18,7 @@ interface DogType {
 interface WolfType {
   howl(): string;
 };
+
 
 class Cat implements CatType {
   meow(): string {
@@ -33,6 +38,7 @@ class Dog implements DogType {
   }
 }
 
+
 class FeralDog implements DogType {
   bark(): string {
     return 'FUCKING RUFF'
@@ -50,6 +56,7 @@ class FeralWolf implements WolfType {
     return 'FUCKING RAORGH'
   }
 }
+
 
 interface IMutantAnimal {
   howl(): string
@@ -76,19 +83,32 @@ class MutantAnimal implements IMutantAnimal {
   }
 }
 
-const container = new Container()
-  // Interfaces can be used with the `nameof` helper func
-  .addSingleton(nameof<CatType>(), Cat)
-  .addSingleton(nameof<DogType>(), Dog)
-  .addSingleton(nameof<WolfType>(), Wolf)
 
-  // Classes exist at runtime so `nameof` is not necessary
+// -- Registration
+const container = new Container()
+  // Classes exist at runtime so can be used as arguments
   .addSingleton(Cat, FeralCat)
   .addSingleton(Dog, FeralDog)
   .addSingleton(Wolf, FeralWolf)
 
-  .addSingleton(nameof<IMutantAnimal>(), MutantAnimal)
+  // Interfaces _must_ be used as a generic type argument
+  .addSingleton<CatType>(Cat)
+  .addSingleton<DogType>(Dog)
+  .addSingleton<WolfType>(Wolf)
 
+  // Dependencies can be transient (ie: not singletons)
+  .addService<IMutantAnimal>(MutantAnimal)
+
+
+// --- Resolution
+const mutant = container.resolve<IMutantAnimal>()
+
+expect(mutant.meow()).toEqual('meow')
+expect(mutant.bark()).toEqual('ruff')
+expect(mutant.howl()).toEqual('raorgh')
+
+
+// -- more examples
 expect(container.resolve<CatType>().meow()).toEqual('meow')
 expect(container.resolve<DogType>().bark()).toEqual('ruff')
 expect(container.resolve<WolfType>().howl()).toEqual('raorgh')
@@ -97,47 +117,4 @@ expect(container.resolve<Cat>().meow()).toEqual('FUCKING MEOW')
 expect(container.resolve<Dog>().bark()).toEqual('FUCKING RUFF')
 expect(container.resolve<Wolf>().howl()).toEqual('FUCKING RAORGH')
 
-const mutant = container.resolve<IMutantAnimal>()
-
-expect(mutant.meow()).toEqual('meow')
-expect(mutant.bark()).toEqual('ruff')
-expect(mutant.howl()).toEqual('raorgh')
-```
-
-
-## TODO
-
-- Finish this readme
-- Finish implementing runtime generics, eg:
-
-``` ts
-/**
- * When using an Interface
-**/
-interface BaseInterface { ... }
-
-// BROKEN !!!
-container.resolve<BaseInterface>()
-
-// works
-container.resolve(nameof<BaseInterface>())
-
-const container = new Container()
-  .addSingleton<BaseInterface>(Impl) // BROKEN !!!
-  .addSingleton(BaseInterface, Impl) // works
-
-/**
- * When using a Class
-**/
-class BaseClass { ... }
-
-// works
-container.resolve<BaseClass>()
-
-// works
-container.resolve(nameof<BaseClass>())
-
-const container = new Container()
-  .addSingleton<BaseInterface>(Impl) // BROKEN !!!
-  .addSingleton(BaseInterface, Impl) // works
 ```
