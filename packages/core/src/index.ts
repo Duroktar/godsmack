@@ -34,4 +34,4 @@ export {
   Injectable,
 
   InjectableDecoratorFactory,
-} from '@godsmack/inject'
+} from './injector'
