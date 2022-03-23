@@ -33,21 +33,7 @@ export class VanillaJsView {
     this.root = document.querySelector<HTMLElement>(':root')!
   }
   getCellContent(model: IGameModel, cell: IGameCell): string {
-    const isFlagged = (cell: IGameCell) => {
-      return cell.flagged && (!cell.visible && model.state !== GameState.WON);
-    };
-    const isMined = (cell: IGameCell) => {
-      return cell.isMine && (cell.visible || model.state === GameState.WON);
-    };
-    const isNumber = (cell: IGameCell) => {
-      return cell.mines > 0 && (cell.visible || model.state === GameState.WON);
-    };
-    return (
-      isFlagged(cell) ? this.config.flagCharacter :
-      isMined(cell)   ? this.config.mineCharacter :
-      isNumber(cell)  ? String(cell.mines) :
-      /* otherwise */ ''
-    );
+    return cell.value === '.' ? '' : cell.value;
   }
   renderCell(model: IGameModel, cell: IGameCell): string {
     const el = document.createElement('div');
@@ -56,10 +42,10 @@ export class VanillaJsView {
     el.innerText = this.getCellContent(model, cell)
     el.classList.add('centered-content');
     el.classList.add('cell');
-    el.classList.toggle('found',   cell.isMine && model.state === GameState.WON)
-    el.classList.toggle('tripped', cell.isMine && cell.visible);
-    el.classList.toggle('visible', cell.visible);
-    el.classList.toggle('flagged', cell.flagged);
+    // el.classList.toggle('found',   cell.isMine && model.state === GameState.WON)
+    // el.classList.toggle('tripped', cell.isMine && cell.value);
+    el.classList.toggle('hint',     cell.isHint);
+    el.classList.toggle('selected', model.selected === cell.index);
 
     return el.outerHTML;
   }
@@ -74,6 +60,7 @@ export class VanillaJsView {
     return (
         `<h3>Game State: ${GameState[model.state]}</h3>`
       // + `<h3>Game Seed: ${state.seed}</h3>`
+      + `<h3>Selected Cell: ${model.selected}</h3>`
       + `<h3>Game Difficulty: ${GameDifficulty[model.difficulty]}</h3>`
       + `<div name="time"></div>`
     );
@@ -107,15 +94,6 @@ export class VanillaJsView {
         alert(`You Lost! Try again..`);
     });
   }
-  updateColumnSize(model: IGameModel) {
-    const [cols, _] = this.logic
-      .getBoardSize(model.difficulty);
-
-    this.setColumnSize(String(cols));
-  }
-  setColumnSize(cols: string) {
-    this.root.style.setProperty('--number-of-columns', cols);
-  }
   setCellSize({cellSize: [x, y]}: GameSettings) {
     this.root.style.setProperty('--cell-width',  x + 'px');
     this.root.style.setProperty('--cell-height', y + 'px');
@@ -128,10 +106,10 @@ export class VanillaJsView {
     event.preventDefault();
 
     const form = new FormData(this.form);
-    const difficulty = form.get('difficulty');
+    const difficulty = form.get('difficulty')!;
 
     const gameboard = this.gameManager
-      .create(Number(difficulty));
+      .create(<any>difficulty);
 
     this.form.addEventListener('submit', () => {
       if (gameboard.state < GameState.WON)
@@ -146,11 +124,8 @@ export class VanillaJsView {
         this.setCellSize(this.config)
         this.setCellCharacters(this.config)
         break
-      case 'begin':
-        this.updateColumnSize(event.payload);
-        this.renderBoard(event.payload);
-        break;
       case 'update':
+      case 'begin':
         this.renderBoard(event.payload);
         break;
       case 'end':
@@ -181,10 +156,10 @@ export class VanillaJsView {
   }
   initializeControls() {
     this.diff.replaceChildren(
-      ...[0, 1, 2, 3].map(value => {
+      ...(Object.keys(GameDifficulty)).map(value => {
         const el = document.createElement('option')
         el.setAttribute('value', String(value))
-        el.textContent = GameDifficulty[value]
+        el.textContent = (<any>value)
         if (value === this.config.defaultDifficulty)
           el.selected = true
         return el
