@@ -1,8 +1,8 @@
 import { Injector } from './Injector';
-import type { EmptyType, Type, InferType } from './types';
-import type { IContainer } from './interface/IContainer';
-import type { IInjector } from './interface/IInjector';
-import { proxify } from './proxify';
+import type { EmptyType, Type, InferType } from '../types';
+import type { IContainer } from '../interface/IContainer';
+import type { IInjector } from '../interface/IInjector';
+import { proxify } from '../proxify';
 
 type ContainerSettings = {
   hotSwapping?: boolean;
@@ -22,8 +22,8 @@ export class Container<T = EmptyType> implements IContainer<T> {
       throw new ContainerDependencyResolutionError(target)
     }
     const resolved = this.settings.hotSwapping
-      ? proxify(this.injector, target)
-      : this.injector.resolve(target);
+      ? proxify<Target>(this.injector, target)
+      : this.injector.resolve<Target>(target);
 
     return resolved as Target
   }
@@ -57,7 +57,7 @@ export class Container<T = EmptyType> implements IContainer<T> {
     instance: InferType<I>,
   ): Container<Exclude<InferType<I> | T, EmptyType>> {
     this.injector.registerInstance(type, instance)
-    return this as any;
+    return this;
   }
 
   public addSingleton<Base, Impl extends Base = Base, Ret extends Base = Base>(type: Type<Ret>, impl?: Impl, force?: boolean): Container<Ret | InferType<Ret> | T>;
@@ -78,7 +78,7 @@ export class Container<T = EmptyType> implements IContainer<T> {
   ): Container<Exclude<I | T, EmptyType>> {
     this.injector.registerType(type, type, force)
     this.injector.registerInstance(type, instance)
-    return this as any;
+    return this;
   }
 
   public async onExit() {

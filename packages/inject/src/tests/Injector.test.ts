@@ -1,4 +1,4 @@
-import { Injector } from "../Injector"
+import { Injector } from "../library/Injector"
 import { Service, Singleton } from '../decorators';
 
 describe('Injector Class', () => {

@@ -22,10 +22,7 @@ export class FactoryBuilder<Types extends FactoryTypeRecord> {
     injector.insertDependency(ObjectFactory, this.factory);
 
     const C = injector
-      .getDependency(ObjectFactory);
-
-    if (!C)
-      throw new Error('Nothing to build');
+      .getDependency(ObjectFactory)!;
 
     return new C(this.app, this.types) as any;
   }

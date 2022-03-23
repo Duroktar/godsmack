@@ -20,9 +20,9 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/dist/test.js",
+      "program": "${workspaceFolder}/packages/core/dist/test.js",
       "outFiles": [
-        "${workspaceFolder}/**/*.js"
+        "${workspaceFolder}/packages/core/**/*.js"
       ]
     },
     {
@@ -32,9 +32,9 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/dist/lisp/__test__/container.js",
+      "program": "${workspaceFolder}/packages/core/dist/lisp/__test__/container.js",
       "outFiles": [
-        "${workspaceFolder}/**/*.js"
+        "${workspaceFolder}/packages/core/**/*.js"
       ]
     },
     {
@@ -44,7 +44,7 @@
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "disableOptimisticBPs": true,
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/packages/core/",
       "runtimeExecutable": "yarn",
       "args": [
         "test",

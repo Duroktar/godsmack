@@ -441,15 +441,9 @@ export class Application<AppContainer = any> implements IApplication<AppContaine
     await emitAwaitableEvent(ApplicationEvent.AFTER_CONFIG)
 
     // STEP 6 ---------------------------------------------
-    // Setup/Fire the BEFORE_START event
-    await emitAwaitableEvent(ApplicationEvent.BEFORE_START)
-
-    // STEP 7 ---------------------------------------------
     // Profit..
+    await emitAwaitableEvent(ApplicationEvent.BEFORE_START)
     await emitAwaitableEvent(ApplicationEvent.ON_START)
-
-    // STEP 8 ---------------------------------------------
-    // Cleanup/Fire the AFTER_START event
     await emitAwaitableEvent(ApplicationEvent.AFTER_START)
   }
 

@@ -13,6 +13,6 @@ export interface IInjector {
   reloadDependency<T>(target: Type<T> | string): void
   destroyAll(): Promise<void>
   listDependencies(opts?: { sort?: boolean, log?: boolean }): string[]
-  dependenciesAsJSON(): Record<string, any>
+  dependenciesAsJSON(): Record<string, Type<any>>
   getTypeName<T extends Type<any>>(t: T | string): string
 }

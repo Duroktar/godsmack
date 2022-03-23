@@ -1,7 +1,7 @@
-import type { Type } from './types';
-import { proxify } from './proxify';
-import type { IInjector } from './interface/IInjector';
-import { reflectTargetType, staticDepsProp } from './constants';
+import type { Type } from '../types';
+import { proxify } from '../proxify';
+import type { IInjector } from '../interface/IInjector';
+import { reflectTargetType, staticDepsProp } from '../constants';
 
 type InjectorSettings = {
   hotSwapping?: boolean;
@@ -11,7 +11,11 @@ export class Injector implements IInjector {
   constructor(
     private settings: InjectorSettings = { hotSwapping: false },
   ) {
-    this.__logger = console
+    this.__logger = new Proxy(console, {
+      get(target, prop, receiver) {
+        return (...args: any[]): any => void 0
+      }
+    })
   }
 
   //#region api
@@ -101,19 +105,12 @@ export class Injector implements IInjector {
 
     const typeName = this.getTypeName(target);
 
-    if (this.__singletons.has(typeName) ||
-        this.__reflectTargetType(resolved) === 'singleton'
-    ) {
+    if (this.__isSingletonInstance(typeName, resolved))
       this.__instanceCache.set(typeName, instance);
-    }
 
     // this.logger.debug('created', instance);
 
     return instance;
-  }
-
-  private __reflectTargetType<T>(resolved: Type<T>) {
-    return Reflect.getMetadata(reflectTargetType, resolved);
   }
 
   public async destroyAll() {
@@ -236,6 +233,15 @@ export class Injector implements IInjector {
   private __replaceInstanceInCache<T>(target: Type<T> | string) {
     this.__purgeInstanceFromCache(target)
     return this.resolve<T>(target)
+  }
+
+  private __isSingletonInstance<T>(typeName: string, resolved: Type<T>) {
+    return this.__singletons.has(typeName) ||
+      this.__reflectTargetType(resolved) === 'singleton'
+  }
+
+  private __reflectTargetType<T>(resolved: Type<T>) {
+    return Reflect.getMetadata(reflectTargetType, resolved);
   }
 
   private __createObject<T>(target: Type<T>, injections: Type<any>[]): T {

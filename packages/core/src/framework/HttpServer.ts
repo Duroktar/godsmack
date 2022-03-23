@@ -38,7 +38,10 @@ export class HttpServerProvider<T extends Express = Express> implements IHttpSer
 
     this.events = new AwaitableEventEmitter();
 
-    this.events.once(HttpServerEvent.ON_START_HTTP_SERVER, this.onServerStarted);
+    this.events.once(
+      HttpServerEvent.ON_START_HTTP_SERVER,
+      this.onServerStarted
+    );
   }
 
   //  -- 1. MIDDLEWARE

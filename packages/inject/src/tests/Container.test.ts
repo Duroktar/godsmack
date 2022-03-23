@@ -1,5 +1,5 @@
-import { staticTestProps } from './staticTestProps';
-import { Container } from '../Container';
+import { staticTestProps } from '../utils/staticTestProps';
+import { Container } from '../library/Container';
 
 describe('Container Class', () => {
   const expect = staticTestProps.expect

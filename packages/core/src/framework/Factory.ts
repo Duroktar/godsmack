@@ -18,10 +18,10 @@ export class ObjectFactory<Types extends FactoryTypeRecord = any> implements IFa
   create<TypeKey extends keyof Types, Impl extends Types[TypeKey]>(
     type: TypeKey,
     ...params: ParamsOf<Impl>[]
-  ) {
+  ): InstanceType<Impl> {
     const C = this.getInjectorDependency<Impl>(type as string)
-    if (C) return new C(...params)
-    throw new Error("Factory couldn't create type: " + type)
+    if (C) return new C(...params) as any
+    throw new Error("Factory couldn't create type: " + String(type))
   }
 
   getTypes(): Record<string, types.Type<any>> {

@@ -2,8 +2,8 @@ import type { Request } from 'express';
 import * as JWT from 'jsonwebtoken';
 import { SettingsService } from '../framework/Settings';
 import { Singleton } from '../injector';
-import { IApplicationSettings } from '../interfaces';
-import { IAuthService } from '../interfaces/IAuthService';
+import type { IApplicationSettings } from '../interfaces';
+import type { IAuthService } from '../interfaces/IAuthService';
 import { AuthServiceError } from '../utils/error';
 import { hashPasswordSha512, isSha512PasswordCorrect } from '../utils/saltHashPassword';
 import { LogFactory } from './Logger';
@@ -43,24 +43,14 @@ export class AuthUtilsService implements IAuthService {
   public jwtAuthorizationFlow(req: Pick<Request, 'header'>, requiredRoles?: string[] | null) {
     const decoded = this.verifyJwtFromHeadersOrThrow<JwtAuthData>(req);
 
-    if (!requiredRoles)
-      return decoded;
-
     if (!this.userHasPermission(requiredRoles, decoded.roles))
       throw new AuthServiceError('Not authorized to view this resource')
 
     return decoded
   }
 
-  public userHasPermission(requiredRoles: string[], userRoles: string[]) {
-    if (requiredRoles.length === 0)
-      return true
-    for (let role of requiredRoles) {
-      if (!userRoles.includes(role))
-        continue
-      return true
-    }
-    return false
+  public userHasPermission(requiredRoles: string[] | null | undefined, userRoles: string[]): boolean {
+    return !!requiredRoles?.every(role => userRoles.includes(role))
   }
 
   public createJWT(data: string | object | Buffer, options?: JWT.SignOptions): string {

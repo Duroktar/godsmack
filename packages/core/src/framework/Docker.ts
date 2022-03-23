@@ -237,7 +237,10 @@ export class DockerService {
   private readonly __ejectTag = '# -- NO_REPLACE';
 
   private hasDockerfileEjected(): boolean {
-    return this.readDockerfile().startsWith(this.__ejectTag)
+    return !this.readDockerfile()
+      .split('\n')
+      .slice(0, 2)
+      .includes(this.__ejectTag)
   }
 
   private readDockerfile(): string {

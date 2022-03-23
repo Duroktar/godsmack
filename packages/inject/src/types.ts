@@ -1,4 +1,4 @@
-import type { Container } from "./Container";
+import type { Container } from "./library/Container";
 
 export interface StaticTestProps {
   describe: typeof describe;

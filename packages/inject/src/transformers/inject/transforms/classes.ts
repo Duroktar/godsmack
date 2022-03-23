@@ -1,6 +1,5 @@
 import ts from "typescript";
 import { staticDepsProp } from "../../../constants";
-import { hasFields } from "../bitField";
 import { decoratorNameList } from "../constants";
 
 /*
@@ -24,14 +23,6 @@ export function isDecoratedClassConstructorInjection(node: ts.Node): node is ts.
     ts.isCallExpression(dec.expression) &&
     decoratorNameList.includes(dec.expression.expression.getText())
   )
-}
-
-function isInterfaceType(objType: ts.ObjectType): objType is ts.InterfaceType {
-  return hasFields(objType.objectFlags, ts.ObjectFlags.Interface);
-}
-
-function isObjectType(type: ts.Type): type is ts.ObjectType {
-  return (type as any)['objectFlags'] != undefined
 }
 
 function insertArrayAt<T>(array: T[], index: number, arrayToInsert: T[]): T[] {

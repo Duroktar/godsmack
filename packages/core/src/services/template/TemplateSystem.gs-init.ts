@@ -1,4 +1,4 @@
-
+import 'reflect-metadata';
 import { spawnSync } from 'child_process';
 import enquirer from 'enquirer';
 import { readFileSync } from 'fs';
@@ -227,7 +227,7 @@ export async function bootstrap() {
   spawnSync('yarn')
   spinner2.succeed()
 
-  const spinner3 = ora('Setting up git repository').start();
+  const spinner3 = ora('Initializing up git repository').start();
   spawnSync('git init .')
   spawnSync('git add -A')
   spawnSync('git commit -m "first commit"')

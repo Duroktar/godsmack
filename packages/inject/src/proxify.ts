@@ -1,29 +1,29 @@
 import type { IInjector } from '.';
+import { proxyCompareKey } from './constants';
 import type { Type } from './types';
 
 class ProxifyNullTokenError extends Error {}
 
-const compareKey = '@@godsmack/di:compare-key'
-
-export function proxify<T extends Type<any>>(
+export function proxify<T>(
   injector: IInjector,
-  token: Type<any> | string,
+  token: Type<T> | string,
 ): T {
   if (token == null) {
     throw new ProxifyNullTokenError()
   }
   return new Proxy(/* injector.resolve(token) */ {} as any, {
     get(_, prop, receiver) {
-      if (prop === compareKey) {
-        return injector.resolve<T>(token)
+      const target = injector.resolve<T>(token);
+      if (prop === proxyCompareKey) {
+        return target
       }
-      return Reflect.get(injector.resolve(token), prop, receiver);
+      return Reflect.get(<any>target, prop, receiver);
     },
   });
 }
 
-export const compare = <A>(a: A, b: any): b is A => {
-  a = (a as any ?? {})[compareKey] ?? a
-  b = (b as any ?? {})[compareKey] ?? b
+export const compare = <A>(a: A, b: unknown): b is A => {
+  a = (<any>a ?? {})[proxyCompareKey] ?? a
+  b = (<any>b ?? {})[proxyCompareKey] ?? b
   return Object.is(a, b)
 }

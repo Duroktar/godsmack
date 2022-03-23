@@ -68,6 +68,7 @@ export class SwaggerService implements ISwaggerService {
 
   private async generateClient(outputPath: string, swaggerSpecPath: string, lang: string) {
 
+    // TODO: non destructive ... maybe time versioned or something...
     this.logger.debug('Removing old client..')
     doTry(() => rmdirSync(outputPath));
 

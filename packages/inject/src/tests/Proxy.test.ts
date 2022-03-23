@@ -1,5 +1,5 @@
-import { staticTestProps } from './staticTestProps';
-import { Container } from '../Container';
+import { staticTestProps } from '../utils/staticTestProps';
+import { Container } from '../library/Container';
 import { Singleton } from '../decorators';
 import { compare } from '../proxify';
 
@@ -53,22 +53,32 @@ describe('Proxy', () => {
     const extended = container.resolve<ExtendedProxyClass>()
     const master = container.resolve<MasterProxyClass>()
 
-    expect(compare(base, container.resolve<BaseProxyClass>())).toBe(true)
+    expect(compare(base, container.resolve<BaseProxyClass>()))
+      .toBe(true)
 
-    expect(base.noise()).toEqual(noise1)
+    expect(base.noise())
+      .toEqual(noise1)
 
-    expect(extended.noise()).toEqual(noise3)
-    expect(extended.extendedNoise()).toEqual(noise1 + ' ' + noise3)
-    expect(master.masterNoise()).toEqual(noise4 + ' ' + noise1 + ' ' + noise3)
+    expect(extended.noise())
+      .toEqual(noise3)
+    expect(extended.extendedNoise())
+      .toEqual(noise1 + ' ' + noise3)
+    expect(master.masterNoise())
+      .toEqual(noise4 + ' ' + noise1 + ' ' + noise3)
 
     container.replace<BaseProxyClass>(ProxyImplementation2)
 
-    expect(compare(base, container.resolve<BaseProxyClass>())).toBe(true)
+    expect(compare(base, container.resolve<BaseProxyClass>()))
+      .toBe(true)
 
-    expect(base.noise()).toEqual(noise2)
+    expect(base.noise())
+      .toEqual(noise2)
 
-    expect(extended.noise()).toEqual(noise3)
-    expect(extended.extendedNoise()).toEqual(noise2 + ' ' + noise3)
-    expect(master.masterNoise()).toEqual(noise4 + ' ' + noise2 + ' ' + noise3)
+    expect(extended.noise())
+      .toEqual(noise3)
+    expect(extended.extendedNoise())
+      .toEqual(noise2 + ' ' + noise3)
+    expect(master.masterNoise())
+      .toEqual(noise4 + ' ' + noise2 + ' ' + noise3)
   })
 });

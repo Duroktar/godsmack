@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { parseAndTransform } from "./transform";
+import { parseAndTransform } from "./parser";
 
 export const transformerFactory =
   (typeChecker: ts.TypeChecker) =>
