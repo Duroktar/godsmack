@@ -59,8 +59,7 @@ export class SudokuTS implements ISudokuTS {
     // Define difficulties by how many squares are given to the player in a new
     // puzzle.
     this.DIFFICULTY = {
-        "easy":         79,
-        // "easy":         62,
+        "easy":         62,
         "medium":       53,
         "hard":         44,
         "very-hard":    35,
