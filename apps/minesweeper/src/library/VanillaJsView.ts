@@ -10,6 +10,8 @@ import { Singleton } from "@godsmack/inject";
 import { GameSettings } from "./GameSettings";
 import { vec2 } from "../utils/vec2";
 
+import '../styles/index.scss'
+
 @Singleton()
 export class VanillaJsView {
   private startTime: number = 0;
@@ -49,20 +51,31 @@ export class VanillaJsView {
       /* otherwise */ ''
     );
   }
+  getCellColor(cell: IGameCell): string {
+    return cell.mines > 2 ? 'red'   :
+           cell.mines > 1 ? 'green' :
+          /* otherwise */   'blue'  ;
+  }
   renderCell(model: IGameModel, cell: IGameCell): string {
     const el = document.createElement('div');
     el.id = String(cell.index);
 
-    el.innerText = this.getCellContent(model, cell)
-    el.classList.add('centered-content');
     el.classList.add('cell');
+
+    el.classList.toggle('flagged', cell.flagged);
     el.classList.toggle('found',   cell.isMine && model.state === GameState.WON)
     el.classList.toggle('tripped', cell.isMine && cell.visible);
     el.classList.toggle('visible', cell.visible);
-    el.classList.toggle('flagged', cell.flagged);
+
+    el.setAttribute('flag-character', this.config.flagCharacter)
+    el.setAttribute('mine-character', this.config.mineCharacter)
+    el.setAttribute('mine-count', this.getCellContent(model, cell))
+
+    el.style.color = this.getCellColor(cell)
 
     return el.outerHTML;
   }
+
   renderCellList(model: IGameModel) {
     return `
       <div class="container">
@@ -130,6 +143,9 @@ export class VanillaJsView {
     const form = new FormData(this.form);
     const difficulty = form.get('difficulty');
 
+    this.playGame(<any>difficulty as GameDifficulty);
+  }
+  playGame(difficulty: GameDifficulty = GameDifficulty.EASY) {
     const gameboard = this.gameManager
       .create(Number(difficulty));
 
@@ -158,6 +174,7 @@ export class VanillaJsView {
         break;
     }
   }
+
   registerListeners() {
     this.events
       .subscribe(this.eventHandler);
@@ -204,7 +221,7 @@ export class VanillaJsView {
 
     return this
   }
-  run() {
+  init() {
     this.initializeControls()
     this.registerListeners()
     return this

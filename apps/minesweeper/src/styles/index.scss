@@ -1,0 +1,95 @@
+@import 'https://fonts.googleapis.com/css?family=Roboto+Mono:700';
+
+:root {
+  --number-of-columns: 9;
+  --cell-width: 25px;
+  --cell-height: 25px;
+}
+
+body {
+	min-height: 100vh;
+
+	padding: 1px; box-sizing: border-box;
+	background: teal url(https://assets.codepen.io/15664/bliss.jpg) center / cover no-repeat;
+}
+
+.centered-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#board > .container {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(var(--number-of-columns), min-content);
+}
+
+#board > .container > .cell {
+  position: relative;
+  display: block;
+
+  font-family: 'Roboto Mono', monospace;
+
+  width: var(--cell-width);
+  height: var(--cell-height);
+
+  /* border: 0.5px solid #808080; */
+  /* background-color: darkgray; */
+
+  background: #c0c0c0;
+  box-sizing: border-box;
+  border: solid #808080;
+  border-width: 0 1px 1px 0;
+  flex: 0 0 11.1111111111%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#board > .container > .cell:before {
+  content: attr(mine-count);
+  font-size: 0.9rem;
+  font-family: "Roboto Mono", monospace;
+  font-weight: bold;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#board > .container > .cell:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background: #c0c0c0;
+  border: 2px outset #ececec;
+  font-size: 0.75rem;
+  text-align: center;
+  pointer-events: auto;
+}
+
+#board > .container > .cell.visible:after {
+  visibility: hidden;
+}
+
+#board > .container > .cell.tripped {
+  background-color: #f00;
+}
+
+#board > .container > .cell.tripped:after {
+  visibility: hidden;
+  content: attr(mine-character);
+}
+
+#board > .container > .cell.flagged:after {
+  visibility: visible !important;
+  content: attr(flag-character);
+}
+
+#board > .container > .cell.found {
+  background-color: rgba(21, 126, 21, 0.75);
+}
