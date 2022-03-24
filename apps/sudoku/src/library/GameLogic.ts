@@ -5,6 +5,7 @@ import { IGameLogic } from "../interface/IGameLogic";
 import { IGameModel } from "../interface/IGameModel";
 import { IGameCell } from "../interface/IGameCell";
 import { UNREACHABLE } from "../utils/assert";
+import { IVector2 } from "../interface/IVector2";
 
 @Singleton()
 export class GameLogic implements IGameLogic {
@@ -68,5 +69,13 @@ export class GameLogic implements IGameLogic {
       return GameState.WON
     }
     return model.state
+  }
+
+  getTileVectorForIndex(index: number): IVector2 {
+    return [Math.floor(index % 9), Math.floor(index / 9)]
+  }
+
+  getIndexForTileVector([x, y]: IVector2): number {
+    return y * 9 + x
   }
 }

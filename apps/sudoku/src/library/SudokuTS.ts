@@ -59,7 +59,8 @@ export class SudokuTS implements ISudokuTS {
     // Define difficulties by how many squares are given to the player in a new
     // puzzle.
     this.DIFFICULTY = {
-        "easy":         62,
+        "easy":         79,
+        // "easy":         62,
         "medium":       53,
         "hard":         44,
         "very-hard":    35,
@@ -69,7 +70,7 @@ export class SudokuTS implements ISudokuTS {
 
     // Blank character and board representation
     this.BLANK_CHAR = '.';
-    this.BLANK_BOARD = "...................................................."+
+    this.BLANK_BOARD = "...................................................." +
             ".............................";
 
     // Init
@@ -113,8 +114,6 @@ export class SudokuTS implements ISudokuTS {
       By default, the puzzles are unique, uless you set `unique` to false.
       (Note: Puzzle uniqueness is not yet implemented, so puzzles are *not*
       guaranteed to have unique solutions)
-
-      TODO: Implement puzzle uniqueness
       */
 
       // If `difficulty` is a string or undefined, convert it to a number or
@@ -165,8 +164,8 @@ export class SudokuTS implements ISudokuTS {
 
           // If we have at least difficulty, and the unique candidate count is
           // at least 8, return the puzzle!
-          if(single_candidates.length >= _difficulty &&
-                  this._strip_dups(single_candidates).length >= 8){
+          if (single_candidates.length >= _difficulty &&
+                  this._strip_dups(single_candidates).length >= 8) {
               let board = "";
               let givens_idxs = [];
               for (let i = 0; i < this.SQUARES.length; i++) {
@@ -219,7 +218,7 @@ export class SudokuTS implements ISudokuTS {
       // Assure a valid board
       let report = this.validate_board(board);
       if (report !== true) {
-          throw report;
+          return false;
       }
 
       // Check number of givens is at least MIN_GIVENS
@@ -713,12 +712,12 @@ export class SudokuTS implements ISudokuTS {
       */
 
       // Check for empty board
-      if (!board){
+      if (!board) {
           return "Empty board";
       }
 
       // Invalid board length
-      if (board.length !== this.NR_SQUARES){
+      if (board.length !== this.NR_SQUARES) {
           return "Invalid board size. Board must be exactly " + this.NR_SQUARES +
                   " squares.";
       }

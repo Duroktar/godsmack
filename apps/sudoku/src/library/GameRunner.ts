@@ -3,17 +3,15 @@ import { GameState } from "../enums/GameState";
 import { IGameManager } from "../interface/IGameManager";
 import { IGameRunner } from "../interface/IGameRunner";
 import { IGameModel } from "../interface/IGameModel";
-import { IGameLogic } from "../interface/IGameLogic";
 import { GameEventType, IGamePubSub } from "../interface/IGamePubSub";
 import { IInputProvider } from "../interface/IInputProvider";
 
 @Singleton()
 export class GameRunner implements IGameRunner {
   constructor(
-    public manager: IGameManager,
-    public logic: IGameLogic,
-    public events: IGamePubSub,
-    public input: IInputProvider,
+    private manager: IGameManager,
+    private events: IGamePubSub,
+    private input: IInputProvider,
   ) {}
 
   async playGame(gameboard: IGameModel): Promise<IGameModel> {

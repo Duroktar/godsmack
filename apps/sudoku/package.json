@@ -18,6 +18,8 @@
     "immer": "^9.0.12",
     "fork-ts-checker-webpack-plugin": "^7.2.1",
     "reflect-metadata": "^0.1.13",
+    "style-loader": "^3.3.1",
+    "css-loader": "^6.7.1",
     "ts-loader": "^9.2.8",
     "ts-node": "^10.7.0",
     "tslib": "^2.3.1",
