@@ -52,6 +52,14 @@ export class GameLogic implements IGameLogic {
     return cells
   }
 
+  getTileVectorForIndex(index: number): IVector2 {
+    return [Math.floor(index % 9), Math.floor(index / 9)]
+  }
+
+  getIndexForTileVector([x, y]: IVector2): number {
+    return y * 9 + x
+  }
+
   private createGameCell(index: number, seed: string): IGameCell {
     return {
       index,
@@ -69,13 +77,5 @@ export class GameLogic implements IGameLogic {
       return GameState.WON
     }
     return model.state
-  }
-
-  getTileVectorForIndex(index: number): IVector2 {
-    return [Math.floor(index % 9), Math.floor(index / 9)]
-  }
-
-  getIndexForTileVector([x, y]: IVector2): number {
-    return y * 9 + x
   }
 }

@@ -288,7 +288,7 @@ export class SudokuTS implements ISudokuTS {
   getRemainingDigits = (board: string) => {
     const candidates = this.getCandidates(board);
     const characters = (candidates || [])
-      .map((item, i) => game[i] === '.' ? item : '')
+      .map((item, i) => board[i] === '.' ? item : '')
       .join('');
     return this._strip_dups(characters).sort()
   }
@@ -514,6 +514,16 @@ export class SudokuTS implements ISudokuTS {
       return candidates;
   };
 
+
+  // Groups
+  // -------------------------------------------------------------------------
+  getGroupNumber = (col: number, row: number): string => {
+    const getSectionNumber = (n: number) =>
+      n < 3 ? '1' :
+      n < 6 ? '2' :
+              '3' ;
+    return getSectionNumber(col) + getSectionNumber(row)
+  }
 
   // Square relationships
   // -------------------------------------------------------------------------
@@ -832,23 +842,23 @@ export class SudokuTS implements ISudokuTS {
   }
 }
 
-const sudoku = new SudokuTS()
+// const sudoku = new SudokuTS()
 
-const game = sudoku.generate('easy')
-game
+// const game = sudoku.generate('easy')
+// game
 
-const result = sudoku.solve(game)
-result
+// const result = sudoku.solve(game)
+// result
 
-const candidates = (<string[][]>sudoku
-  .getCandidates(game))
-  .flat()
+// const candidates = (<string[][]>sudoku
+//   .getCandidates(game))
+//   .flat()
 
-const remaining = [...new Set(candidates.map((candidate, i) => {
-  if (game[i] === '.')
-    return candidate
-}).join('').split(''))].sort()
+// const remaining = [...new Set(candidates.map((candidate, i) => {
+//   if (game[i] === '.')
+//     return candidate
+// }).join('').split(''))].sort()
 
-console.log(candidates)
-console.log(remaining)
-sudoku.print_board(game)
+// console.log(candidates)
+// console.log(remaining)
+// sudoku.print_board(game)

@@ -6,6 +6,7 @@ import { IGameLogic } from "../interface/IGameLogic";
 import { IGameManager } from "../interface/IGameManager";
 import { IGameRunner } from "../interface/IGameRunner";
 import { IGameModel } from "../interface/IGameModel";
+import { ISudokuTS } from "../interface/ISudokuTS";
 import { GameSettings } from "./GameSettings";
 import { vec2 } from "../utils/vec2";
 
@@ -19,6 +20,7 @@ export class VanillaJsView {
   constructor(
     public gameManager: IGameManager,
     public logic: IGameLogic,
+    public sudoku: ISudokuTS,
     public runner: IGameRunner,
     public events: IGamePubSub,
     public config: GameSettings,
@@ -40,13 +42,20 @@ export class VanillaJsView {
     el.style.height = '62px'
 
     const [x, y] = this.logic.getTileVectorForIndex(cell.index);
+    const slPos = !!model.selected && this.logic.getTileVectorForIndex(model.selected);
+
+    const selectedGroup = slPos && this.sudoku.getGroupNumber(slPos[0], slPos[1])
+    const group = this.sudoku.getGroupNumber(x, y)
 
     const isSelected = model.selected === cell.index;
+    const isGroup = group === selectedGroup;
+    const isInline = isGroup || (slPos && (slPos[0] === x || slPos[1] === y));
 
     el.classList.toggle('fix', cell.isHint);
-    el.classList.toggle('selected', isSelected);
-    el.classList.toggle('current', isSelected);
-    el.classList.toggle('group', isSelected);
+    el.classList.toggle('current', isSelected); // currently selected cell
+    el.classList.toggle('group', isGroup);      // same section as selected
+    el.classList.toggle('selected', isInline);   // inline with selected
+
     el.classList.toggle('border_v', [3, 6].includes(x + 1));
     el.classList.toggle('border_h', [3, 6].includes(y + 1));
 
@@ -55,8 +64,9 @@ export class VanillaJsView {
     el.setAttribute('idx', String(cell.index))
 
     const span = document.createElement('span')
+    span.style.lineHeight = this.config.cellSize + 'px'
+    // span.style.lineHeight = '62px'
     // span.style.lineHeight = '25px'
-    span.style.lineHeight = '62px'
 
     span.innerHTML = this.getCellDisplayValue(model, cell)
 
@@ -70,7 +80,8 @@ export class VanillaJsView {
   }
   renderBoard(model: IGameModel) {
     // console.log('renderBoard', model);
-    this.board.style.width = "553px";
+    this.board.style.width = this.config.boardWidth + 'px';
+    // this.board.style.width = "553px";
     // this.board.style.width = "220px";
 
     this.board.innerHTML = this.renderCellList(model)

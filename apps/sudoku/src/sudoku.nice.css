@@ -32,8 +32,8 @@ body {
 
 .sudoku_board .cell {
   width:11.11%;
-  display: inline-block;
-  float:left;
+  /* display: inline-block; */
+  float: left;
   cursor:pointer;
   text-align: center;
   overflow: hidden;
