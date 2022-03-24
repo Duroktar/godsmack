@@ -1,2 +1,0 @@
-
-export { QueryFailedError } from 'typeorm'

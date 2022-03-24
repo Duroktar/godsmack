@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-
-echo $(date)
-$PWD/node_modules/.bin/ttsc -P tsconfig.json

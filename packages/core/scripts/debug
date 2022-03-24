@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-
-echo $(date)
-node --inspect -r node_modules/.bin/ts-node/register src/main.ts

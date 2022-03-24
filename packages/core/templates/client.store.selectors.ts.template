@@ -1,3 +1,0 @@
-import type { RootState } from "./rootReducer";
-
-export const selectRootState = (s: RootState) => s

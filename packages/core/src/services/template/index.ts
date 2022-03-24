@@ -1,1 +1,0 @@
-export { TemplateSystem } from './TemplateSystem'
