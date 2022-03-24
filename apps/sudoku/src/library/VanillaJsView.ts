@@ -1,19 +1,16 @@
+import { Singleton } from "@godsmack/inject";
+import { GameDifficulty } from "../enums/GameDifficulty";
 import { IGameCell } from "../interface/IGameCell";
 import { IGameEvent, IGamePubSub } from "../interface/IGamePubSub";
 import { IGameLogic } from "../interface/IGameLogic";
 import { IGameManager } from "../interface/IGameManager";
 import { IGameRunner } from "../interface/IGameRunner";
 import { IGameModel } from "../interface/IGameModel";
-import { GameState } from "../enums/GameState";
-import { GameDifficulty } from "../enums/GameDifficulty";
-import { Singleton } from "@godsmack/inject";
 import { GameSettings } from "./GameSettings";
 import { vec2 } from "../utils/vec2";
 
 @Singleton()
 export class VanillaJsView {
-  private startTime: number = 0;
-  private timer?: NodeJS.Timer;
   private root: HTMLElement;
   private board: HTMLDivElement;
   private ctrl: HTMLDivElement;
@@ -32,14 +29,15 @@ export class VanillaJsView {
     this.diff = document.querySelector<HTMLSelectElement>('form select')!
     this.root = document.querySelector<HTMLElement>(':root')!
   }
-  getCellContent(model: IGameModel, cell: IGameCell): string {
+  getCellDisplayValue(model: IGameModel, cell: IGameCell): string {
     return cell.value === '.' ? '' : cell.value;
   }
   renderCell(model: IGameModel, cell: IGameCell): string {
     const el = document.createElement('div');
 
     el.classList.add('cell');
-    el.style.height = '25px'
+    // el.style.height = '25px'
+    el.style.height = '62px'
 
     const [x, y] = this.logic.getTileVectorForIndex(cell.index);
 
@@ -57,8 +55,10 @@ export class VanillaJsView {
     el.setAttribute('idx', String(cell.index))
 
     const span = document.createElement('span')
-    span.style.lineHeight = '25px'
-    span.innerHTML = this.getCellContent(model, cell)
+    // span.style.lineHeight = '25px'
+    span.style.lineHeight = '62px'
+
+    span.innerHTML = this.getCellDisplayValue(model, cell)
 
     el.appendChild(span)
     return el.outerHTML;
@@ -68,49 +68,12 @@ export class VanillaJsView {
       .map(cell => this.renderCell(model, cell))
       .join('')
   }
-  renderScore(model: IGameModel) {
-    return (
-        `<div class="statistics">`
-      // +   `<h3>Game State: ${GameState[model.state]}</h3>`
-      // // +   `<h3>Game Seed: ${state.seed}</h3>`
-      // +   `<h3>Selected Cell: ${model.selected}</h3>`
-      // +   `<h3>Game Difficulty: ${GameDifficulty[model.difficulty]}</h3>`
-      // +   `<div name="time"></div>`
-      + `</div>`
-    );
-  }
   renderBoard(model: IGameModel) {
-    console.log('renderBoard', model);
-    this.board.style.width = "220px";
+    // console.log('renderBoard', model);
+    this.board.style.width = "553px";
+    // this.board.style.width = "220px";
 
     this.board.innerHTML = this.renderCellList(model)
-    // `
-    //   ${this.renderCellList(model)}
-    //   ${this.renderScore(model)}
-    // `;
-  }
-  renderResult(model: IGameModel) {
-    this.renderBoard(model);
-    this.updateElapsedTime(model);
-    this.showGameResult(model);
-  }
-  getSecondsElapsed(model: IGameModel) {
-    if (model.state === GameState.PREGAME)
-      return 0;
-    return (new Date().getTime() - this.startTime) / 1000;
-  }
-  updateElapsedTime(model: IGameModel) {
-    // const el = this.board.children.namedItem("time")!;
-    // const seconds = this.getSecondsElapsed(model);
-    // return el.innerHTML = `<h3>Time: ${seconds} seconds</h3>`;
-  }
-  showGameResult(model: IGameModel) {
-    setTimeout(() => {
-      if (model.state === GameState.WON)
-        alert(`You won! Time taken: ${this.getSecondsElapsed(model)} seconds`);
-      if (model.state === GameState.GAMEOVER)
-        alert(`You Lost! Try again..`);
-    });
   }
   setCellSize({cellSize: [x, y]}: GameSettings) {
     this.root.style.setProperty('--cell-width',  x + 'px');
@@ -120,16 +83,8 @@ export class VanillaJsView {
     this.root.style.setProperty('--flag-character', flagCharacter);
     this.root.style.setProperty('--mine-character', mineCharacter);
   }
-  submitHandler = (event: SubmitEvent) => {
-    event.preventDefault();
-
-    const form = new FormData(this.form);
-    const difficulty = form.get('difficulty')!;
-
-    this.startGame(<any>difficulty);
-  }
   startGame = async (difficulty = GameDifficulty.easy) => {
-    console.log('startGame', difficulty);
+    // console.log('startGame', difficulty);
     const gameboard = this.gameManager.create(difficulty);
 
     // this.form.addEventListener('submit', () => {
@@ -139,8 +94,16 @@ export class VanillaJsView {
 
     await this.runner.playGame(gameboard);
   }
+  submitHandler = (event: SubmitEvent) => {
+    event.preventDefault();
+
+    const form = new FormData(this.form);
+    const difficulty = form.get('difficulty')!;
+
+    this.startGame(<any>difficulty);
+  }
   eventHandler = (event: IGameEvent) => {
-    console.log('eventHandler', event);
+    // console.log('eventHandler', event);
     switch (event.type) {
       case 'config-changed':
         this.setCellSize(this.config)
@@ -148,10 +111,8 @@ export class VanillaJsView {
         break
       case 'update':
       case 'begin':
-        this.renderBoard(event.payload);
-        break;
       case 'end':
-        this.renderResult(event.payload);
+        this.renderBoard(event.payload);
         break;
     }
   }
