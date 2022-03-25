@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
-          integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" /> -->
-    <!-- <link rel="stylesheet" href="style.css"> -->
 
     <title>Sudoku</title>
 <script defer src="vendors-node_modules_css-loader_dist_runtime_api_js-node_modules_css-loader_dist_runtime_getU-9dabd3.bundle.js"></script><script defer src="main.bundle.js"></script></head>
@@ -24,13 +18,28 @@
 
     <div id="sudoku_menu">
         <ul>
-            <li><a class="restart" href="#">New Game</a></li>
+            <li><a id="restart_button" class="restart" href="#">New Game</a></li>
             <li></li>
         </ul>
     </div>
 
     <div id="sudoku_container">
         <div class="sudoku_board"></div>
+        <div class="board_console_container" style="display:none">
+            <div class="board_console">
+                <div class="num">1</div>
+                <div class="num">2</div>
+                <div class="num">3</div>
+                <div class="num">4</div>
+                <div class="num">5</div>
+                <div class="num">6</div>
+                <div class="num">7</div>
+                <div class="num">8</div>
+                <div class="num">9</div>
+                <div class="num remove">X</div>
+                <div class="num note">?</div>
+            </div>
+        </div>
         <div class="statistics"></div>
     </div>
 </body>
