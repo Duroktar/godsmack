@@ -12,7 +12,7 @@ import { GameRunner } from "./library/GameRunner";
 import { GameLogic } from "./library/GameLogic";
 import { GameSettings } from "./library/GameSettings";
 import { SudokuTS } from "./library/SudokuTS";
-import { VanillaJsView } from "./library/VanillaJsView";
+import { VanillaJsView } from "./views/VanillaJsView";
 
 export const container = new Container()
   .addSingleton(VanillaJsView)

@@ -19,6 +19,7 @@ export class GameRunner implements IGameRunner {
 
     do {
       const input = await this.input.getNextInput();
+      this.emit("input", gameboard)
       this.manager.update(gameboard, input)
       this.emit("update", gameboard)
     } while (gameboard.state < GameState.WON)

@@ -2,14 +2,10 @@ import { Singleton } from "@godsmack/inject";
 import EventEmitter from "events";
 import { IGameInput } from "../interface/IGameInput";
 import { IInputProvider } from "../interface/IInputProvider";
-import { ISudokuTS } from "../interface/ISudokuTS";
 
 @Singleton()
 export class DOMInputProvider implements IInputProvider {
-  constructor(private sudoku: ISudokuTS) {
-    document.addEventListener('click', this.onClickCell)
-    document.addEventListener('keypress', this.onKeyPress)
-  }
+  constructor() {}
 
   async getNextInput(): Promise<IGameInput> {
     return new Promise<IGameInput>((resolve) => {
@@ -17,29 +13,23 @@ export class DOMInputProvider implements IInputProvider {
     })
   }
 
-  private onClickCell = (e: MouseEvent) => {
-    if (e.target instanceof HTMLElement) {
-      if (e.target.classList.contains('cell')) {
-        const idx = Number(e.target.getAttribute('idx'))
-        this.emitData({ action: 'select', cellIndex: idx })
-      }
-      if (e.target.parentElement?.classList.contains('cell')) {
-        const idx = Number(e.target.parentElement.getAttribute('idx'))
-        this.emitData({ action: 'select', cellIndex: idx })
-      }
-    }
-  }
-
-  private onKeyPress = (e: KeyboardEvent) => {
-    if (this.sudoku.DIGITS.includes(e.key))
-      this.emitData({ action: 'keypress', key: e.key })
-  }
-
-  private emitData(data: IGameInput): void {
-    console.log('Input', data);
-
+  public putNextInput(data: IGameInput): void {
+    console.log('putting input:', data);
     this.emitter.emit('data', data)
   }
 
   private emitter = new EventEmitter();
 }
+
+// export abstract class BaseInputProvider {
+//   protected getNextInput(): Promise<IGameInput> {
+//     return new Promise<IGameInput>((resolve) =>
+//       resolve(this.provideNextInput()))
+//   }
+//   abstract provideNextInput(): Promise<IGameInput>;
+// }
+
+// export class GameInputProvider extends BaseInputProvider {
+//   public async provideNextInput(): Promise<IGameInput> {
+//   }
+// }

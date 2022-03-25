@@ -150,15 +150,19 @@ color:#ecf0f1;
   left: 0;
   width: 100%;
   height: 100%;
+  justify-content: center;
+  align-items: center;
 
-   -webkit-user-select: none;
-   -moz-user-select: none;
-   -ms-user-select: none;
-   user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .board_console {
-  display:block;
+  display: grid;
+  grid-template-columns: 33.3% 33.3% 33.3%;
+  grid-template-rows: 8em 8em 8em 8em;
   position:absolute;
   width:50%;
   color:white;
@@ -167,14 +171,16 @@ color:#ecf0f1;
 }
 
 .board_console .num {
-  width:33.33%;
+  /* width:33.33%; */
   color:#2c3e50;
   padding: 1px;
-  display: inline-block;
+  display: flex;
   font-weight:bold;
   font-size:24px;
   text-align: center;
   cursor:pointer;
+  justify-content: center;
+  align-items: center;
 
   -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
@@ -190,12 +196,14 @@ color:#ecf0f1;
 }
 
 .board_console .num.remove {
-  width:66.66%;
+  width: 200%;
 }
 
 .board_console .num.note {
   background:#95a5a6;
   color:#ecf0f1;
+  position: relative;
+  left: 100%;
 }
 
 .board_console .num.note:hover {

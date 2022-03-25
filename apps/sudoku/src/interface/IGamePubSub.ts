@@ -1,6 +1,6 @@
 import { IGameModel } from "./IGameModel";
 
-export type GameEventType = 'begin' | 'update' | 'end';
+export type GameEventType = 'begin' | 'input' | 'update' | 'end';
 
 export type IGameEvent = {
   type: GameEventType
