@@ -65,10 +65,10 @@ export class VanillaJsView {
     el.classList.toggle('group', isGroup);      // same section as selected
     el.classList.toggle('selected', isInline);  // inline with selected
 
-    el.classList.toggle('notvalid',
-      cell.value !== '.' &&
-      model.solution[cell.index] !== cell.value
-    );
+    const isInvalid = cell.value !== '.' &&
+      model.solution[cell.index] !== cell.value;
+
+    el.classList.toggle('notvalid', isInvalid);
 
     el.classList.toggle('border_v', [3, 6].includes(x + 1));
     el.classList.toggle('border_h', [3, 6].includes(y + 1));
@@ -137,6 +137,7 @@ export class VanillaJsView {
     this.startGame(<any>difficulty);
   }
   onClickCell = (e: MouseEvent | TouchEvent) => {
+    e.preventDefault()
     if (e.target instanceof HTMLElement) {
       if (e.target.classList.contains('cell')) {
         const idx = Number(e.target.getAttribute('idx'))
@@ -190,6 +191,7 @@ export class VanillaJsView {
 
     this.restartButton.addEventListener('click', e => {
       e.preventDefault()
+      // e.stopPropagation()
 
       this.menu.classList.toggle('open-sidebar')
       this.startGame()
@@ -197,6 +199,7 @@ export class VanillaJsView {
 
     this.sidebarToggle.addEventListener('click', e => {
       e.preventDefault()
+      // e.stopPropagation()
 
       this.menu.classList.toggle('open-sidebar')
       // this.keypadBG.style.display = 'none';
@@ -204,35 +207,38 @@ export class VanillaJsView {
 
     this.keypadBG.addEventListener('click', e => {
       e.preventDefault()
+      // e.stopPropagation()
       this.keypadBG.style.display = 'none';
     })
 
-    this.keypad.addEventListener('click', e => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!(e.target instanceof HTMLDivElement))
-        return
-      if (!(e.target.classList.contains('num')))
-        return
-      if (e.target.innerText.match(/[1-9]/)) {
-        this.input.putNextInput({
-          action: 'keypress',
-          key: e.target.innerText,
-        })
-        this.keypadBG.style.display = 'none';
-      }
-      else if (e.target.innerText === 'X') {
-        this.input.putNextInput({
-          action: 'keypress',
-          key: '',
-        })
-        this.keypadBG.style.display = 'none';
-      }
-    })
+    this.keypad.addEventListener('click', this.onClickPad)
+    this.keypad.addEventListener('touchstart', this.onClickPad)
 
     this.events.subscribe(this.eventHandler);
 
     return this
+  }
+  onClickPad = (e: MouseEvent | TouchEvent) => {
+    if (!(e.target instanceof HTMLDivElement))
+      return
+    if (!(e.target.classList.contains('num')))
+      return
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.target.innerText.match(/[1-9]/)) {
+      this.input.putNextInput({
+        action: 'keypress',
+        key: e.target.innerText,
+      })
+      this.keypadBG.style.display = 'none';
+    }
+    else if (e.target.innerText === 'X') {
+      this.input.putNextInput({
+        action: 'keypress',
+        key: '',
+      })
+      this.keypadBG.style.display = 'none';
+    }
   }
   duration = 0
   unregisterListeners() {

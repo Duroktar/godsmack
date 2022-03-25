@@ -25,7 +25,7 @@ export class GameLogic implements IGameLogic {
           if (cell.isHint) {
             break
           }
-          if (cell.value === input.key) {
+          if (cell.value === input.key || input.key === '') {
             cell.value = '.'
             break
           }

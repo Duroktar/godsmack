@@ -38,6 +38,10 @@ body {
   text-align: center;
   overflow: hidden;
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
   -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
     box-sizing: border-box;
