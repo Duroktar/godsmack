@@ -5,6 +5,7 @@
   "repository": "https://github.com/Duroktar/godsmack.git",
   "author": "traBpUkciP <scott.doucet@hotmail.com>",
   "license": "MIT",
+  "private" :"true",
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "test": "lerna run test"

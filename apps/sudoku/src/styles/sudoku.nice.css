@@ -328,8 +328,8 @@ left:0px;
 }
 
 @media all and (orientation:portrait) and (max-width: 470px){
-.sudoku_board .cell span { font-size:16px; }
-.sudoku_board .cell .note { font-size:8px; }
+.sudoku_board .cell span { font-size:46px; }
+.sudoku_board .cell .note { font-size:24px; }
 }
 
 @media all and (orientation:portrait) and (max-width: 320px){

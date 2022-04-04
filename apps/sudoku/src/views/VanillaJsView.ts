@@ -159,7 +159,6 @@ export class VanillaJsView {
       this.keypadBG.style.display = 'none';
     }
   }
-  timer: any
   eventHandler = (event: IGameEvent) => {
     // console.log('eventHandler', event);
     switch (event.type) {
@@ -168,18 +167,22 @@ export class VanillaJsView {
         this.setCellCharacters(this.config)
         break
       case 'begin':
+        clearInterval(this.timer)
         this.timer = setInterval(() => {
           this.duration++
           this.renderStats(event.payload);
         }, 1000)
+        this.duration = 0
       case 'update': {
         this.renderBoard(event.payload);
-        // this.renderStats(event.payload);
+        this.renderStats(event.payload);
         break;
       }
       case 'end': {
-        clearInterval(this.timer)
         this.duration = 0
+        clearInterval(this.timer)
+        this.renderBoard(event.payload);
+        this.renderStats(event.payload);
       }
     }
   }
@@ -191,7 +194,6 @@ export class VanillaJsView {
 
     this.restartButton.addEventListener('click', e => {
       e.preventDefault()
-      // e.stopPropagation()
 
       this.menu.classList.toggle('open-sidebar')
       this.startGame()
@@ -199,15 +201,13 @@ export class VanillaJsView {
 
     this.sidebarToggle.addEventListener('click', e => {
       e.preventDefault()
-      // e.stopPropagation()
 
       this.menu.classList.toggle('open-sidebar')
-      // this.keypadBG.style.display = 'none';
     })
 
     this.keypadBG.addEventListener('click', e => {
       e.preventDefault()
-      // e.stopPropagation()
+
       this.keypadBG.style.display = 'none';
     })
 
@@ -240,7 +240,6 @@ export class VanillaJsView {
       this.keypadBG.style.display = 'none';
     }
   }
-  duration = 0
   unregisterListeners() {
     this.events.unsubscribe(this.eventHandler);
 
@@ -251,28 +250,6 @@ export class VanillaJsView {
   }
   initializeControls() {
 
-    // this.diff.replaceChildren(
-    //   ...(Object.keys(GameDifficulty)).map(value => {
-    //     const el = document.createElement('option')
-    //     el.setAttribute('value', String(value))
-    //     el.textContent = (<any>value)
-    //     if (value === this.config.defaultDifficulty)
-    //       el.selected = true
-    //     return el
-    //   })
-    // )
-
-    // const cellSizeInputEl = this.ctrl
-    //   .querySelector<HTMLInputElement>('[name=cell-size]')!
-
-    // cellSizeInputEl.value = String(this.config.cellSize[0])
-
-    // cellSizeInputEl
-    //   .addEventListener('change', ev => {
-    //     if (ev.target instanceof HTMLInputElement)
-    //       this.config.set('cellSize', vec2(Number(ev.target.value)))
-    //   })
-
     return this
   }
   run() {
@@ -280,4 +257,6 @@ export class VanillaJsView {
     this.registerListeners()
     return this
   }
+  private duration = 0
+  private timer: any
 }
