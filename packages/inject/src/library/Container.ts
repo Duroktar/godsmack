@@ -76,7 +76,7 @@ export class Container<T = EmptyType> implements IContainer<T> {
     instance?: I,
     force = false,
   ): Container<Exclude<I | T, EmptyType>> {
-    this.injector.registerType(<any>type, type, force)
+    this.injector.registerType(<any>type, <any>type, force)
     this.injector.registerInstance(<any>type, instance)
     return this;
   }
