@@ -1,6 +1,6 @@
 {
   "name": "@trabpukcip/inject",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "dist/index.js",
   "license": "MIT",
   "author": "duroktar@gmail.com",
@@ -22,6 +22,9 @@
     "test": "jest",
     "prepublish": "yarn build",
     "test:watch": "yarn test --watch --watch-files src/tests/"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@ts-nameof/common": "4.2.1",
