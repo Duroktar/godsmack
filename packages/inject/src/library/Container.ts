@@ -72,12 +72,12 @@ export class Container<T = EmptyType> implements IContainer<T> {
   }
 
   public addSingletonInstance<I>(
-    type: Type<I>,
-    instance: I,
+    type: Type<I> | I,
+    instance?: I,
     force = false,
   ): Container<Exclude<I | T, EmptyType>> {
-    this.injector.registerType(type, type, force)
-    this.injector.registerInstance(type, instance)
+    this.injector.registerType(<any>type, type, force)
+    this.injector.registerInstance(<any>type, instance)
     return this;
   }
 

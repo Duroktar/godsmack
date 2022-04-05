@@ -41,8 +41,7 @@ export interface IContainer<T = EmptyType> {
    * @returns {(Container<Exclude<I | T, EmptyType>>)} The container instance for chaining.
    * @memberof IContainer
    */
-  addSingletonInstance<I>(instance: I): IContainer<Exclude<I | T, EmptyType>>;
-  addSingletonInstance<I>(type: Type<I>, instance: I): IContainer<Exclude<I | T, EmptyType>>;
+  addSingletonInstance<I>(type: Type<I> | I, instance?: I): IContainer<Exclude<I | T, EmptyType>>;
   /**
    * Returns the InjectorFactory instance used by the container.
    *
