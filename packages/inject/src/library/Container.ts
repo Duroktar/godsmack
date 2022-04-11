@@ -43,6 +43,7 @@ export class Container<T = EmptyType> implements IContainer<T> {
     return this.injector.create(target);
   }
 
+  public addService<Base, Impl extends Base = Base, Ret extends Base = Base>(type: Type<Ret>, impl?: Impl, force?: boolean): Container<Ret | InferType<Ret> | T>;
   public addService<Base, Impl extends Type<Base> = any, Ret extends Type<Base> = any>(
     type: Ret,
     impl: Impl = type as any,
