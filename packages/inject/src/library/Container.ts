@@ -16,8 +16,8 @@ export class Container<T = EmptyType> implements IContainer<T> {
     this.injector = new Injector(settings)
   }
 
-  public resolve<Target extends T>(target?: Type<Target> | string): Target;
-  public resolve<Target extends T>(target: Type<Target> | string): Target {
+  public resolve<Target extends T, RetType extends Target = Target>(target?: Type<RetType> | string): RetType;
+  public resolve<Target extends T, RetType extends Target = Target>(target: Type<RetType> | string): RetType {
     if (target == null) {
       throw new ContainerDependencyResolutionError(target)
     }
@@ -25,7 +25,7 @@ export class Container<T = EmptyType> implements IContainer<T> {
       ? proxify<Target>(this.injector, target)
       : this.injector.resolve<Target>(target);
 
-    return resolved as Target
+    return resolved as RetType
   }
 
   public replace<Base extends T, Impl extends Type<Base> = any, Ret extends Type<Base> = any>(

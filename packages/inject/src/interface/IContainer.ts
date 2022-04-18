@@ -17,11 +17,12 @@ export interface IContainer<T = EmptyType> {
    * application container in the `ConfigureServices` function.
    *
    * @template Target Can be replaced with a valid Interface for the Target type
+   * @template RetType Can replace the Target type with another valid Interface (defaults to Target)
    * @param {Type<Target>} target The type to resolve
-   * @returns {Target} A fully instantiated object of the specified type.
+   * @returns {RetType} A fully instantiated object of the specified type.
    * @memberof IContainer
    */
-  resolve<Target extends T>(target?: Type<Target> | string): Target;
+   resolve<Target extends T, RetType extends Target = Target>(target?: Type<RetType> | string): RetType;
   /**
    * Registers a class as a singleton to the DI container
    *
